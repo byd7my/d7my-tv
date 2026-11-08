@@ -25,6 +25,7 @@ on:
     push:
         branches:
             - master
+            - main
         tags:
             - 'v*.*.*'
         paths-ignore:
@@ -34,6 +35,10 @@ on:
             - '.agents/**'
             - '.codex/**'
             - '.claude/**'
+            - '.github/workflows/build-and-make.yaml'
+            - '.github/release-notes-windows-ar.md'
+            - 'CHANGELOG.md'
+            - 'package.json'
     pull_request:
         branches:
             - master
@@ -68,33 +73,68 @@ jobs:
         timeout-minutes: 5
         outputs:
             version: ${{ steps.resolve.outputs.version }}
+            stable_version: ${{ steps.resolve.outputs.stable_version }}
         steps:
             - name: Checkout code
-              if: github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository == '4gray/iptvnator'
+              if: (github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository == '4gray/iptvnator') || (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'byd7my/d7my-tv')
               uses: actions/checkout@v7
+              with:
+                  fetch-depth: 0
 
             - name: Resolve nightly version
               id: resolve
               shell: bash
               env:
                   NIGHTLY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository == '4gray/iptvnator' }}
+                  AUTO_STABLE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'byd7my/d7my-tv' }}
+                  GH_TOKEN: ${{ github.token }}
               run: |
                   set -euo pipefail
 
-                  if [ "${NIGHTLY}" != "true" ]; then
+                  if [ "${NIGHTLY}" = "true" ]; then
+                      VERSION="$(node tools/release/nightly-version.mjs)"
+                      echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+                      echo "Nightly version: ${VERSION}"
+                  else
                       echo "version=" >> "${GITHUB_OUTPUT}"
-                      echo "Not a master push; no nightly version."
-                      exit 0
                   fi
 
-                  VERSION="$(node tools/release/nightly-version.mjs)"
-                  echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
-                  echo "Nightly version: ${VERSION}"
+                  if [ "${AUTO_STABLE}" = "true" ]; then
+                      BASE_VERSION="$(node -p "require('./package.json').version")"
+                      LATEST_TAG="$(gh release list --repo "${GITHUB_REPOSITORY}" --limit 100 --json tagName --jq '.[].tagName | select(test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))' | sort -V | tail -n 1)"
+                      LATEST_VERSION="${LATEST_TAG#v}"
+                      STABLE_VERSION="$(node - "${BASE_VERSION}" "${LATEST_VERSION}" <<'NODE'
+                  const [base, latest] = process.argv.slice(2);
+                  const valid = (value) => /^\d+\.\d+\.\d+$/.test(value);
+                  const parts = (value) => value.split('.').map(Number);
+                  const compare = (left, right) => {
+                    const a = parts(left);
+                    const b = parts(right);
+                    for (let index = 0; index < 3; index += 1) {
+                      if (a[index] !== b[index]) return a[index] - b[index];
+                    }
+                    return 0;
+                  };
+                  if (!valid(base) || (latest && !valid(latest))) throw new Error('Expected stable semantic versions.');
+                  const current = latest && compare(latest, base) > 0 ? latest : base;
+                  if (latest && compare(current, latest) === 0) {
+                    const [major, minor, patch] = parts(current);
+                    console.log(`${major}.${minor}.${patch + 1}`);
+                  } else {
+                    console.log(current);
+                  }
+                  NODE
+                      )"
+                      echo "stable_version=${STABLE_VERSION}" >> "${GITHUB_OUTPUT}"
+                      echo "Automatic Windows release: ${STABLE_VERSION}"
+                  else
+                      echo "stable_version=" >> "${GITHUB_OUTPUT}"
+                  fi
 
     linux-embedded-mpv-runtime:
         name: Build pinned Linux Embedded MPV runtime
         # A Windows release builds nothing for Linux.
-        if: ${{ inputs.publish_release != true }}
+        if: ${{ inputs.publish_release != true && !(github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'byd7my/d7my-tv') }}
         runs-on: ubuntu-22.04
         timeout-minutes: 120
         # Concurrency lives on the build jobs, not the workflow: cancelling a
@@ -392,7 +432,7 @@ jobs:
     build-cross-platform:
         name: Build on ${{ matrix.os }} ${{ matrix.arch }}
         # A Windows release (publish_release) builds only build-windows-release.
-        if: ${{ inputs.publish_release != true }}
+        if: ${{ inputs.publish_release != true && !(github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'byd7my/d7my-tv') }}
         needs: nightly-version
         runs-on: ${{ matrix.runner }}
         timeout-minutes: 120
@@ -435,6 +475,19 @@ jobs:
               with:
                   node-version-file: '.nvmrc'
                   cache: 'pnpm'
+
+            - name: Apply automatic stable version
+              if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'byd7my/d7my-tv'
+              env:
+                  VERSION: ${{ needs.nightly-version.outputs.stable_version }}
+              run: |
+                  node - <<'NODE'
+                  const fs = require('node:fs');
+                  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+                  if (!process.env.VERSION) throw new Error('Missing automatic stable version.');
+                  packageJson.version = process.env.VERSION;
+                  fs.writeFileSync('package.json', `${JSON.stringify(packageJson, null, 4)}\n`);
+                  NODE
 
             - name: Install Linux system dependencies
               if: matrix.os == 'linux'
@@ -1406,7 +1459,7 @@ jobs:
         needs:
             - linux-embedded-mpv-runtime
             - nightly-version
-        if: ${{ inputs.publish_release != true }}
+        if: ${{ inputs.publish_release != true && !(github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'byd7my/d7my-tv') }}
         runs-on: ${{ matrix.runner }}
         timeout-minutes: 120
         concurrency:
@@ -1445,7 +1498,7 @@ jobs:
     # publish_release.
     build-windows-release:
         name: Build Windows release (${{ matrix.arch }})
-        if: ${{ inputs.publish_release == true }}
+        if: ${{ inputs.publish_release == true || (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'byd7my/d7my-tv') }}
         needs: nightly-version
         runs-on: ${{ matrix.runner }}
         timeout-minutes: 120
@@ -1492,6 +1545,12 @@ jobs:
         steps:
             - name: Checkout code
               uses: actions/checkout@v7
+
+            - name: Generate automatic stable changelog
+              if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'byd7my/d7my-tv'
+              env:
+                  VERSION: ${{ needs.nightly-version.outputs.stable_version }}
+              run: node tools/release/build-release-notes.mjs --version "$VERSION" --consume
 
             - name: Download all artifacts
               uses: actions/download-artifact@v8
@@ -1626,7 +1685,15 @@ jobs:
 
             - name: Get version from package.json
               id: package-version
-              run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+              env:
+                  AUTO_VERSION: ${{ needs.nightly-version.outputs.stable_version }}
+              run: |
+                  if [ -n "${AUTO_VERSION}" ]; then
+                      VERSION="${AUTO_VERSION}"
+                  else
+                      VERSION="$(node -p "require('./package.json').version")"
+                  fi
+                  echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
             # Test drafts (PR/master) get a self-describing title plus a context
             # header linking the PR, real head commit, and workflow run. A stable
@@ -1642,7 +1709,7 @@ jobs:
                   VERSION: ${{ steps.package-version.outputs.version }}
                   EVENT_NAME: ${{ github.event_name }}
                   IS_TAG_BUILD: ${{ startsWith(github.ref, 'refs/tags/') }}
-                  PUBLISH_RELEASE: ${{ inputs.publish_release == true && 'true' || 'false' }}
+                  PUBLISH_RELEASE: ${{ (inputs.publish_release == true || (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'byd7my/d7my-tv')) && 'true' || 'false' }}
                   PR_NUMBER: ${{ github.event.pull_request.number }}
                   PR_TITLE: ${{ github.event.pull_request.title }}
                   PR_URL: ${{ github.event.pull_request.html_url }}
@@ -1741,7 +1808,7 @@ jobs:
 
             - name: Create Draft Release
               id: draft-release
-              if: env.NIGHTLY != 'true' && inputs.publish_release != true && (github.event_name != 'pull_request' || steps.pr-state.outputs.state == 'open')
+              if: env.NIGHTLY != 'true' && inputs.publish_release != true && !(github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'byd7my/d7my-tv') && (github.event_name != 'pull_request' || steps.pr-state.outputs.state == 'open')
               uses: softprops/action-gh-release@v3
               with:
                   draft: true
@@ -1782,7 +1849,7 @@ jobs:
             # (latest.yml and the .blockmap) are attached; the release is
             # published, not a draft, and is not a prerelease.
             - name: Publish Windows release
-              if: inputs.publish_release == true && needs.build-windows-release.result == 'success'
+              if: (inputs.publish_release == true || (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'byd7my/d7my-tv')) && needs.build-windows-release.result == 'success'
               uses: softprops/action-gh-release@v3
               with:
                   draft: false
@@ -1791,7 +1858,7 @@ jobs:
                   name: ${{ steps.release-meta.outputs.name }}
                   tag_name: ${{ steps.release-meta.outputs.tag }}
                   target_commitish: ${{ steps.release-meta.outputs.commitish }}
-                  body_path: .github/release-notes-windows-ar.md
+                  body: ${{ steps.release-meta.outputs.body }}
                   generate_release_notes: false
                   fail_on_unmatched_files: true
                   files: |
@@ -1800,6 +1867,28 @@ jobs:
                       artifacts/*-windows-x64-setup.exe.blockmap
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Commit automatic release version and changelog
+              if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'byd7my/d7my-tv' && needs.build-windows-release.result == 'success'
+              env:
+                  VERSION: ${{ needs.nightly-version.outputs.stable_version }}
+              run: |
+                  set -euo pipefail
+                  node - <<'NODE'
+                  const fs = require('node:fs');
+                  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+                  packageJson.version = process.env.VERSION;
+                  fs.writeFileSync('package.json', `${JSON.stringify(packageJson, null, 4)}\n`);
+                  NODE
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git add package.json CHANGELOG.md .changes
+                  if git diff --cached --quiet; then
+                      echo "No release metadata changes to commit."
+                      exit 0
+                  fi
+                  git commit -m "chore(release): record v${VERSION}"
+                  git push origin HEAD:main
 
             # Rare action-gh-release path: when the release listing transiently
             # misses the rolling draft, the action creates a duplicate, deletes
