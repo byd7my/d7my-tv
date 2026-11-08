@@ -1,5 +1,8 @@
 import { Injectable, InjectionToken, signal } from '@angular/core';
-import type { Channel, ExternalAudioOverride } from '@iptvnator/shared/interfaces';
+import type {
+    Channel,
+    ExternalAudioOverride,
+} from '@iptvnator/shared/interfaces';
 
 /** How long a requested override waits for the playback launch that should use it. */
 export const SPLIT_AUDIO_PENDING_TTL_MS = 10_000;
@@ -25,7 +28,10 @@ const DELAY_STORAGE_PREFIX = 'iptvnator.splitAudioDelay.';
  * player controls do not have to import the dialog's component library.
  */
 export const SPLIT_AUDIO_DIALOG_OPENER = new InjectionToken<
-    (context: SplitAudioContext) => void
+    (
+        context: SplitAudioContext,
+        onSelect?: (audio: ExternalAudioOverride | null) => void
+    ) => void
 >('SPLIT_AUDIO_DIALOG_OPENER');
 
 /** The live channel being watched and the channels its audio can come from. */
@@ -41,9 +47,18 @@ export class SplitAudioService {
      * control bar can offer "audio from another channel" for it.
      */
     readonly context = signal<SplitAudioContext | null>(null);
+    readonly activeAudio = signal<ExternalAudioOverride | null>(null);
 
     setContext(context: SplitAudioContext | null): void {
+        const previous = this.context();
         this.context.set(context);
+        if (!context || previous?.video.url !== context.video.url) {
+            this.activeAudio.set(null);
+        }
+    }
+
+    setActiveAudio(audio: ExternalAudioOverride | null): void {
+        this.activeAudio.set(audio);
     }
 
     private pending: { override: ExternalAudioOverride; at: number } | null =

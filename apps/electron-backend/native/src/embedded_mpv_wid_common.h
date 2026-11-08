@@ -203,6 +203,8 @@ struct Session {
     std::string pendingRecordingStartedAt;
     std::string pendingRecordingStopStartedAt;
     uint64_t pendingPlaybackLoadRequestId = 0;
+    int64_t originalAudioTrackId = -1;
+    bool externalAudioActive = false;
     /** Session options from Settings (network defaults + user lines). */
     std::vector<iptvnator::EmbeddedMpvExtraOption> extraOptions;
 #ifdef __linux__
@@ -824,6 +826,46 @@ bool transactLinuxMpvIpc(
     return ok;
 }
 
+bool transactLinuxMpvIpcBatch(
+    const std::string& socketPath,
+    const std::vector<std::string>& commands)
+{
+    if (socketPath.empty() || socketPath.size() >= sizeof(sockaddr_un::sun_path) ||
+        commands.empty()) {
+        return false;
+    }
+
+    const int fileDescriptor = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+    if (fileDescriptor < 0) return false;
+
+    timeval timeout{};
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 250000;
+    setsockopt(fileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+    setsockopt(fileDescriptor, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+
+    sockaddr_un address{};
+    address.sun_family = AF_UNIX;
+    std::strncpy(address.sun_path, socketPath.c_str(), sizeof(address.sun_path) - 1);
+    bool ok = connect(
+        fileDescriptor,
+        reinterpret_cast<sockaddr*>(&address),
+        sizeof(address)
+    ) == 0;
+
+    std::string payload;
+    for (const auto& command : commands) {
+        payload += command;
+        if (payload.empty() || payload.back() != '\n') payload.push_back('\n');
+    }
+    if (ok) ok = writeAll(fileDescriptor, payload);
+    // Commands are sent in order over one connection. Do not wait for
+    // audio-add's command reply here: opening a live stream can take time, and
+    // this function is called from Electron's main process.
+    close(fileDescriptor);
+    return ok;
+}
+
 std::optional<std::string> parseJsonDataToken(const std::string& response)
 {
     const size_t key = response.find("\"data\"");
@@ -963,6 +1005,27 @@ bool sendLinuxMpvCommand(
 {
     std::string response;
     return transactLinuxMpvIpc(socketPath, command, response);
+}
+
+std::string jsonQuote(const std::string& value)
+{
+    std::string result = "\"";
+    for (const unsigned char character : value) {
+        if (character == '"' || character == '\\') {
+            result.push_back('\\');
+            result.push_back(static_cast<char>(character));
+        } else if (character == '\n') {
+            result += "\\n";
+        } else if (character == '\r') {
+            result += "\\r";
+        } else if (character == '\t') {
+            result += "\\t";
+        } else if (character >= 0x20) {
+            result.push_back(static_cast<char>(character));
+        }
+    }
+    result.push_back('"');
+    return result;
 }
 
 std::optional<int64_t> queryLinuxMpvInteger(
@@ -1239,6 +1302,8 @@ void loadLinuxProcessPlayback(
         session->snapshot.positionSeconds = std::max(0.0, startTime);
         session->snapshot.durationSeconds = -1.0;
         session->snapshot.streamUrl = streamUrl;
+        session->externalAudioActive = false;
+        session->originalAudioTrackId = -1;
         session->snapshot.error.clear();
         // A spawned process has not opened the URL yet: stay `loading` until
         // the poller sees a decoded position, so a URL that never plays is
@@ -2136,6 +2201,8 @@ Napi::Value LoadPlayback(const Napi::CallbackInfo& info)
     {
         std::lock_guard<std::mutex> lock(session->mutex);
         session->snapshot.streamUrl = streamUrl;
+        session->externalAudioActive = false;
+        session->originalAudioTrackId = -1;
         session->snapshot.error.clear();
         session->snapshot.status = SessionStatus::Loading;
         session->snapshot.recordingActive = false;
@@ -2404,6 +2471,127 @@ Napi::Value SetAudioTrack(const Napi::CallbackInfo& info)
     if (result < 0) {
         throw Napi::Error::New(env, mpv_error_string(result));
     }
+    return env.Undefined();
+}
+
+Napi::Value SetExternalAudio(const Napi::CallbackInfo& info)
+{
+    Napi::Env env = info.Env();
+    if (info.Length() < 2 || !info[0].IsString() ||
+        !(info[1].IsNull() || info[1].IsObject())) {
+        throw Napi::TypeError::New(env, "Expected session id and audio playback or null.");
+    }
+    const auto session = getSessionOrThrow(env, info[0].As<Napi::String>().Utf8Value());
+    const bool clear = info[1].IsNull();
+    const Napi::Object playback = clear ? Napi::Object::New(env) : info[1].As<Napi::Object>();
+    std::string url;
+    std::string title;
+    std::string userAgent;
+    std::string referer;
+    std::string headers;
+    if (!clear) {
+        const Napi::Value urlValue = playback.Get("streamUrl");
+        if (!urlValue.IsString() || urlValue.As<Napi::String>().Utf8Value().empty()) {
+            throw Napi::TypeError::New(env, "External audio requires a stream URL.");
+        }
+        url = urlValue.As<Napi::String>().Utf8Value();
+        if (playback.Get("title").IsString()) title = playback.Get("title").As<Napi::String>().Utf8Value();
+        if (playback.Get("userAgent").IsString()) userAgent = playback.Get("userAgent").As<Napi::String>().Utf8Value();
+        if (playback.Get("referer").IsString()) referer = playback.Get("referer").As<Napi::String>().Utf8Value();
+        if (playback.Get("headers").IsObject()) headers = joinHeaderFields(playback.Get("headers").As<Napi::Object>());
+        if (playback.Get("origin").IsString()) {
+            const auto origin = playback.Get("origin").As<Napi::String>().Utf8Value();
+            if (!origin.empty()) headers += (headers.empty() ? "" : ",") + std::string("Origin: ") + origin;
+        }
+    }
+    double delay = 0;
+    if (info.Length() > 2 && info[2].IsNumber()) {
+        delay = std::clamp(info[2].As<Napi::Number>().DoubleValue(), -60.0, 60.0);
+    }
+
+    int64_t restoreAudioId = -1;
+    bool wasActive = false;
+    {
+        std::lock_guard<std::mutex> lock(session->mutex);
+        wasActive = session->externalAudioActive;
+        if (!wasActive && !clear) {
+            session->originalAudioTrackId = session->snapshot.selectedAudioTrackId;
+        }
+        restoreAudioId = session->originalAudioTrackId;
+        session->externalAudioActive = !clear;
+    }
+
+#ifdef __linux__
+    const std::string socketPath = session->mpvIpcSocketPath;
+    if (socketPath.empty()) throw Napi::Error::New(env, "MPV session is not ready.");
+    std::vector<std::string> commands;
+    if (wasActive) {
+        commands.push_back("{\"command\":[\"audio-remove\"]}");
+    }
+    if (clear) {
+        commands.push_back("{\"command\":[\"set_property\",\"aid\"," +
+            jsonQuote(restoreAudioId >= 0 ? std::to_string(restoreAudioId) : "auto") + "]}");
+        commands.push_back("{\"command\":[\"set_property\",\"audio-delay\",0]}");
+    } else {
+        commands.push_back("{\"command\":[\"set_property\",\"user-agent\"," + jsonQuote(userAgent) + "]}");
+        commands.push_back("{\"command\":[\"set_property\",\"referrer\"," + jsonQuote(referer) + "]}");
+        commands.push_back("{\"command\":[\"set_property\",\"http-header-fields\"," + jsonQuote(headers) + "]}");
+        commands.push_back("{\"command\":[\"set_property\",\"audio-delay\"," + std::to_string(delay) + "]}");
+        commands.push_back("{\"command\":[\"audio-add\"," + jsonQuote(url) + ",\"select\"," + jsonQuote(title) + "],\"async\":true}");
+    }
+    if (!transactLinuxMpvIpcBatch(socketPath, commands)) {
+        throw Napi::Error::New(env, "Could not update the external audio source.");
+    }
+    {
+        std::lock_guard<std::mutex> lock(session->mutex);
+    }
+    return env.Undefined();
+#else
+    if (wasActive) {
+        const char* removeArgs[] = {"audio-remove", nullptr};
+        mpv_command_async(session->handle, nextAsyncRequestId(), removeArgs);
+    }
+    if (clear) {
+        const std::string trackId = restoreAudioId >= 0 ? std::to_string(restoreAudioId) : "auto";
+        const char* aidArgs[] = {"set_property", "aid", trackId.c_str(), nullptr};
+        const char* delayArgs[] = {"set_property", "audio-delay", "0", nullptr};
+        mpv_command_async(session->handle, nextAsyncRequestId(), aidArgs);
+        mpv_command_async(session->handle, nextAsyncRequestId(), delayArgs);
+    } else {
+        const auto setProperty = [&](const char* property, const std::string& value) {
+            const char* args[] = {"set_property", property, value.c_str(), nullptr};
+            mpv_command_async(session->handle, nextAsyncRequestId(), args);
+        };
+        setProperty("user-agent", userAgent);
+        setProperty("referrer", referer);
+        setProperty("http-header-fields", headers);
+        setProperty("audio-delay", std::to_string(delay));
+        const char* addArgs[] = {"audio-add", url.c_str(), "select", title.c_str(), nullptr};
+        mpv_command_async(session->handle, nextAsyncRequestId(), addArgs);
+    }
+    return env.Undefined();
+#endif
+}
+
+Napi::Value SetExternalAudioDelay(const Napi::CallbackInfo& info)
+{
+    Napi::Env env = info.Env();
+    if (info.Length() < 2 || !info[0].IsString() || !info[1].IsNumber()) {
+        throw Napi::TypeError::New(env, "Expected session id and delay seconds.");
+    }
+    const auto session = getSessionOrThrow(env, info[0].As<Napi::String>().Utf8Value());
+    const double delay = std::clamp(info[1].As<Napi::Number>().DoubleValue(), -60.0, 60.0);
+#ifdef __linux__
+    if (!sendLinuxMpvCommand(session->mpvIpcSocketPath,
+            "{\"command\":[\"set_property\",\"audio-delay\"," + std::to_string(delay) + "]}\n")) {
+        throw Napi::Error::New(env, "Could not update external audio delay.");
+    }
+#else
+    const std::string value = std::to_string(delay);
+    const char* args[] = {"set_property", "audio-delay", value.c_str(), nullptr};
+    const int result = mpv_command_async(session->handle, nextAsyncRequestId(), args);
+    if (result < 0) throw Napi::Error::New(env, mpv_error_string(result));
+#endif
     return env.Undefined();
 }
 
@@ -2787,6 +2975,8 @@ Napi::Object Init(Napi::Env env, Napi::Object exports)
     exports.Set("seekBy", Napi::Function::New(env, SeekBy));
     exports.Set("setVolume", Napi::Function::New(env, SetVolume));
     exports.Set("setAudioTrack", Napi::Function::New(env, SetAudioTrack));
+    exports.Set("setExternalAudio", Napi::Function::New(env, SetExternalAudio));
+    exports.Set("setExternalAudioDelay", Napi::Function::New(env, SetExternalAudioDelay));
 #ifndef __linux__
     exports.Set("setSubtitleTrack", Napi::Function::New(env, SetSubtitleTrack));
     exports.Set("setSpeed", Napi::Function::New(env, SetSpeed));

@@ -1,5 +1,8 @@
 import type { Signal } from '@angular/core';
-import type { PlayerSubtitleStyle } from '@iptvnator/shared/interfaces';
+import type {
+    PlayerSubtitleStyle,
+    ResolvedPortalPlayback,
+} from '@iptvnator/shared/interfaces';
 import type { PlayerStreamStatsSource } from './player-stream-stats.model';
 
 export type PlayerStatus =
@@ -140,6 +143,11 @@ export interface PlayerControlsCommands {
     seekBy(deltaSeconds: number): void;
     setVolume(value: number): void; // 0..1
     setAudioTrack(id: number): void;
+    setExternalAudio?(
+        playback: ResolvedPortalPlayback | null,
+        delaySeconds?: number
+    ): void;
+    setExternalAudioDelay?(seconds: number): void;
     setSubtitleTrack(id: number): void; // -1 = off
     /** Opens the engine's subtitle file picker; loads + selects the file. */
     addExternalSubtitleFile(): void;

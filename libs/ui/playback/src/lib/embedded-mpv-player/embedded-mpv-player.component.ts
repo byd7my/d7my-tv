@@ -34,6 +34,7 @@ import type {
 import type { SeriesPlaybackNavigation } from '../portal-inline-player/series-playback-navigation';
 import { embeddedMpvTimelineSegments } from './embedded-mpv-chapter-segments';
 import { EmbeddedMpvControlsAdapter } from './embedded-mpv-controls.adapter';
+import { ControlsSplitAudio } from '../player-controls/controls-settings';
 import { EmbeddedMpvDockPanelComponent } from './embedded-mpv-dock-panel.component';
 import { EmbeddedMpvDockPanelState } from './embedded-mpv-dock-panels';
 import { EmbeddedMpvLegacyInteractions } from './embedded-mpv-legacy-interactions';
@@ -117,6 +118,10 @@ export class EmbeddedMpvPlayerComponent implements OnDestroy {
     private readonly translationsTick = injectTranslationTick();
     readonly controller = inject(EmbeddedMpvSessionController);
     readonly sharedControls = inject(EmbeddedMpvControlsAdapter);
+    readonly splitAudio = new ControlsSplitAudio(
+        this.sharedControls.state,
+        () => this.sharedControls.commands
+    );
     private readonly shortcuts = new EmbeddedMpvShortcuts();
     readonly menus = new EmbeddedMpvMenuState();
     readonly feedback = new EmbeddedMpvFeedback();
@@ -140,7 +145,10 @@ export class EmbeddedMpvPlayerComponent implements OnDestroy {
     /** Catch-up programmes first, else the file's chapters; see the helper. */
     readonly controlsTimelineSegments = computed(
         () =>
-            embeddedMpvTimelineSegments(this.timelineSegments(), this.session()),
+            embeddedMpvTimelineSegments(
+                this.timelineSegments(),
+                this.session()
+            ),
         { equal: sameTimelineSegments }
     );
     readonly stalled = this.controller.stalled;

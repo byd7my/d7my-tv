@@ -3,6 +3,7 @@ import {
     EmbeddedMpvSession,
     EmbeddedMpvSubtitleStyle,
     RecordingStartMetadata,
+    ResolvedPortalPlayback,
 } from '@iptvnator/shared/interfaces';
 
 type ElectronBridge = Window['electron'];
@@ -96,6 +97,25 @@ export class EmbeddedMpvCommandRunner {
         await this.run(id, () =>
             electron.setEmbeddedMpvAudioTrack(id, trackId)
         );
+    }
+
+    async setExternalAudio(
+        playback: ResolvedPortalPlayback | null,
+        delaySeconds = 0
+    ): Promise<void> {
+        const id = this.ctx.sessionId();
+        const electron = this.bridge();
+        const setExternalAudio = electron?.setEmbeddedMpvExternalAudio;
+        if (!id || !setExternalAudio) return;
+        await this.run(id, () => setExternalAudio(id, playback, delaySeconds));
+    }
+
+    async setExternalAudioDelay(seconds: number): Promise<void> {
+        const id = this.ctx.sessionId();
+        const electron = this.bridge();
+        const setDelay = electron?.setEmbeddedMpvExternalAudioDelay;
+        if (!id || !setDelay) return;
+        await this.run(id, () => setDelay(id, seconds));
     }
 
     async setSubtitleTrack(trackId: number): Promise<void> {

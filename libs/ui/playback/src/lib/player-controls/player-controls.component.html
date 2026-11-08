@@ -451,6 +451,39 @@
                     >
                         <mat-icon>surround_sound</mat-icon>
                     </button>
+                    @if (splitAudio.activeAudio(); as activeAudio) {
+                        <span class="player-controls__split-audio-name">{{
+                            activeAudio.title
+                        }}</span>
+                        <button
+                            mat-icon-button
+                            type="button"
+                            class="player-controls__button"
+                            data-test-id="player-controls-audio-delay-back"
+                            (click)="splitAudio.adjustDelay(-0.1)"
+                            [attr.aria-label]="
+                                'CHANNELS.SPLIT_AUDIO.DELAY_HINT' | translate
+                            "
+                            [matTooltip]="'−0.1 s · ' + activeAudio.title"
+                            matTooltipPosition="above"
+                        >
+                            <mat-icon>fast_rewind</mat-icon>
+                        </button>
+                        <button
+                            mat-icon-button
+                            type="button"
+                            class="player-controls__button"
+                            data-test-id="player-controls-audio-delay-forward"
+                            (click)="splitAudio.adjustDelay(0.1)"
+                            [attr.aria-label]="
+                                'CHANNELS.SPLIT_AUDIO.DELAY_HINT' | translate
+                            "
+                            [matTooltip]="'+0.1 s · ' + activeAudio.title"
+                            matTooltipPosition="above"
+                        >
+                            <mat-icon>fast_forward</mat-icon>
+                        </button>
+                    }
                 }
 
                 @if (settings.available()) {

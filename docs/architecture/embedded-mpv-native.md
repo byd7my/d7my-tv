@@ -169,6 +169,7 @@ The renderer never gets direct native-module access. It can only call the preloa
 - seek (absolute target) and seek by (relative step)
 - set volume
 - set audio track
+- attach or remove an external audio stream without reloading the video, with source-specific HTTP headers and an adjustable audio delay
 - start/stop live stream recording
 - resolve/select the live recording folder
 - dispose session

@@ -316,6 +316,15 @@
     min-width: 0;
 }
 
+.player-controls__split-audio-name {
+    max-width: 132px;
+    overflow: hidden;
+    color: var(--pc-text-secondary);
+    font-size: 0.72rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .player-controls__transport {
     display: flex;
     align-items: center;

@@ -33,4 +33,8 @@ export interface ExternalAudioOverride {
     streamUrl: string;
     title?: string;
     delaySeconds?: number;
+    headers?: Record<string, string>;
+    userAgent?: string;
+    referer?: string;
+    origin?: string;
 }

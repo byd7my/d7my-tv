@@ -1013,7 +1013,8 @@
             "DELAY": "Audio delay (seconds)",
             "DELAY_HINT": "If you hear things before you see them, raise the delay. The value is remembered for this pair of channels.",
             "NEEDS_MPV": "Plays in a separate MPV window (MPV must be installed), whichever player is selected in Settings.",
-            "PLAY": "Play"
+            "PLAY": "Play",
+      "USE_ORIGINAL": "チャンネル本来の音声を使用"
         },
         "FAVORITES_UPDATED": "お気に入りが更新されました！",
         "SELECT_CHANNEL_PLAYBACK": "再生を開始するチャンネルを選択してください",

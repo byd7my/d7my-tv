@@ -198,6 +198,8 @@ struct Session {
     std::string pendingRecordingStartedAt;
     std::string pendingRecordingStopStartedAt;
     uint64_t pendingPlaybackLoadRequestId = 0;
+    int64_t originalAudioTrackId = -1;
+    bool externalAudioActive = false;
     std::weak_ptr<Session>* renderCallbackContext = nullptr;
     RenderBackend renderBackend = RenderBackend::OpenGL;
     int renderWidthPixels = 0;
@@ -2225,6 +2227,8 @@ Napi::Value LoadPlayback(const Napi::CallbackInfo& info)
     {
         std::lock_guard<std::mutex> lock(session->mutex);
         session->snapshot.streamUrl = streamUrl;
+        session->originalAudioTrackId = -1;
+        session->externalAudioActive = false;
         session->snapshot.error.clear();
         session->snapshot.engineError = false;
         session->snapshot.status = SessionStatus::Loading;
@@ -2473,6 +2477,92 @@ Napi::Value SetAudioTrack(const Napi::CallbackInfo& info)
         updateSelectedAudioTrack(session->snapshot, trackId);
     }
 
+    return env.Undefined();
+}
+
+Napi::Value SetExternalAudio(const Napi::CallbackInfo& info)
+{
+    Napi::Env env = info.Env();
+    if (info.Length() < 2 || !info[0].IsString() ||
+        !(info[1].IsNull() || info[1].IsObject())) {
+        throw Napi::TypeError::New(env, "Expected session id and audio playback or null.");
+    }
+    const auto session = getSessionOrThrow(env, info[0].As<Napi::String>().Utf8Value());
+    const bool clear = info[1].IsNull();
+    const Napi::Object playback = clear ? Napi::Object::New(env) : info[1].As<Napi::Object>();
+    std::string url;
+    std::string title;
+    std::string userAgent;
+    std::string referer;
+    std::string headers;
+    if (!clear) {
+        const Napi::Value urlValue = playback.Get("streamUrl");
+        if (!urlValue.IsString() || urlValue.As<Napi::String>().Utf8Value().empty()) {
+            throw Napi::TypeError::New(env, "External audio requires a stream URL.");
+        }
+        url = urlValue.As<Napi::String>().Utf8Value();
+        if (playback.Get("title").IsString()) title = playback.Get("title").As<Napi::String>().Utf8Value();
+        if (playback.Get("userAgent").IsString()) userAgent = playback.Get("userAgent").As<Napi::String>().Utf8Value();
+        if (playback.Get("referer").IsString()) referer = playback.Get("referer").As<Napi::String>().Utf8Value();
+        if (playback.Get("headers").IsObject()) headers = joinHeaderFields(playback.Get("headers").As<Napi::Object>());
+        if (playback.Get("origin").IsString()) {
+            const auto origin = playback.Get("origin").As<Napi::String>().Utf8Value();
+            if (!origin.empty()) headers += (headers.empty() ? "" : ",") + std::string("Origin: ") + origin;
+        }
+    }
+    double delay = 0;
+    if (info.Length() > 2 && info[2].IsNumber()) {
+        delay = std::clamp(info[2].As<Napi::Number>().DoubleValue(), -60.0, 60.0);
+    }
+
+    int64_t restoreAudioId = -1;
+    bool wasActive = false;
+    {
+        std::lock_guard<std::mutex> lock(session->mutex);
+        wasActive = session->externalAudioActive;
+        if (!wasActive && !clear) {
+            session->originalAudioTrackId = session->snapshot.selectedAudioTrackId;
+        }
+        restoreAudioId = session->originalAudioTrackId;
+        session->externalAudioActive = !clear;
+    }
+    if (wasActive) {
+        const char* removeArgs[] = {"audio-remove", nullptr};
+        mpv_command_async(session->handle, nextAsyncRequestId(), removeArgs);
+    }
+    const auto setProperty = [&](const char* property, const std::string& value) {
+        const char* args[] = {"set_property", property, value.c_str(), nullptr};
+        const int result = mpv_command_async(session->handle, nextAsyncRequestId(), args);
+        if (result < 0) throw Napi::Error::New(env, mpv_error_string(result));
+    };
+    if (clear) {
+        setProperty("aid", restoreAudioId >= 0 ? std::to_string(restoreAudioId) : "auto");
+        setProperty("audio-delay", "0");
+    } else {
+        setProperty("user-agent", userAgent);
+        setProperty("referrer", referer);
+        setProperty("http-header-fields", headers);
+        setProperty("audio-delay", std::to_string(delay));
+        const char* addArgs[] = {"audio-add", url.c_str(), "select", title.c_str(), nullptr};
+        const int result = mpv_command_async(session->handle, nextAsyncRequestId(), addArgs);
+        if (result < 0) throw Napi::Error::New(env, mpv_error_string(result));
+    }
+    return env.Undefined();
+}
+
+Napi::Value SetExternalAudioDelay(const Napi::CallbackInfo& info)
+{
+    Napi::Env env = info.Env();
+    if (info.Length() < 2 || !info[0].IsString() || !info[1].IsNumber()) {
+        throw Napi::TypeError::New(env, "Expected session id and delay seconds.");
+    }
+    const auto session = getSessionOrThrow(env, info[0].As<Napi::String>().Utf8Value());
+    const std::string delay = std::to_string(
+        std::clamp(info[1].As<Napi::Number>().DoubleValue(), -60.0, 60.0)
+    );
+    const char* args[] = {"set_property", "audio-delay", delay.c_str(), nullptr};
+    const int result = mpv_command_async(session->handle, nextAsyncRequestId(), args);
+    if (result < 0) throw Napi::Error::New(env, mpv_error_string(result));
     return env.Undefined();
 }
 
@@ -3009,6 +3099,8 @@ Napi::Object Init(Napi::Env env, Napi::Object exports)
     exports.Set("seekBy", Napi::Function::New(env, SeekBy));
     exports.Set("setVolume", Napi::Function::New(env, SetVolume));
     exports.Set("setAudioTrack", Napi::Function::New(env, SetAudioTrack));
+    exports.Set("setExternalAudio", Napi::Function::New(env, SetExternalAudio));
+    exports.Set("setExternalAudioDelay", Napi::Function::New(env, SetExternalAudioDelay));
     exports.Set(
         "setSubtitleTrack",
         Napi::Function::New(env, SetSubtitleTrack)

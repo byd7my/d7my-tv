@@ -153,8 +153,11 @@ struct HelperState {
      * rendered (and frames stay as small as possible). */
     int viewportWidth = 0;
     int viewportHeight = 0;
+    uint64_t nextCommandRequestId = 1;
 
     std::atomic<bool> running{true};
+    int64_t originalAudioTrackId = -1;
+    bool externalAudioActive = false;
 };
 
 HelperState g_state;
@@ -723,6 +726,8 @@ void handleLoadCommand(const Command& command) {
             g_state.snapshot.recordingStartedAt.clear();
         }
         g_state.snapshot.streamUrl = url;
+        g_state.externalAudioActive = false;
+        g_state.originalAudioTrackId = -1;
         g_state.snapshot.error.clear();
         g_state.snapshot.engineError = false;
         g_state.snapshot.status = "loading";
@@ -819,6 +824,48 @@ void handleCommand(const Command& command) {
         const std::string value = command.get("value");
         setPropertyString(command.name.c_str(),
                           value == "-1" ? "no" : value);
+    } else if (command.name == "external-audio") {
+        const bool clear = command.get("clear") == "1";
+        bool wasActive = false;
+        int64_t originalAudioTrackId = -1;
+        {
+            std::lock_guard<std::mutex> lock(g_state.mutex);
+            wasActive = g_state.externalAudioActive;
+            if (!wasActive && !clear) {
+                g_state.originalAudioTrackId = g_state.snapshot.selectedAudioTrackId;
+            }
+            originalAudioTrackId = g_state.originalAudioTrackId;
+            g_state.externalAudioActive = !clear;
+        }
+        if (wasActive) {
+            const char* removeArgs[] = {"audio-remove", nullptr};
+            mpv_command_async(g_state.mpv, g_state.nextCommandRequestId++, removeArgs);
+        }
+        if (clear) {
+            if (wasActive) {
+                setPropertyString("aid", originalAudioTrackId >= 0
+                    ? std::to_string(originalAudioTrackId) : "auto");
+                double noDelay = 0;
+                mpv_set_property(g_state.mpv, "audio-delay", MPV_FORMAT_DOUBLE,
+                                 &noDelay);
+            }
+        } else {
+            setPropertyString("user-agent", command.get("user-agent"));
+            setPropertyString("referrer", command.get("referer"));
+            setPropertyString("http-header-fields", command.get("headers"));
+            double delay = std::clamp(command.getDouble("delay", 0), -60.0, 60.0);
+            mpv_set_property(g_state.mpv, "audio-delay", MPV_FORMAT_DOUBLE, &delay);
+            const std::string url = command.get("url");
+            const std::string title = command.get("title");
+            if (!url.empty()) {
+                const char* addArgs[] = {"audio-add", url.c_str(), "select",
+                                         title.c_str(), nullptr};
+                mpv_command_async(g_state.mpv, g_state.nextCommandRequestId++, addArgs);
+            }
+        }
+    } else if (command.name == "audio-delay") {
+        double delay = std::clamp(command.getDouble("value", 0), -60.0, 60.0);
+        mpv_set_property(g_state.mpv, "audio-delay", MPV_FORMAT_DOUBLE, &delay);
     } else if (command.name == "sub-add") {
         /* External subtitle file (.srt/.ass/.vtt/…): mpv parses and renders
          * it natively; "select" makes it the active subtitle track. */

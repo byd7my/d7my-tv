@@ -1013,7 +1013,8 @@
             "DELAY": "Audio delay (seconds)",
             "DELAY_HINT": "If you hear things before you see them, raise the delay. The value is remembered for this pair of channels.",
             "NEEDS_MPV": "Plays in a separate MPV window (MPV must be installed), whichever player is selected in Settings.",
-            "PLAY": "Play"
+            "PLAY": "Play",
+      "USE_ORIGINAL": "Użyj oryginalnego dźwięku kanału"
         },
         "FAVORITES_UPDATED": "Ulubione zostały zaktualizowane!",
         "SELECT_CHANNEL_PLAYBACK": "Wybierz kanał, aby rozpocząć odtwarzanie",

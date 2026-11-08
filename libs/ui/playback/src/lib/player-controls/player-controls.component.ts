@@ -145,7 +145,10 @@ export class PlayerControlsComponent implements OnDestroy {
     );
 
     readonly state = computed(() => this.controller().state());
-    readonly splitAudio = new ControlsSplitAudio(this.state);
+    readonly splitAudio = new ControlsSplitAudio(
+        this.state,
+        () => this.controller().commands
+    );
     readonly capabilities = computed(() => this.controller().capabilities());
     readonly settings = new ControlsSettings({
         state: this.state,

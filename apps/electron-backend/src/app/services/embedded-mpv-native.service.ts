@@ -116,6 +116,12 @@ export interface NativeEmbeddedMpvAddon {
     seekBy?(sessionId: string, deltaSeconds: number): void;
     setVolume(sessionId: string, volume: number): void;
     setAudioTrack(sessionId: string, trackId: number): void;
+    setExternalAudio?(
+        sessionId: string,
+        playback: ResolvedPortalPlayback | null,
+        delaySeconds: number
+    ): void;
+    setExternalAudioDelay?(sessionId: string, delaySeconds: number): void;
     setSubtitleTrack?(sessionId: string, trackId: number): void;
     addSubtitle?(sessionId: string, filePath: string): void;
     setSubtitleDelay?(sessionId: string, seconds: number): void;
@@ -792,6 +798,40 @@ export class EmbeddedMpvNativeService {
     ): EmbeddedMpvSession | null {
         this.assertEmbeddedMpvEnabled();
         this.getAddon().setAudioTrack(sessionId, trackId);
+        return this.refreshSession(sessionId);
+    }
+
+    setExternalAudio(
+        sessionId: string,
+        playback: ResolvedPortalPlayback | null,
+        delaySeconds = 0
+    ): EmbeddedMpvSession | null {
+        this.assertEmbeddedMpvEnabled();
+        const addon = this.getAddon();
+        if (typeof addon.setExternalAudio !== 'function') {
+            throw new Error(
+                'External audio is not supported by this MPV runtime.'
+            );
+        }
+        addon.setExternalAudio(sessionId, playback, delaySeconds);
+        return this.refreshSession(sessionId);
+    }
+
+    setExternalAudioDelay(
+        sessionId: string,
+        delaySeconds: number
+    ): EmbeddedMpvSession | null {
+        this.assertEmbeddedMpvEnabled();
+        const addon = this.getAddon();
+        if (typeof addon.setExternalAudioDelay !== 'function') {
+            throw new Error(
+                'External audio delay is not supported by this MPV runtime.'
+            );
+        }
+        addon.setExternalAudioDelay(
+            sessionId,
+            Math.max(-60, Math.min(60, delaySeconds))
+        );
         return this.refreshSession(sessionId);
     }
 

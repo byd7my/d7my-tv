@@ -55,6 +55,8 @@ describe('EmbeddedMpvCommandRunner', () => {
                 .fn()
                 .mockResolvedValue(createSession({ volume: 0.3 })),
             setEmbeddedMpvAudioTrack: jest.fn().mockResolvedValue(null),
+            setEmbeddedMpvExternalAudio: jest.fn().mockResolvedValue(null),
+            setEmbeddedMpvExternalAudioDelay: jest.fn().mockResolvedValue(null),
             setEmbeddedMpvSubtitleTrack: jest.fn().mockResolvedValue(null),
             setEmbeddedMpvSpeed: jest
                 .fn()
@@ -193,6 +195,25 @@ describe('EmbeddedMpvCommandRunner', () => {
         expect(session()?.playbackSpeed).toBe(1.5);
         await runner.setAspect('16:9');
         expect(session()?.aspectOverride).toBe('16:9');
+    });
+
+    it('switches external audio and adjusts its delay over the embedded player bridge', async () => {
+        const playback = {
+            streamUrl: 'https://audio.example/live.ts',
+            title: 'Commentary',
+            isLive: true,
+        };
+        await runner.setExternalAudio(playback, 0.4);
+        await runner.setExternalAudioDelay(-0.1);
+        expect(electron.setEmbeddedMpvExternalAudio).toHaveBeenCalledWith(
+            'mpv-1',
+            playback,
+            0.4
+        );
+        expect(electron.setEmbeddedMpvExternalAudioDelay).toHaveBeenCalledWith(
+            'mpv-1',
+            -0.1
+        );
     });
 
     it('swallows IPC errors and leaves the session untouched', async () => {

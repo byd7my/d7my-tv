@@ -6,6 +6,7 @@ import {
     signal,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import {
     MAT_DIALOG_DATA,
     MatDialog,
@@ -24,7 +25,11 @@ import {
     SPLIT_AUDIO_MAX_DELAY_SECONDS,
     SplitAudioService,
 } from '@iptvnator/services';
-import { Channel, OPEN_MPV_PLAYER } from '@iptvnator/shared/interfaces';
+import {
+    Channel,
+    ExternalAudioOverride,
+    OPEN_MPV_PLAYER,
+} from '@iptvnator/shared/interfaces';
 import { dialogSize } from '../../dialog-shell/dialog-size';
 
 export interface SplitAudioDialogData {
@@ -32,22 +37,22 @@ export interface SplitAudioDialogData {
     readonly video: Channel;
     /** Every channel the audio can come from. */
     readonly channels: readonly Channel[];
+    onSelect?: (audio: ExternalAudioOverride | null) => void;
 }
 
 /** More rows than this are never useful to scroll; the search narrows the rest. */
 const MAX_VISIBLE_CHANNELS = 300;
 
 /**
- * "Video from this channel, audio from another one": picks the audio channel
- * and the delay between the two streams, then starts the video channel in
- * MPV with the other stream's audio attached.
+ * Picks another channel's audio while the current live video continues in its
+ * existing player. External-player entry points retain their launch behavior.
  */
 @Component({
     selector: 'app-split-audio-dialog',
     templateUrl: './split-audio-dialog.component.html',
     styleUrl: './split-audio-dialog.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatButtonModule, MatDialogModule, TranslatePipe],
+    imports: [MatButtonModule, MatDialogModule, MatIconModule, TranslatePipe],
 })
 export class SplitAudioDialogComponent {
     protected readonly data = inject<SplitAudioDialogData>(MAT_DIALOG_DATA);
@@ -55,12 +60,16 @@ export class SplitAudioDialogComponent {
         MatDialogRef<SplitAudioDialogComponent>
     );
     private readonly store = inject(Store);
-    private readonly splitAudio = inject(SplitAudioService);
+    protected readonly splitAudio = inject(SplitAudioService);
     private readonly dataService = inject(DataService);
 
     protected readonly maxDelay = SPLIT_AUDIO_MAX_DELAY_SECONDS;
     protected readonly query = signal('');
-    protected readonly selected = signal<Channel | null>(null);
+    protected readonly selected = signal<Channel | null>(
+        this.data.channels.find(
+            (item) => item.url === this.splitAudio.activeAudio()?.streamUrl
+        ) ?? null
+    );
     protected readonly delay = signal(0);
 
     protected readonly visibleChannels = computed(() => {
@@ -87,6 +96,17 @@ export class SplitAudioDialogComponent {
         });
     }
 
+    constructor() {
+        const active = this.splitAudio.activeAudio();
+        const channel =
+            active &&
+            this.data.channels.find((item) => item.url === active.streamUrl);
+        if (channel) {
+            this.selected.set(channel);
+            this.delay.set(active.delaySeconds ?? 0);
+        }
+    }
+
     protected onQuery(event: Event): void {
         this.query.set((event.target as HTMLInputElement).value);
     }
@@ -94,8 +114,11 @@ export class SplitAudioDialogComponent {
     protected select(channel: Channel): void {
         this.selected.set(channel);
         // Back to the delay that worked last time for this exact pair.
+        const active = this.splitAudio.activeAudio();
         this.delay.set(
-            this.splitAudio.savedDelay(this.data.video.url, channel.url)
+            active?.streamUrl === channel.url
+                ? (active.delaySeconds ?? 0)
+                : this.splitAudio.savedDelay(this.data.video.url, channel.url)
         );
     }
 
@@ -120,6 +143,21 @@ export class SplitAudioDialogComponent {
             this.store.select(selectActivePlaylist)
         );
         this.dialogRef.close();
+        if (this.data.onSelect) {
+            this.data.onSelect({
+                streamUrl: audio.url,
+                title: audio.name,
+                delaySeconds: delay,
+                userAgent: resolveExternalPlayerHttpHeaders(audio, playlist)[
+                    'user-agent'
+                ],
+                referer: resolveExternalPlayerHttpHeaders(audio, playlist)
+                    .referer,
+                origin: resolveExternalPlayerHttpHeaders(audio, playlist)
+                    .origin,
+            });
+            return;
+        }
         await this.dataService.sendIpcEvent(OPEN_MPV_PLAYER, {
             url: video.url,
             title: video.name,
@@ -127,5 +165,11 @@ export class SplitAudioDialogComponent {
             audioUrl: audio.url,
             audioDelaySeconds: delay,
         });
+    }
+
+    protected clearExternalAudio(): void {
+        this.splitAudio.setActiveAudio(null);
+        this.dialogRef.close();
+        this.data.onSelect?.(null);
     }
 }

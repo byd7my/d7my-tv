@@ -105,10 +105,20 @@ export const appConfig: ApplicationConfig = {
                 const dialog = inject(MatDialog);
                 // Loaded on demand: the dialog is opened rarely and its
                 // component library is large.
-                return (context: SplitAudioContext) =>
+                return (
+                    context: SplitAudioContext,
+                    onSelect?: (
+                        audio:
+                            | import('@iptvnator/shared/interfaces').ExternalAudioOverride
+                            | null
+                    ) => void
+                ) =>
                     void import('./services/split-audio-dialog.lazy').then(
                         ({ SplitAudioDialogComponent }) =>
-                            SplitAudioDialogComponent.open(dialog, context)
+                            SplitAudioDialogComponent.open(dialog, {
+                                ...context,
+                                onSelect,
+                            })
                     );
             },
         },

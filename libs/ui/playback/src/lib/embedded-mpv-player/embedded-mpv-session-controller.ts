@@ -352,6 +352,12 @@ export class EmbeddedMpvSessionController {
         this.commands.applyVolume(value);
     readonly setAudioTrack = (trackId: number): Promise<void> =>
         this.commands.setAudioTrack(trackId);
+    readonly setExternalAudio = (
+        playback: ResolvedPortalPlayback | null,
+        delaySeconds = 0
+    ): Promise<void> => this.commands.setExternalAudio(playback, delaySeconds);
+    readonly setExternalAudioDelay = (seconds: number): Promise<void> =>
+        this.commands.setExternalAudioDelay(seconds);
     readonly setSubtitleTrack = (trackId: number): Promise<void> =>
         this.commands.setSubtitleTrack(trackId);
     readonly addExternalSubtitle = (): Promise<boolean> =>

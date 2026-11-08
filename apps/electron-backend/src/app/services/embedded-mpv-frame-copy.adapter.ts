@@ -232,6 +232,42 @@ export class EmbeddedMpvFrameCopyAdapter implements NativeEmbeddedMpvAddon {
         this.send(sessionId, `aid\tvalue=${trackId}`);
     }
 
+    setExternalAudio(
+        sessionId: string,
+        playback: ResolvedPortalPlayback | null,
+        delaySeconds: number
+    ): void {
+        if (!playback) {
+            this.send(sessionId, 'external-audio\tclear=1');
+            return;
+        }
+        const headers = { ...(playback.headers ?? {}) };
+        if (playback.origin) headers.origin ??= playback.origin;
+        const headerFields = Object.entries(headers)
+            .filter(([key, value]) => key && value)
+            .map(
+                ([key, value]) =>
+                    `${key}: ${String(value).replace(/,/g, '\\\,')}`
+            )
+            .join(',');
+        this.send(
+            sessionId,
+            `external-audio\turl=${encodeProtocolValue(playback.streamUrl)}` +
+                `\ttitle=${encodeProtocolValue(playback.title)}` +
+                `\tuser-agent=${encodeProtocolValue(playback.userAgent ?? '')}` +
+                `\treferer=${encodeProtocolValue(playback.referer ?? '')}` +
+                `\theaders=${encodeProtocolValue(headerFields)}` +
+                `\tdelay=${delaySeconds}`
+        );
+    }
+
+    setExternalAudioDelay(sessionId: string, seconds: number): void {
+        this.send(
+            sessionId,
+            `audio-delay\tvalue=${Math.max(-60, Math.min(60, seconds))}`
+        );
+    }
+
     setSubtitleTrack(sessionId: string, trackId: number): void {
         this.send(sessionId, `sid\tvalue=${trackId}`);
     }

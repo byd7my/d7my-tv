@@ -228,6 +228,10 @@ export class EmbeddedMpvControlsAdapter implements PlayerController {
         seekBy: (deltaSeconds) => void this.controller.seekBy(deltaSeconds),
         setVolume: (value) => void this.controller.applyVolume(value),
         setAudioTrack: (id) => void this.controller.setAudioTrack(id),
+        setExternalAudio: (playback, delaySeconds) =>
+            void this.controller.setExternalAudio(playback, delaySeconds),
+        setExternalAudioDelay: (seconds) =>
+            void this.controller.setExternalAudioDelay(seconds),
         setSubtitleTrack: (id) => void this.controller.setSubtitleTrack(id),
         addExternalSubtitleFile: () =>
             this.subtitleSettings.addExternalSubtitle(),

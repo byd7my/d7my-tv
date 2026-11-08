@@ -663,6 +663,26 @@ const electronApi: ElectronBridgeApi = {
         trackId: number
     ): Promise<EmbeddedMpvSession | null> =>
         ipcRenderer.invoke('EMBEDDED_MPV_SET_AUDIO_TRACK', sessionId, trackId),
+    setEmbeddedMpvExternalAudio: (
+        sessionId: string,
+        playback: ResolvedPortalPlayback | null,
+        delaySeconds = 0
+    ): Promise<EmbeddedMpvSession | null> =>
+        ipcRenderer.invoke(
+            'EMBEDDED_MPV_SET_EXTERNAL_AUDIO',
+            sessionId,
+            playback,
+            delaySeconds
+        ),
+    setEmbeddedMpvExternalAudioDelay: (
+        sessionId: string,
+        seconds: number
+    ): Promise<EmbeddedMpvSession | null> =>
+        ipcRenderer.invoke(
+            'EMBEDDED_MPV_SET_EXTERNAL_AUDIO_DELAY',
+            sessionId,
+            seconds
+        ),
     setEmbeddedMpvSubtitleTrack: (
         sessionId: string,
         trackId: number

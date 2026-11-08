@@ -1430,6 +1430,15 @@ export interface ElectronBridgeApi {
         sessionId: string,
         trackId: number
     ) => Promise<EmbeddedMpvSession | null>;
+    setEmbeddedMpvExternalAudio?: (
+        sessionId: string,
+        playback: ResolvedPortalPlayback | null,
+        delaySeconds?: number
+    ) => Promise<EmbeddedMpvSession | null>;
+    setEmbeddedMpvExternalAudioDelay?: (
+        sessionId: string,
+        seconds: number
+    ) => Promise<EmbeddedMpvSession | null>;
     setEmbeddedMpvSubtitleTrack?: (
         sessionId: string,
         trackId: number

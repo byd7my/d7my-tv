@@ -47,6 +47,15 @@ describe('SplitAudioService', () => {
         );
     });
 
+    it('tracks the active embedded audio source and clears it with playback context', () => {
+        service.setActiveAudio({ streamUrl: 'https://audio.example/one.ts' });
+        expect(service.activeAudio()?.streamUrl).toBe(
+            'https://audio.example/one.ts'
+        );
+        service.setContext(null);
+        expect(service.activeAudio()).toBeNull();
+    });
+
     it('remembers the delay per pair without putting URLs in storage keys', () => {
         const video = 'http://h/live/user/secret/1.ts';
         const audio = 'http://h/live/user/secret/2.ts';

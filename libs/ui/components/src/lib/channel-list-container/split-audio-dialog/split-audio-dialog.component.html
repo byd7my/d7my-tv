@@ -8,9 +8,11 @@
         {{ data.video.name }}
     </p>
 
-    <p class="split-audio__hint">
-        {{ 'CHANNELS.SPLIT_AUDIO.NEEDS_MPV' | translate }}
-    </p>
+    @if (!data.onSelect) {
+        <p class="split-audio__hint">
+            {{ 'CHANNELS.SPLIT_AUDIO.NEEDS_MPV' | translate }}
+        </p>
+    }
 
     <label class="split-audio__label" for="split-audio-search">{{
         'CHANNELS.SPLIT_AUDIO.AUDIO_FROM' | translate
@@ -63,6 +65,12 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
+    @if (data.onSelect && splitAudio.activeAudio()) {
+        <button mat-button type="button" (click)="clearExternalAudio()">
+            <mat-icon>volume_up</mat-icon>
+            {{ 'CHANNELS.SPLIT_AUDIO.USE_ORIGINAL' | translate }}
+        </button>
+    }
     <button mat-button type="button" mat-dialog-close>
         {{ 'CLOSE' | translate }}
     </button>

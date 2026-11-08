@@ -44,6 +44,7 @@ describe('SplitAudioDialogComponent', () => {
 
     beforeEach(async () => {
         localStorage.clear();
+        data.onSelect = undefined;
         sendIpcEvent = jest.fn().mockResolvedValue(undefined);
         close = jest.fn();
 
@@ -112,6 +113,25 @@ describe('SplitAudioDialogComponent', () => {
             })
         );
         expect(close).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns a selected channel to the embedded player without launching a new window', async () => {
+        const onSelect = jest.fn();
+        data.onSelect = onSelect;
+        options()[0].click();
+        fixture.detectChanges();
+        type('#split-audio-delay', '1.2');
+        playButton().click();
+        await fixture.whenStable();
+
+        expect(onSelect).toHaveBeenCalledWith(
+            expect.objectContaining({
+                streamUrl: commentary.url,
+                title: 'Commentary',
+                delaySeconds: 1.2,
+            })
+        );
+        expect(sendIpcEvent).not.toHaveBeenCalled();
     });
 
     it('remembers the delay for the pair and restores it next time', () => {

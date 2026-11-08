@@ -11,6 +11,8 @@ import {
     EMBEDDED_MPV_SELECT_SUBTITLE_FILE,
     EMBEDDED_MPV_SET_ASPECT,
     EMBEDDED_MPV_SET_AUDIO_TRACK,
+    EMBEDDED_MPV_SET_EXTERNAL_AUDIO,
+    EMBEDDED_MPV_SET_EXTERNAL_AUDIO_DELAY,
     EMBEDDED_MPV_SET_BOUNDS,
     EMBEDDED_MPV_SET_PAUSED,
     EMBEDDED_MPV_SET_SPEED,
@@ -149,6 +151,20 @@ handleEmbeddedMpv(
     EMBEDDED_MPV_SET_AUDIO_TRACK,
     (sessionId: string, trackId: number) =>
         getService().setAudioTrack(sessionId, trackId)
+);
+
+handleEmbeddedMpv(
+    EMBEDDED_MPV_SET_EXTERNAL_AUDIO,
+    (
+        sessionId: string,
+        playback: ResolvedPortalPlayback | null,
+        delaySeconds: number = 0
+    ) => getService().setExternalAudio(sessionId, playback, delaySeconds)
+);
+handleEmbeddedMpv(
+    EMBEDDED_MPV_SET_EXTERNAL_AUDIO_DELAY,
+    (sessionId: string, seconds: number) =>
+        getService().setExternalAudioDelay(sessionId, seconds)
 );
 
 handleEmbeddedMpv(

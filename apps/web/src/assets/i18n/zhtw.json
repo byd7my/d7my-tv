@@ -1013,7 +1013,8 @@
             "DELAY": "Audio delay (seconds)",
             "DELAY_HINT": "If you hear things before you see them, raise the delay. The value is remembered for this pair of channels.",
             "NEEDS_MPV": "Plays in a separate MPV window (MPV must be installed), whichever player is selected in Settings.",
-            "PLAY": "Play"
+            "PLAY": "Play",
+      "USE_ORIGINAL": "使用頻道原始音訊"
         },
         "FAVORITES_UPDATED": "我的最愛已更新！",
         "SELECT_CHANNEL_PLAYBACK": "請選擇一個頻道以開始播放",
