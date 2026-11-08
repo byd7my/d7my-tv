@@ -1,0 +1,390 @@
+@use 'sass:map';
+@use 'sass:meta';
+@use '@angular/material' as mat;
+@use 'styles';
+@use 'theme-palettes' as palettes;
+@use 'warm-theme' as warm;
+@use 'dark-variant-themes' as dark-variants;
+
+// No `mat.elevation-classes()`: nothing in the app uses the `.mat-elevation-z*`
+// utilities, and the 25 rules cost 4.4 KB of the initial stylesheet.
+@include mat.app-background();
+
+// ─── Typography ─────────────────────────────────────────────────────────────
+// The stack is declared once on html; every Material typography token and the
+// typography hierarchy read it through the variable. Inlined, the 103-char
+// stack was copied into ~90 declarations (about 7 KB of the initial CSS).
+$app-font-stack-value: "'DM Sans', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
+$app-font-stack: var(--app-font-family);
+
+html {
+    --app-font-family: #{$app-font-stack-value};
+}
+
+$my-typography: mat.m2-define-typography-config(
+    $font-family: $app-font-stack,
+);
+@include mat.typography-hierarchy($my-typography);
+
+// ─── M3 Themes ───────────────────────────────────────────────────────────────
+// One primary color across the app. Azure is the closest M3 prebuilt to the
+// product's "active/selection" blue (#2f7bff / #78adff), so checkboxes, radio
+// buttons, raised CTAs, etc. now read as the same blue as rail selection.
+//
+// Cyan stays on tertiary so the EPG "now" indicator (which uses Material
+// tertiary surfaces) keeps its existing visual role.
+$light-theme: mat.define-theme(
+    (
+        color: (
+            theme-type: light,
+            use-system-variables: true,
+            primary: mat.$azure-palette,
+            tertiary: mat.$cyan-palette,
+        ),
+        typography: (
+            plain-family: $app-font-stack,
+            brand-family: $app-font-stack,
+        ),
+    )
+);
+
+$dark-theme: mat.define-theme(
+    (
+        color: (
+            theme-type: dark,
+            use-system-variables: true,
+            primary: mat.$azure-palette,
+            tertiary: mat.$cyan-palette,
+        ),
+        typography: (
+            plain-family: $app-font-stack,
+            brand-family: $app-font-stack,
+        ),
+    )
+);
+
+// ─── Themed components ───────────────────────────────────────────────────────
+// Only the Material components the app imports, in Material's own order.
+// `mat.all-component-themes` also emitted about 24 KB of tokens for 17
+// components nothing imports. Add an entry with a new
+// `@angular/material/<entry>` import and remove it with the last one:
+// `pnpm run styles:material-theme-scope:validate` (CI) checks both
+// directions, and `core` (ripples, options, pseudo-checkboxes) always stays.
+// `fab` follows the templates instead: the button import carries its
+// directives either way, so it is listed only while a template renders
+// `mat-fab` or `mat-mini-fab` (its tokens alone were about 6 KB).
+$material-components: (
+    core,
+    card,
+    progress-bar,
+    tooltip,
+    form-field,
+    input,
+    select,
+    dialog,
+    slide-toggle,
+    slider,
+    menu,
+    list,
+    checkbox,
+    button,
+    icon-button,
+    snack-bar,
+    progress-spinner,
+    button-toggle,
+    divider,
+    icon
+);
+
+@mixin component-tokens($theme, $kinds) {
+    @each $component in $material-components {
+        @each $kind in $kinds {
+            @include meta.apply(
+                meta.get-mixin('#{$component}-#{$kind}', 'mat'),
+                $theme
+            );
+        }
+    }
+}
+
+// ─── Apply Themes ────────────────────────────────────────────────────────────
+// Re-declare aliases at each color boundary: CSS custom properties resolve
+// where declared, so aliases inherited from html would keep the light colors.
+html,
+html .dark-theme,
+html [data-app-theme='cream'],
+html [data-app-theme='mocha'],
+html [data-app-theme='night-owl'],
+html [data-app-theme='black-oled'] {
+    @include component-tokens($light-theme, (color));
+}
+
+html {
+    // Typography and density stay on html so preset color boundaries do not
+    // reset the compact input density applied later in this stylesheet.
+    @include component-tokens($light-theme, (base, typography, density));
+
+    // Component color tokens reference system roles once. Each preset changes
+    // those roles instead of repeating every Material component's color map.
+    @include mat.system-level-colors($light-theme);
+    @include mat.system-level-typography($light-theme);
+    @include mat.system-level-elevation($light-theme);
+    @include mat.system-level-shape($light-theme);
+    @include mat.system-level-state($light-theme);
+
+    .dark-theme {
+        // Only the color roles differ per theme: the elevation shadows are
+        // the same black in both, so html's declarations already apply here.
+        @include mat.system-level-colors($dark-theme);
+
+        @include palettes.dark;
+    }
+}
+
+// Light presets share aliases on the same element as their color overrides.
+html,
+html .light-theme {
+    @include palettes.light;
+}
+
+// Preset identity is separate from the compatibility light/dark mode class.
+html {
+    [data-app-theme='cream'] {
+        @include mat.system-level-colors(warm.$cream);
+        @include palettes.cream;
+    }
+
+    [data-app-theme='mocha'] {
+        @include mat.system-level-colors(warm.$mocha);
+        @include palettes.mocha;
+    }
+
+    [data-app-theme='night-owl'] {
+        @include dark-variants.night-owl;
+        @include palettes.night-owl;
+    }
+
+    [data-app-theme='black-oled'] {
+        @include dark-variants.black-oled;
+        @include palettes.black-oled;
+    }
+
+    // Samples use the same declarations as the app, independent of its theme.
+    [data-theme-preview='light'] {
+        @include palettes.light($preview: true);
+    }
+    [data-theme-preview='dark'] {
+        @include palettes.dark($preview: true);
+    }
+    [data-theme-preview='cream'] {
+        @include palettes.cream($preview: true);
+    }
+    [data-theme-preview='mocha'] {
+        @include palettes.mocha($preview: true);
+    }
+    [data-theme-preview='night-owl'] {
+        @include palettes.night-owl($preview: true);
+    }
+    [data-theme-preview='black-oled'] {
+        @include palettes.black-oled($preview: true);
+    }
+}
+
+// ─── Global refined outlined inputs ──────────────────────────────────────────
+// Applied app-wide AFTER the component themes so these overrides win the
+// cascade. Pairs with the outline + dynamic MAT_FORM_FIELD_DEFAULT_OPTIONS
+// that provideFormFieldDefaults() (@iptvnator/ui/components) sets on each
+// component rendering a form field.
+$app-refined-input-density: mat.define-theme(
+    (
+        density: (
+            scale: -2,
+        ),
+    )
+);
+
+html {
+    @include mat.form-field-density($app-refined-input-density);
+
+    // Declared on the field itself (not on html) so the var(--app-*) values
+    // resolve inside .dark-theme instead of being inherited as light values.
+    // The resting and hover outlines keep the theme's outline roles: the app
+    // hairline tokens fall far under the 3:1 boundary contrast a field needs.
+    // The secondary text token clears 4.5:1 on the raised field fill too.
+    // Focus uses the text accent: the selection fill blue is too light in light mode.
+    // Text sizes stay on the theme defaults: this theme leaves the floated
+    // label's size token undeclared, so it inherits the field's text size and
+    // scales it to 75%; a 13px field would float a 10px label.
+    .mat-mdc-form-field {
+        @include mat.form-field-overrides(
+            (
+                outlined-focus-outline-color: var(--app-selection-color),
+                outlined-container-shape: 10px,
+                outlined-label-text-color: var(--app-muted-color),
+                outlined-hover-label-text-color: var(--app-muted-color),
+                outlined-focus-label-text-color: var(--app-selection-text-color),
+                outlined-input-text-color: var(--app-heading-color),
+                outlined-caret-color: var(--app-selection-color),
+            )
+        );
+    }
+
+    // Inputs sit slightly above the surrounding surface. color-mix is inlined
+    // here (not via a custom property on html) so var(--app-widget-bg)
+    // resolves at the wrapper — inside .dark-theme — rather than being
+    // locked to the light-mode value at html-level inheritance.
+    .mat-form-field-appearance-outline .mat-mdc-text-field-wrapper {
+        background: color-mix(in srgb, var(--app-widget-bg) 85%, white 7%);
+        border-radius: 10px;
+    }
+
+    .mat-mdc-form-field .mat-mdc-input-element,
+    .mat-mdc-form-field .mat-mdc-select-value {
+        font-size: 13.5px;
+    }
+
+    // A select stays inside a form; its option panel follows the kit menu:
+    // a bordered 10px panel with 6px padding, 36px rows at 13px and the
+    // chosen row on the list-selection tokens. The overrides sit on the
+    // panel, which renders in the overlay container inside the theme
+    // context, so the `--app-*` values resolve per theme. The selector is
+    // doubled because Material sets the panel's padding and attached
+    // corners from `div.mat-mdc-select-panel` and
+    // `.mat-mdc-select-panel-above div.mat-mdc-select-panel`, injected after
+    // the global stylesheet.
+    div.mat-mdc-select-panel.mat-mdc-select-panel {
+        @include mat.select-overrides(
+            (
+                panel-background-color: var(--app-widget-bg),
+                container-elevation-shadow: 0 18px 40px rgba(0, 0, 0, 0.35),
+            )
+        );
+        @include mat.option-overrides(
+            (
+                label-text-size: 13px,
+                label-text-color: var(--app-heading-color),
+                selected-state-label-text-color: var(--app-list-selected-fg),
+                selected-state-layer-color: var(--app-list-selected-bg),
+                hover-state-layer-color: color-mix(
+                        in srgb,
+                        var(--app-on-surface) 8%,
+                        transparent
+                    ),
+                focus-state-layer-color: color-mix(
+                        in srgb,
+                        var(--app-on-surface) 10%,
+                        transparent
+                    ),
+            )
+        );
+        padding: 6px;
+        border: 1px solid var(--app-line-strong);
+        border-radius: 10px;
+
+        .mat-mdc-option {
+            min-height: 36px;
+            padding: 0 10px;
+            border-radius: 6px;
+        }
+    }
+
+    // Every dialog shares one frame: the kit's 16px panel on the widget
+    // surface, a hairline border and the popover shadow. The tokens sit on
+    // the container, inside the overlay, so the `--app-*` values resolve
+    // per theme. A dialog that draws its own surface (the command palette,
+    // the programme dialog) strips this frame through its panel class.
+    .mat-mdc-dialog-container {
+        @include mat.dialog-overrides(
+            (
+                container-shape: 16px,
+                container-color: var(--app-widget-bg),
+                container-elevation-shadow: var(--app-popover-shadow),
+                subhead-color: var(--app-heading-color),
+                supporting-text-color: var(--app-body-color),
+            )
+        );
+    }
+
+    .mat-mdc-dialog-surface {
+        border: 1px solid var(--app-line-strong);
+    }
+
+    // ─── Destructive actions ───────────────────────────────────────────────
+    // Material only emits `.mat-warn` button colors for M2 themes, so the
+    // `warn` color input is a no-op with this M3 theme. Buttons that remove or
+    // discard user data opt in with this class instead. The kit draws them as
+    // a red tint (`--app-danger-*`, declared per theme context above), never
+    // a solid error fill: hover changes the fill only, the ripple is off and
+    // a disabled button is the same button at 40% opacity.
+    .app-destructive-button {
+        @include mat.button-overrides(
+            (
+                filled-container-shape: 10px,
+                text-container-shape: 10px,
+                outlined-container-shape: 10px,
+                filled-container-color: var(--app-danger-surface),
+                filled-disabled-container-color: var(--app-danger-surface),
+                filled-label-text-color: var(--app-danger-text),
+                filled-disabled-label-text-color: var(--app-danger-text),
+                filled-state-layer-color: var(--app-danger-text),
+                filled-hover-state-layer-opacity: 0.08,
+                filled-focus-state-layer-opacity: 0.08,
+                filled-pressed-state-layer-opacity: 0.12,
+                filled-ripple-color: transparent,
+                text-label-text-color: var(--app-danger-text),
+                text-disabled-label-text-color: var(--app-danger-text),
+                text-state-layer-color: var(--app-danger-text),
+                text-hover-state-layer-opacity: 0.08,
+                text-focus-state-layer-opacity: 0.08,
+                text-pressed-state-layer-opacity: 0.12,
+                text-ripple-color: transparent,
+                outlined-label-text-color: var(--app-danger-text),
+                outlined-disabled-label-text-color: var(--app-danger-text),
+                outlined-outline-color: transparent,
+                outlined-disabled-outline-color: transparent,
+                outlined-state-layer-color: var(--app-danger-text),
+                outlined-hover-state-layer-opacity: 0.08,
+                outlined-focus-state-layer-opacity: 0.08,
+                outlined-pressed-state-layer-opacity: 0.12,
+                outlined-ripple-color: transparent,
+            )
+        );
+        @include mat.icon-button-overrides(
+            (
+                icon-color: var(--app-danger-text),
+                disabled-icon-color: var(--app-danger-text),
+                state-layer-color: var(--app-danger-text),
+                hover-state-layer-opacity: 0.08,
+                focus-state-layer-opacity: 0.08,
+                pressed-state-layer-opacity: 0.12,
+                ripple-color: transparent,
+            )
+        );
+
+        // The kit has no outlined buttons: an outlined destructive button
+        // carries the same tint as a filled one.
+        &.mat-mdc-outlined-button {
+            background-color: var(--app-danger-surface);
+        }
+
+        &[disabled],
+        &.mat-mdc-button-disabled {
+            opacity: 0.4;
+        }
+    }
+
+    .mat-mdc-form-field-subscript-wrapper {
+        font-size: 11px;
+        letter-spacing: 0.01em;
+        margin-top: 2px;
+
+        .mat-mdc-form-field-hint-wrapper,
+        .mat-mdc-form-field-error-wrapper {
+            padding: 0 12px;
+        }
+
+        .mat-mdc-form-field-hint {
+            color: var(--app-muted-color);
+        }
+    }
+}

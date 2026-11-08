@@ -1,0 +1,148 @@
+{
+    "name": "electron-backend-e2e",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "projectType": "application",
+    "sourceRoot": "apps/electron-backend-e2e/src",
+    "tags": ["scope:e2e", "domain:electron-main", "type:e2e"],
+    "implicitDependencies": [
+        "electron-backend",
+        "web",
+        "web-backend",
+        "remote-control-web",
+        "stalker-mock-server",
+        "xtream-mock-server"
+    ],
+    "targets": {
+        "source-sync": {
+            "executor": "nx:run-commands",
+            "dependsOn": ["electron-backend:build-e2e"],
+            "cache": false,
+            "parallelism": false,
+            "options": {
+                "cwd": "{workspaceRoot}",
+                "command": "playwright test --config=apps/electron-backend-e2e/playwright.source-sync.config.ts"
+            }
+        },
+        "e2e": {
+            "dependsOn": ["electron-backend:build-e2e"]
+        },
+        "test-performance-harness": {
+            "executor": "nx:run-commands",
+            "options": {
+                "cwd": "apps/electron-backend-e2e",
+                "command": "tsx --test \"src/performance/*.spec.ts\""
+            }
+        },
+        "benchmark-m3u-refresh-cancellation": {
+            "dependsOn": ["electron-backend:build-performance"],
+            "executor": "nx:run-commands",
+            "cache": false,
+            "parallelism": false,
+            "options": {
+                "cwd": "apps/electron-backend-e2e",
+                "command": "playwright test --config=playwright.performance.config.ts src/m3u-refresh-cancellation.performance.ts"
+            }
+        },
+        "benchmark-m3u-import": {
+            "dependsOn": ["electron-backend:build-performance"],
+            "executor": "nx:run-commands",
+            "cache": false,
+            "parallelism": false,
+            "options": {
+                "cwd": "apps/electron-backend-e2e",
+                "command": "playwright test --config=playwright.performance.config.ts src/m3u-import.performance.ts"
+            }
+        },
+        "benchmark-xtream": {
+            "dependsOn": ["electron-backend:build-performance"],
+            "executor": "nx:run-commands",
+            "cache": false,
+            "parallelism": false,
+            "options": {
+                "cwd": "apps/electron-backend-e2e",
+                "command": "playwright test --config=playwright.xtream-performance.config.ts src/xtream.performance.ts"
+            }
+        },
+        "benchmark-charset-parse": {
+            "executor": "nx:run-commands",
+            "cache": false,
+            "parallelism": false,
+            "options": {
+                "cwd": "apps/electron-backend-e2e",
+                "command": "tsx --expose-gc --tsconfig tsconfig.json src/performance/charset-parse.benchmark.ts"
+            }
+        },
+        "journeys": {
+            "dependsOn": ["electron-backend:build-performance"],
+            "executor": "nx:run-commands",
+            "cache": false,
+            "parallelism": false,
+            "options": {
+                "cwd": "apps/electron-backend-e2e",
+                "command": "playwright test --config=playwright.journeys.config.ts"
+            }
+        },
+        "journeys-large-library": {
+            "dependsOn": ["electron-backend:build-performance"],
+            "executor": "nx:run-commands",
+            "cache": false,
+            "parallelism": false,
+            "options": {
+                "cwd": "apps/electron-backend-e2e",
+                "env": {
+                    "IPTVNATOR_JOURNEY_LARGE_LIBRARY": "1"
+                },
+                "command": "playwright test --config=playwright.journeys.config.ts src/journeys/launch-large.journey.ts"
+            }
+        },
+        "large-library-profile": {
+            "executor": "nx:run-commands",
+            "cache": false,
+            "options": {
+                "cwd": "apps/electron-backend-e2e",
+                "command": "tsx --tsconfig tsconfig.json src/performance/large-library-profile.cli.ts"
+            }
+        },
+        "compositing-report": {
+            "dependsOn": ["electron-backend:build-e2e"],
+            "executor": "nx:run-commands",
+            "cache": false,
+            "parallelism": false,
+            "options": {
+                "cwd": "apps/electron-backend-e2e",
+                "command": "playwright test --config=playwright.compositing.config.ts"
+            }
+        },
+        "packaged-frame-copy-smoke": {
+            "dependsOn": ["test-packaged-frame-copy-fixtures"],
+            "executor": "nx:run-commands",
+            "cache": false,
+            "outputs": [
+                "{workspaceRoot}/dist/playwright-report/electron-backend-e2e/packaged-frame-copy-smoke",
+                "{workspaceRoot}/dist/test-results/electron-backend-e2e/packaged-frame-copy-smoke"
+            ],
+            "options": {
+                "cwd": "apps/electron-backend-e2e",
+                "command": "playwright test --config=playwright.packaged.config.ts src/embedded-mpv-frame-copy-packaged.e2e.ts"
+            }
+        },
+        "test-packaged-frame-copy-fixtures": {
+            "executor": "nx:run-commands",
+            "options": {
+                "cwd": "apps/electron-backend-e2e",
+                "command": "tsx --test src/embedded-mpv-frame-copy-packaged-fixtures.spec.ts"
+            }
+        },
+        "lint": {
+            "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                "{workspaceRoot}/tools/eslint/**/*"
+            ]
+        }
+    }
+}

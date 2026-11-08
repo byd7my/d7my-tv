@@ -1,0 +1,55 @@
+<button
+    #trigger
+    type="button"
+    class="playlist-switcher-trigger"
+    data-test-id="playlist-switcher-trigger"
+    cdkOverlayOrigin
+    #origin="cdkOverlayOrigin"
+    aria-haspopup="dialog"
+    aria-keyshortcuts="Meta+P Control+P"
+    [attr.aria-expanded]="isOpen()"
+    [class.is-open]="isOpen()"
+    (click)="toggle()"
+>
+    @if (activePlaylist(); as active) {
+        <app-source-tile
+            size="sm"
+            [playlist]="active"
+            [status]="activeStatus()"
+        />
+    } @else {
+        <span class="trigger-placeholder-tile" aria-hidden="true">
+            <mat-icon>playlist_play</mat-icon>
+        </span>
+    }
+    <span class="playlist-info">
+        <span class="name">{{ displayTitle() }}</span>
+        <span class="channels-count">{{ triggerSubtitle() }}</span>
+    </span>
+    <mat-icon class="dropdown-icon" [class.rotated]="isOpen()"
+        >expand_more</mat-icon
+    >
+</button>
+
+<ng-template
+    cdkConnectedOverlay
+    [cdkConnectedOverlayOrigin]="origin"
+    [cdkConnectedOverlayOpen]="isOpen()"
+    [cdkConnectedOverlayPositions]="positions"
+    [cdkConnectedOverlayHasBackdrop]="true"
+    [cdkConnectedOverlayPush]="true"
+    [cdkConnectedOverlayViewportMargin]="8"
+    cdkConnectedOverlayBackdropClass="playlist-switcher-backdrop"
+    cdkConnectedOverlayPanelClass="playlist-switcher-pane"
+    (backdropClick)="close()"
+    (detach)="close()"
+    (overlayKeydown)="onOverlayKeydown($event)"
+>
+    <app-playlist-switcher-panel
+        [style.--playlist-switcher-max-height]="maxHeight()"
+        (closeRequested)="close()"
+        (playlistSelected)="playlistSelected.emit($event)"
+        (addPlaylistRequested)="addPlaylistRequested.emit()"
+        (accountInfoRequested)="accountInfoForPlaylistRequested.emit($event)"
+    />
+</ng-template>

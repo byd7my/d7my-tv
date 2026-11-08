@@ -1,0 +1,138 @@
+@use '../../../../../../ui/styles/focus-ring';
+
+:host {
+    display: block;
+    width: 100%;
+}
+
+// The trigger is a secondary button (UI kit): 40px, 10px radius, a 10%
+// fill, the source's tile, two lines and a chevron that turns when open.
+.playlist-switcher-trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    height: 40px;
+    padding: 0 10px 0 6px;
+    box-sizing: border-box;
+    border: 0;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--app-on-surface) 10%, transparent);
+    color: var(--app-heading-color);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+    app-region: no-drag;
+    transition: background 0.12s ease;
+
+    &:hover {
+        background: color-mix(in srgb, var(--app-on-surface) 16%, transparent);
+    }
+
+    // Open: one step up, with a 2px inset ring in the selection colour.
+    &.is-open {
+        background: color-mix(in srgb, var(--app-on-surface) 14%, transparent);
+        box-shadow: inset 0 0 0 2px var(--app-selection-color);
+    }
+
+    &:focus-visible {
+        @include focus-ring.focus-ring-declarations;
+    }
+
+    app-source-tile {
+        --source-tile-bg: color-mix(
+            in srgb,
+            var(--app-on-surface) 10%,
+            var(--app-header-bg)
+        );
+        --source-tile-ring: var(--app-header-bg);
+    }
+}
+
+.trigger-placeholder-tile {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--app-on-surface) 10%, transparent);
+    color: var(--app-body-color);
+
+    .mat-icon {
+        width: 14px;
+        height: 14px;
+        font-size: 14px;
+        line-height: 14px;
+    }
+}
+
+.playlist-info {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+
+    .name,
+    .channels-count {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .name {
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+
+    .channels-count {
+        font-size: 11px;
+        line-height: 1.3;
+        color: var(--app-body-color);
+    }
+}
+
+.dropdown-icon {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    font-size: 12px;
+    line-height: 12px;
+    color: var(--app-body-color);
+    transition: transform 0.15s ease;
+
+    &.rotated {
+        transform: rotate(180deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .playlist-switcher-trigger,
+    .dropdown-icon {
+        transition: none;
+    }
+}
+
+// On a phone the header row has no width to spare and the trigger may
+// shrink to 88px: the tile and the subtitle go, the name ellipsizes.
+@media (max-width: 640px) {
+    .playlist-switcher-trigger app-source-tile,
+    .trigger-placeholder-tile,
+    .playlist-info .channels-count {
+        display: none;
+    }
+}
+
+// The popover's backdrop dims and slightly blurs the window behind it. The
+// overlay container is outside this component, so these are global.
+::ng-deep .playlist-switcher-backdrop {
+    background: var(--app-popover-backdrop);
+    backdrop-filter: blur(2px);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    ::ng-deep .playlist-switcher-backdrop {
+        backdrop-filter: none;
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "name": "playlist-shared-util",
+    "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/playlist/shared/util/src",
+    "prefix": "lib",
+    "projectType": "library",
+    "tags": ["scope:playlist", "domain:m3u", "type:data-access"],
+    "targets": {
+        "lint": {
+            "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                "{workspaceRoot}/tools/eslint/**/*"
+            ]
+        }
+    }
+}

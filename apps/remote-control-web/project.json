@@ -1,0 +1,125 @@
+{
+    "name": "remote-control-web",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "projectType": "application",
+    "prefix": "app",
+    "sourceRoot": "apps/remote-control-web/src",
+    "cli": {
+        "cache": {
+            "enabled": false
+        }
+    },
+    "tags": ["scope:remote-control", "domain:playback", "type:app"],
+    "targets": {
+        "build": {
+            "executor": "@angular/build:application",
+            "outputs": ["{options.outputPath}"],
+            "defaultConfiguration": "production",
+            "options": {
+                "outputPath": "dist/apps/remote-control-web",
+                "browser": "apps/remote-control-web/src/main.ts",
+                "polyfills": ["zone.js"],
+                "tsConfig": "apps/remote-control-web/tsconfig.app.json",
+                "inlineStyleLanguage": "scss",
+                "assets": [
+                    {
+                        "glob": "**/*",
+                        "input": "apps/remote-control-web/public"
+                    },
+                    {
+                        "glob": "**/*",
+                        "input": "apps/web/src/assets/i18n",
+                        "output": "assets/i18n"
+                    }
+                ],
+                "styles": ["apps/remote-control-web/src/styles.scss"]
+            },
+            "configurations": {
+                "production": {
+                    "budgets": [
+                        {
+                            "type": "initial",
+                            "maximumWarning": "500kb",
+                            "maximumError": "1mb"
+                        },
+                        {
+                            "type": "anyComponentStyle",
+                            "maximumWarning": "4kb",
+                            "maximumError": "8kb"
+                        }
+                    ],
+                    "outputHashing": "all"
+                },
+                "electron-performance": {
+                    "optimization": true,
+                    "outputHashing": "all",
+                    "sourceMap": true
+                },
+                "development": {
+                    "optimization": false,
+                    "extractLicenses": false,
+                    "sourceMap": true
+                }
+            }
+        },
+        "build-e2e": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "pnpm nx run remote-control-web:build:development"
+            }
+        },
+        "build-performance": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "pnpm nx run remote-control-web:build:electron-performance"
+            }
+        },
+        "serve": {
+            "continuous": true,
+            "executor": "@angular/build:dev-server",
+            "defaultConfiguration": "development",
+            "configurations": {
+                "production": {
+                    "buildTarget": "remote-control-web:build:production"
+                },
+                "development": {
+                    "buildTarget": "remote-control-web:build:development"
+                }
+            },
+            "readyWhen": {
+                "signal": true
+            }
+        },
+        "extract-i18n": {
+            "executor": "@angular/build:extract-i18n",
+            "options": {
+                "buildTarget": "remote-control-web:build"
+            }
+        },
+        "lint": {
+            "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                "{workspaceRoot}/tools/eslint/**/*"
+            ]
+        },
+        "serve-static": {
+            "continuous": true,
+            "executor": "@nx/web:file-server",
+            "readyWhen": {
+                "signal": true
+            },
+            "dependsOn": ["build"],
+            "options": {
+                "buildTarget": "remote-control-web:build",
+                "port": 4200,
+                "staticFilePath": "dist/apps/remote-control-web/browser",
+                "spa": true
+            }
+        }
+    }
+}

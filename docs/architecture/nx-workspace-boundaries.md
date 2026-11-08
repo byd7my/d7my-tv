@@ -1,0 +1,565 @@
+# Nx Workspace Boundaries
+
+This document records the current monorepo placement, tagging, and validation
+contract for IPTVnator. Nx discovery is the canonical project inventory; avoid
+copying an exhaustive project list into documentation.
+
+## Fresh Worktree Bootstrap and Discovery
+
+Install dependencies before relying on Nx:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm nx show projects
+```
+
+`pnpm nx show projects` requires the workspace-local Nx packages in
+`node_modules`. Inspect project ownership and available validation targets
+before choosing commands:
+
+```bash
+pnpm nx show project <name>
+pnpm nx show projects --withTarget test
+pnpm nx show projects --withTarget e2e
+```
+
+Do not invent a `test`, `build`, or `e2e` target because a similarly named
+project has one. Run affected lint/test/build targets that exist and the closest
+available E2E target for the changed behavior.
+
+E2E applications must declare runtime dependencies even when they use HTTP
+instead of TypeScript imports. `web-e2e` includes `web-backend` in
+`implicitDependencies` so provider-proxy changes invalidate cached self-hosted
+PWA tests; starting the backend through a `serve` dependency alone does not
+make its source files inputs to the test hash.
+
+## Nx Dependency Updates
+
+Keep `nx` and every official `@nx/*` package on the same exact version. Run
+`pnpm run deps:nx:validate` after any manifest or lockfile update; CI runs the
+same policy check and rejects both direct specifier drift and multiple resolved
+Nx versions.
+
+Dependabot groups routine minor and patch Nx updates when possible. A security
+update may still contain only the vulnerable package, so replace an incomplete
+Dependabot PR with a coordinated maintainer update instead of editing the bot
+branch:
+
+```bash
+pnpm nx migrate nx@<target> --skipInstall
+pnpm install --no-frozen-lockfile
+pnpm nx migrate --run-migrations
+pnpm run deps:nx:validate
+```
+
+Omit `pnpm nx migrate --run-migrations` when the first command reports that no
+migrations exist. Major Nx updates always use this manual workflow and the
+resulting PR runs the full CI pipeline.
+
+Nx 24.0.4 uses inferred Jest and ESLint tasks instead of the removed
+`@nx/jest:jest` and `@nx/eslint:lint` executors. The Jest plugin includes only
+the projects migrated from that executor; Angular ESM command targets retain
+their existing runner, environment and workspace-root configuration. Preserve
+the scoped `test` defaults for the Jest plugin, including its `ci` configuration,
+and the per-project lint inputs carried forward by the converter. Jest commands
+retain the workspace working directory and pass their project config explicitly,
+so subprocess fixtures and file-based contracts keep their previous paths.
+The marketing-fixtures target retains its `.cts` config through a command override.
+Shared ESLint config patterns have an explicit workspace base path so inferred
+project-local lint commands preserve existing rule scopes and baseline entries.
+Coverage tooling reads resolved Nx project targets, including inferred tasks;
+raw `project.json` alone is no longer a complete target inventory.
+`affected.legacy` keeps the previous project-level affected selection during
+this toolchain migration.
+
+## Angular 22 Toolchain Compatibility
+
+Angular 22 and CLI/build 22.2.5 use Nx 24.0.4 and TypeScript
+6.0. Framework and CLI patch numbers may differ; keep framework packages aligned
+in both dependency sections and all official Nx packages on one exact version.
+Use `.nvmrc` for development/CI (Node 24.22.1); supported LTS Node ranges are
+`^22.23.4 || ^24.22.1`. These security floors include the October 2026
+Brotli, TLS, DNS and HTTP fixes. All Docker build/native/runtime stages use
+the same pinned Node 24 patch. Changing local Node does not update Electron's
+bundled Node: Electron 43.8.4 supplies Node 24.22.1 to the desktop application.
+The shared Nx inputs include `.nvmrc` and `node --version`, so changing either
+the pin or the actual supported runtime invalidates cached builds and checks
+whose inputs include `sharedGlobals`, directly or through `default`.
+
+The Angular 22 migration explicitly preserved the old default change detection
+with `ChangeDetectionStrategy.Eager`. Plan item C6 since converted every component
+the renderer uses to OnPush and switched it to
+`provideZonelessChangeDetection()` without the `zone.js` polyfill; see the
+[zoneless migration](zoneless-migration.md). `apps/remote-control-web` and its
+remote-control component still use zone.js and `ChangeDetectionStrategy.Eager`,
+with a line-scoped explanation for the OnPush lint rule; new components keep
+that rule enabled.
+TypeScript 6 migration settings preserve compiler defaults and per-project output roots;
+`ignoreDeprecations: "6.0"` temporarily supports legacy Node test configs and
+`baseUrl`, rather than changing the whole workspace to browser resolution.
+
+Third-party packages need scoped compatibility bridges in
+`pnpm-workspace.yaml`:
+
+- `nx-electron@22.0.0` still declares Nx 22 peers. Its existing package-layout
+  patch also changes the removed `@nx/js/src/utils/buildable-libs-utils` import
+  to `@nx/js/internal`. Scoped peer allowances select Nx 24.0.4; revalidate them
+  with the executor/package tests and real Electron builds on upgrades.
+  A package extension supplies its undeclared runtime
+  dependency `webpack-node-externals`. The packaging suite loads every executor
+  and checks the single application manifest. Remove these bridges only after
+  the upstream package declares and implements the current Nx APIs.
+- `ngx-indexed-db@22.0.0` declares Angular `<22`, but its used API remains
+  compatible. Its allowance is scoped to the exact Angular version and must be
+  revalidated on upgrades. `apps/web-e2e/src/basic.e2e.ts` opens a historical
+  `iptvnator` v1 database, retains the `_id` key path, and checks reload
+  persistence. The shared interfaces package declares the same library version.
+  Remove the allowance when upstream includes the installed Angular version.
+- `videojs-quality-selector-hls@1.1.1` imports Babel runtime helpers from its
+  CommonJS entry but lists `@babel/runtime` only as a development dependency.
+  A package extension supplies the existing Babel 7 runtime. Remove it when
+  upstream declares that runtime dependency; player-import unit tests cover it.
+
+Jest uses root Babel 7 while Angular build retains its own Babel 8. The website
+uses Astro 7 with the root TypeScript 6; no Astro-specific compiler package
+extension is needed. Keep the website build in toolchain validation.
+The website's alias uses a relative `./src/*` target without the deprecated
+`baseUrl` option.
+
+Electron's webpack build resolves `ts-loader` 9.6.2 through the existing
+`nx-electron` version range. Keep at least 9.5.7: earlier versions clear
+`rootDir` in transpile-only mode and fail with TypeScript 6 (TS5011/TS6059).
+
+Angular unit-test setup explicitly uses `setupZonelessTestEnv` and separately
+imports `zone.js/testing` for existing `fakeAsync` helpers. This preserves the
+Angular 21 scheduler used by jest-preset-angular 15: its `setupZoneTestEnv` loaded
+Zone but did not provide zone-based change detection on Angular 20+. Preset 17
+does provide it, which disables automatic fixture rendering and changes
+`whenStable()` behavior. The production renderer (`apps/web`) runs
+`provideZonelessChangeDetection()` like the tests; `apps/remote-control-web`
+keeps `provideZoneChangeDetection`. Browser and Electron E2E validate both
+runtimes.
+
+## Vite Dev-Server Patch
+
+Angular's development builder (`@angular/build` 22.2.5) resolves Vite `8.3.5`.
+It contains upstream precise asset/worker URL matchers, but also uses them as
+raw-code prefilters. Those prefilters reject valid expressions containing
+comments before the handlers can strip the comments and apply the precise matchers.
+
+`patches/vite@8.3.5.patch` adds bounded asset/worker prefilters and uses the asset
+prefilter for bundled URL rewriting too. The precise handler matchers remain
+unchanged. This preserves the earlier protection against expensive scanning of
+large false-positive chunks and retains comment-bearing expressions. Remove the
+patch only when the resolved upstream Vite passes the same behavior checks:
+
+```bash
+pnpm run deps:vite:test
+```
+
+CI runs the same check. It resolves Vite from `@angular/build`, verifies the
+patched prefilter/matcher wiring and version pin, stress-tests the false-positive
+chunk shape, and preserves ordinary and comment-bearing asset and worker
+`new URL(..., import.meta.url)` matches.
+
+## Electron Builder signing patch
+
+`app-builder-lib` 26.15.7 is patched in
+`patches/app-builder-lib@26.15.7.patch` with the upstream backport
+electron-userland/electron-builder#10172. For macOS signing,
+`security set-key-partition-list -k` must receive the temporary keychain's own
+password rather than the `.p12` import password. macOS runner images since
+`macos-26-arm64` 20260831 verify that password; the old argument caused
+`SecKeychainUnlock: The user name or passphrase you entered is not correct`.
+Keep the patch until electron-builder resolves a fixed app-builder-lib (26.16.1+).
+Run `pnpm run deps:electron-builder:test` after related dependency updates; it
+also rejects a mismatch between the patched and installed version.
+
+Native addon builds additionally require the root `node-gyp` devDependency;
+see [runtime staging](embedded-mpv-native.md#runtime-staging) before removing it.
+
+## mpegts.js loader abort patch
+
+`mpegts.js` 1.8.2 is patched in `patches/mpegts.js@1.8.2.patch`. Its
+`FetchStreamLoader.abort()` skipped `AbortController.abort()` while buffering on
+Chrome, which includes Electron, and cancelled the reader only when the next
+`read()` resolved. A live MPEG-TS stream that stalls without closing never
+resolves it, so destroying the player left the socket open until the renderer
+unloaded. On providers that allow one connection per account, that socket held
+the slot and the next channel was cut. The patch aborts unconditionally;
+`_pump()` already treats an aborted signal as completion. It changes the shipped
+`dist/mpegts.js` (the package `main`) and, for readers,
+`src/io/fetch-stream-loader.js`. The bundle is one minified line, so the patch
+file carries that whole line twice.
+
+Run `pnpm run deps:mpegts:test` after mpegts.js updates; CI runs it too. It
+rejects a version with no patch entry and a bundle that still carries the
+buffering guard. Retire the patch once mpegts.js aborts a buffering fetch itself.
+
+`apps/electron-backend-e2e/src/mpegts-stalled-stream.e2e.ts` also checks the
+behavior in the real Electron app: a local server sends valid MPEG-TS media,
+then leaves the response open without more data. Switching to another channel
+must close that response before the app shuts down and play the new channel
+without an unhandled renderer error. Run it with
+`pnpm nx run electron-backend-e2e:e2e-ci--src/mpegts-stalled-stream.e2e.ts`.
+
+## Placement Decision
+
+- `apps/` owns runtime applications, development servers, E2E applications,
+  and provider mock servers.
+- `libs/` owns reusable code grouped by product domain and architectural role.
+- `tools/` owns repository automation such as lint, packaging, release, and
+  repository-skill validation. Nx projects there use `scope:tools`.
+
+Inside `libs/`, choose the role before the path:
+
+- `type:feature` owns routes, screens, and feature orchestration.
+- `type:ui` owns reusable visual components.
+- `type:data-access` owns injectable state, API access, persistence, and
+  orchestration.
+- `type:util` is the destination for new pure helpers and contracts only.
+
+For example, provider-neutral collection services that coordinate favorites,
+recents, EPG, or playback persistence belong in
+`libs/portal/shared/data-access`. Pure collection types and transformations stay
+in `libs/portal/shared/util`, while reusable collection views stay in
+`libs/portal/shared/ui`. Existing injectable or stateful services in a `util`
+path are legacy debt, not precedent for new placement.
+
+Playback follows the same split: browser and Angular player integration stays
+in `libs/ui/playback`, while DOM-free diagnostic contracts and classifiers live
+in `libs/playback/util` and receive browser capability checks as explicit
+probes.
+
+`libs/playback/util` is the `playback-util` Nx project and is imported through
+`@iptvnator/playback/util`. Its exact tags are `scope:shared`,
+`domain:playback`, and `type:util`. It owns the public playback diagnostic,
+structured engine-evidence, source/engine-family, target-capability,
+content-session-key, and recovery-recommendation contracts and pure helpers.
+Its public API is `libs/playback/util/src/index.ts`.
+
+`playback-util` has no Angular, DOM, settings, storage, UI, or Electron IPC
+ownership. Browser/player adapters collect public engine events and supply
+explicit capability facts; `playback-util` classifies and ranks them without
+inspecting runtime globals. As a `type:util` project it may depend only on
+other utility projects, including shared interface contracts, while
+`ui-playback` and feature hosts may depend on it to render and execute
+session-local recovery actions.
+
+`libs/playback/data-access` is the `playback-data-access` Nx project,
+imported through `@iptvnator/playback/data-access` (tags `scope:shared`,
+`domain:playback`, `type:data-access`). It owns renderer playback state that
+store, feature and player layers share — currently `PlaybackHistoryGate`,
+which holds "recently viewed" writes until playback is confirmed. It is kept
+out of `@iptvnator/services` on purpose: that barrel ships in the initial
+bundle, and this project is only reached from lazy player and portal code.
+
+`libs/shared/epg` is the pure `shared-epg` utility project, imported through
+`@iptvnator/shared/epg` (scope:shared, domain:shared-contracts, type:util).
+It owns epoch-millisecond time-axis projection, ticks and clipping used by Angular
+EPG and the independent TV grid. Provider parsing, Angular controllers and Preact
+navigation remain with their respective adapters and feature projects.
+
+## Project Tags
+
+Every Nx project keeps one tag from each family in `project.json`:
+
+1. `scope:*` records ownership, such as `scope:portal`, `scope:workspace`,
+   `scope:shared`, `scope:electron`, `scope:e2e`, or `scope:tools`.
+2. `domain:*` records the product/runtime domain.
+3. `type:*` records the architectural role.
+
+`eslint.config.mjs` enforces these type directions:
+
+| Source tag         | Allowed dependency type tags   |
+| ------------------ | ------------------------------ |
+| `type:app`         | feature, UI, data-access, util |
+| `type:e2e`         | feature, UI, data-access, util |
+| `type:dev-app`     | feature, UI, data-access, util |
+| `type:website`     | UI, util                       |
+| `type:feature`     | feature, UI, data-access, util |
+| `type:ui`          | UI, data-access, util          |
+| `type:data-access` | data-access, util              |
+| `type:util`        | util                           |
+
+Domain constraints in the same rule are additive to type constraints. If an
+import violates either family, move the contract or implementation to its
+proper owner instead of weakening a constraint.
+
+The independent TV application and its `tv-setup` phone companion use
+`scope:tv` and `domain:tv`. The companion has `type:app`; it is a build asset
+dependency of `web-backend`, not an imported application module. Its domain
+constraint permits TV, TMDB, provider, M3U and shared-contract libraries, while the
+same type constraints still apply. TV runtime imports additionally reject
+Angular, Electron and Node. The framework-free provider sub-entrypoints are
+`@iptvnator/portal/xtream/client` and `@iptvnator/portal/stalker/client`;
+see [TV architecture](tv-application.md). `shared-tmdb` exposes
+`@iptvnator/shared/tmdb` with `scope:shared`, `domain:tmdb`, `type:data-access`.
+Its domain constraint permits only TMDB and shared contracts; the core has no
+Angular dependencies. Angular services retain injectable compatibility wrappers.
+
+`workspace-shell-util` is a deliberate path/tag exception:
+`libs/workspace/shell/util` is tagged `type:data-access` because it exports
+injectable services that depend on `@iptvnator/services`. The web app imports
+those services eagerly from `apps/web/src/app/app.routes.ts` without pulling
+the lazy workspace shell feature into the initial bundle.
+
+## Import Aliases and Public APIs
+
+`@iptvnator/shared/testing/runtime-coverage` is a Node-only test entry. It keeps
+Istanbul, esbuild hooks and temporary coverage files out of the browser-safe
+`shared-testing` barrel. Its build target lets buildable database tests consume
+that public entry without weakening dependency boundaries. Runtime code does not import it.
+
+Use scoped aliases from `tsconfig.base.json` and expose public imports through a
+library's `src/index.ts`. Do not introduce legacy bare aliases such as
+`services`, `components`, `shared-interfaces`, or `database`, and avoid deep
+imports unless a sub-entrypoint is explicitly configured. The configured
+sub-entrypoints are `@iptvnator/shared/interfaces/ipc-commands` and
+`@iptvnator/shared/interfaces/zoom-level`, both for the Electron preload: the
+`@iptvnator/shared/interfaces` barrel pulls in `ngx-indexed-db`, which the
+preload bundle must not carry, so the preload only type-imports the barrel
+and value-imports those two dependency-free modules directly.
+`@iptvnator/workspace/shell/util/settings-search` exists for the opposite
+reason: the main `workspace-shell-util` barrel is imported eagerly, and the
+settings search index must stay in the lazy settings and shell chunks.
+`@iptvnator/workspace/shell/util/settings-context` keeps
+`SettingsContextService`, which only the lazy settings page and settings
+context panel use, out of that barrel for the same reason, and
+`@iptvnator/services/playlist-backup` keeps `PlaylistBackupService` (about
+22 KB, used only by the lazy settings page) out of the `@iptvnator/services`
+barrel.
+
+`@iptvnator/services/xtream-catalog-refresh` keeps the edit-time catalog scanner
+with the lazy source editor. Do not re-export it from the eager services barrel;
+ordinary startup does not need the editor's network and recovery orchestration.
+`@iptvnator/services/xtream-catalog-restore` similarly exposes dormant restore
+storage outside that barrel. The Electron data source loads it through a local
+dynamic-import wrapper only for restoration or source cleanup; startup services
+load it only when explicitly clearing history or sources. Ordinary Refresh uses
+a project-local `xtream-refresh-recovery` wrapper for the same cold boundary.
+The Electron data source also loads its project-local `xtream-category-import`
+helper only for cold category fills or failed-cache cleanup. Completed cache reads
+return before that import, preserving the warm path's startup work and IPC count.
+Shared catalog availability checks stay outside the eager services barrel in
+`xtream-catalog-availability`, reused by explicit offline restore and route replay.
+Full user-state replay also stays in the local `xtream-deferred-restore` module;
+the data source delegates to it only when restoring a backup or failed import,
+or when the legacy cache-snapshot API is explicitly invoked.
+
+`@iptvnator/services/source-sync/connection` and
+`@iptvnator/services/source-sync/profile-user-data` expose the bootstrap helpers
+without the injectable synchronization service. The server initializer loads
+that service through a local dynamic-import wrapper, so standalone startup
+keeps the sync engine and the status panel's Material view off its initial path.
+
+`@iptvnator/shared/interfaces/source-definition` exposes portable source
+conversion/validation to the server adapters and deferred client sync code,
+without re-exporting those functions from the eager interfaces barrel.
+
+`@iptvnator/shared/interfaces/provider-import` keeps provider-message detection
+and its scanners with the lazy auto-import form. The eager interfaces barrel
+re-exports only their types; re-exporting the functions shares their code with
+the initial bundle.
+
+`@iptvnator/services/pwa-xtream-backup-storage` exposes the framework-free browser
+backup persistence implementation without re-exporting it from the eager services
+barrel. The injected backup service wraps it; deferred restore loads it through a
+local dynamic-import module with the data source's storage. Its map keys live in
+a separate pure module so it does not import the Angular storage token at runtime.
+Electron favorites likewise load their
+legacy pending-conversion helper only when a favorites operation needs it.
+Those lazy helpers value-import the pure normalizer through
+`@iptvnator/shared/interfaces/xtream-restore-state`; their remaining contracts
+use type-only imports so a deferred conversion does not load the interfaces
+barrel's Angular/IndexedDB dependencies.
+
+Age classifications use explicit secondary entries too:
+`@iptvnator/services/age-rating` exposes the detail/settings presentation service,
+`@iptvnator/shared/interfaces/age-rating` exposes country validation and display
+selection, and `@iptvnator/shared/tmdb/certifications` exposes TMDB extraction.
+Their runtime exports stay out of the eager barrels; classification types remain
+type-only exports of shared interfaces. Provider parsing stays with the existing
+provider metadata readers so ordinary normalization does not import ISO countries
+or UI selection helpers. `@iptvnator/services/tmdb-merge` is the public pure merge
+entry for lazy consumers. Eager provider data access calls `loadTmdbMergers`, whose
+local dynamic import defers that implementation until metadata enrichment, then
+checks the current selection again before applying it. This keeps age metadata
+off the launch path without changing the module-boundary rules.
+`@iptvnator/shared/tmdb/season` exposes the season client separately so optional
+season requests do not pull their response handling into eager metadata imports.
+The shared root barrel retains its type only; Angular and TV consumers use the
+explicit entry for construction.
+
+`@iptvnator/shared/tmdb/matcher` likewise exposes the pure confidence matcher
+without re-exporting its runtime functions from the eager shared/services
+barrels. Asynchronous metadata lookups load it through their local matcher loader;
+lightweight title helpers remain direct shared-interface imports.
+
+The web app's root shell (`app.component.ts`, `app.config.ts` and the services
+they construct) is on the renderer's initial path, where a barrel costs its
+whole library: esbuild keeps every Angular component module a barrel
+re-exports, because their static definitions count as side effects (so do an
+`@Injectable` service's and a pipe's). Importing
+`WindowControlsComponent` and `DialogService` from `@iptvnator/ui/components`
+once put the channel lists, EPG views, `@angular/forms`, `date-fns` and the
+Stalker data layer into `main.js`. The root shell therefore uses file-level
+entries: `@iptvnator/ui/components/window-controls`,
+`@iptvnator/ui/components/confirm-dialog`,
+`@iptvnator/playlist/shared/ui/stalker-connection-editor`,
+`@iptvnator/playlist/shared/util/playlist-file-import` (the barrel would add
+`PlaylistContextFacade`) and `@iptvnator/pipes/date-format` (also used by the
+eager EPG progress panel), like the existing
+`@iptvnator/ui/epg/progress-panel`, and loads anything used only on demand
+through a local file it imports dynamically (the Stalker connection editor,
+the release-notes dialog, the external-player info dialog, the parental-lock
+PIN dialog and the Stalker step of the parental-lock enforcement, which runs
+only while a Stalker route is open). A local file,
+not the library alias, is the dynamic-import target because
+`@nx/enforce-module-boundaries` forbids static imports of a library the same
+project also loads dynamically.
+
+The lazy `/workspace` route is entered at every start, so the workspace shell
+follows the same rule: it imports `EmbeddedMpvOverlayVisibilityService` from
+`@iptvnator/ui/playback/embedded-mpv-player` and re-exports the global
+favourites list from `@iptvnator/portal/shared/ui/global-favorites-list`.
+Either barrel puts the web players (video.js, hls.js, mpegts.js, ArtPlayer,
+about 2.7 MB) on the first route; a `no-restricted-imports` block in
+`eslint.config.mjs` keeps both barrels out of `libs/workspace/shell/feature`.
+
+A barrel the initial path imports also costs code it never runs itself:
+code splitting places a module in the chunk shared by every entry point
+that reaches it, so a helper that only lazy routes use, but that an eager
+file can reach through a barrel's re-export, lands in an initial chunk even
+though tree shaking would drop it from a single bundle. The eager Xtream
+data layer and root shell therefore import `@iptvnator/portal/shared/util/logger`
+and `@iptvnator/portal/shared/util/tokens` (the portal DI tokens), not the
+`@iptvnator/portal/shared/util` barrel, whose navigation, keyboard-shortcut
+and download helpers (about 45 KB) belong to the lazy portal routes.
+Packaged renderer reload recovery uses the pure
+`@iptvnator/portal/shared/util/collection-view-state` entry, which keeps its
+validator separate from other navigation code; the navigation barrel
+re-exports the same API for route consumers. Recovery itself loads only for
+an actual restore request, never on ordinary startup.
+A type-only import of a barrel uses `import type`, so it can never keep the
+barrel reachable. `renderer.initialBytes` in
+[performance journeys](performance-journeys.md) guards the result; to see why a
+module is eager, build with `pnpm nx build web --stats-json` and follow the
+static imports in `dist/apps/web/stats.json` from `apps/web/src/main.ts`.
+
+The Xtream category visibility ledger uses
+`@iptvnator/shared/interfaces/xtream-category-visibility` for its runtime key and
+parser. The main shared-interface barrel exports only its type, keeping this
+backup/recovery code out of the initial renderer graph.
+
+The root Xtream store keeps its lightweight detail-request generation guard
+separate from sparse VOD reconstruction. It loads the reconstruction module after
+the detail response and rechecks the guard before publishing or recovering data,
+so opening a source does not load movie-detail recovery code.
+
+For a buildable library that has a local `package.json`, its `name` must match
+the scoped alias. Nx uses that package name when rewriting buildable dependency
+paths to `dist/` during `@nx/js:tsc` builds.
+
+## Shared Stylesheets and Cache Inputs
+
+Nx derives the project graph from TypeScript imports. A relative Sass `@use`
+that crosses a project root creates **no** graph edge, so without an explicit
+declaration the imported partial belongs to no task's input set. The build then
+reports a cache hit for a stylesheet edit and serves the previous CSS — a
+silent wrong build rather than a failure.
+
+Two rules keep that from happening:
+
+1. A directory whose files are consumed by another project is itself an Nx
+   project. Shared partials live in `libs/ui/styles`, project `ui-styles`,
+   tagged `scope:shared`, `domain:shared-ui`, `type:ui`. It declares no targets;
+   it exists so its files are hashed.
+2. Every consumer declares the dependency Nx cannot infer:
+
+    ```json
+    "implicitDependencies": ["ui-styles"]
+    ```
+
+`@nx/enforce-module-boundaries` does not read stylesheets, so tag directions are
+not enforced here — keep consumers at `type:feature` or `type:ui`, both of which
+may depend on `type:ui`.
+
+Importing a partial that the consuming **application** owns is a different case
+and needs no declaration, because that partial already sits inside the app's own
+build inputs. It is still the wrong direction, and it is the one case the two
+rules above cannot repair: a lib → app edge would make the graph cyclic, since
+the app already depends on those libraries. Move the partial into `ui-styles`
+instead. No library stylesheet imports from `apps/` today — keep it that way.
+
+`pnpm run styles:inputs:validate` enforces both rules. It resolves every
+relative `@use`/`@forward`/`@import` in the workspace against Nx's own project
+graph and fails when an imported stylesheet sits outside the input closure of a
+build that compiles it, naming the project to declare. Comment-only example
+paths are ignored, so the documentation blocks inside the shared partials do not
+register as broken imports. CI runs it in the `unit-and-typecheck` job.
+
+Only a module Sass actually compiles counts as an input. `@import` is the one
+rule that takes a comma-separated list, and **every** target in it is a separate
+dependency — reading just the first would let a later cross-project target
+escape the cache key while the check still passed. A quoted string after the
+module in `@use`/`@forward` belongs to a `with (...)` configuration and is a
+value, and `url(...)` stays a plain CSS import the browser resolves at runtime;
+neither is a build input, and treating either as one would report a phantom
+broken import.
+
+Verify a suspected caching gap directly — add a comment to a partial, run the
+consuming build, and confirm the task runs instead of reporting a cache hit:
+
+```bash
+pnpm nx build web --verbose
+```
+
+## TypeScript File Size
+
+`tools/eslint/max-lines-config.mjs` is the single source of truth:
+
+- production TypeScript should stay below 300 lines and has a hard maximum of
+  400;
+- tests, E2E specs, and E2E infrastructure have a maximum of 1200;
+- blank lines and comments are not counted.
+
+Pre-existing violations live in
+`tools/eslint/max-lines-baseline.mjs`. That baseline may only shrink. After
+splitting a baselined file, run
+`node tools/eslint/generate-max-lines-baseline.mjs`; never add a new file to the
+baseline. A genuinely inseparable new file needs a justified file-wide
+directive, which the generator deliberately skips.
+
+## Command-Based Lint Targets
+
+Quote recursive globs so POSIX and Windows hosts lint the same files:
+
+```bash
+eslint "apps/<project>/**/*.ts"
+find apps/<project> -name '*.ts' | wc -l
+```
+
+An unquoted `**` can expand to a shallow subset on POSIX while still returning
+success. After editing such a target, compare ESLint's linted-file count with
+the `find` count.
+
+Repository tooling in `tools/` has the mirror-image trap: Node's `execSync`
+runs through `cmd.exe` on Windows, where single quotes are literal characters
+rather than quoting, so a POSIX-quoted pattern reaches the program intact and
+matches nothing. Spawn without a shell — `execFileSync('git', ['ls-files',
+'*.scss'])` — and let the program expand its own patterns. Both traps report
+success while covering nothing, so a check that scans an empty file set must
+fail rather than pass.
+
+## CI Enforcement
+
+The CI lint job runs affected projects on pull requests and all projects on
+master pushes. Root config or lockfile changes affect every project, so module
+boundaries, legacy-alias restrictions, and max-lines enforcement apply across
+the workspace.
+
+
+`@iptvnator/shared/m3u-utils/favorites` keeps global M3U favorites aggregation
+outside the eager utility barrel. The explicit favorites action helper imports
+it lazily; ordinary source inventory/bootstrap does not need that projection.

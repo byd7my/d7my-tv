@@ -1,0 +1,15 @@
+export {
+    type SearchTitleVariant,
+    searchQueryIdentity,
+    buildSearchTitleVariants,
+    buildSearchLookupKey,
+    buildDetailsLookupKey,
+    buildBadProviderIdLookupKey,
+    parseProviderTmdbId,
+    type ProviderIdVerdict,
+    assessProviderId,
+    detailsMatchProviderTitle,
+    pickConfidentMatch,
+    extractYear,
+    normalizeTitle,
+} from '@iptvnator/shared/tmdb/matcher';

@@ -1,0 +1,51 @@
+<!-- No brand mark: it linked to the page the first workspace link opens.
+     The page's Back lives in the header's leading slot. -->
+<aside class="app-rail" [class.is-macos]="isMacOS()">
+    <app-workspace-shell-rail-links [links]="workspaceLinks()" />
+
+    @if (primaryContextLinks().length > 0) {
+        <div class="rail-context-region" [class]="railProviderClass()">
+            <app-workspace-shell-rail-links
+                activeClass="is-active"
+                [selectedSection]="selectedSection()"
+                [links]="primaryContextLinks()"
+            />
+
+            @if (secondaryContextLinks().length > 0) {
+                <div class="rail-divider"></div>
+                <app-workspace-shell-rail-links
+                    activeClass="is-active"
+                    [selectedSection]="selectedSection()"
+                    [links]="secondaryContextLinks()"
+                />
+            }
+        </div>
+    }
+
+    <div class="rail-footer">
+        @if (serverState() !== 'inactive') {
+            <a
+                class="rail-shortcut nav-item rail-server"
+                routerLink="/workspace/settings/server"
+                [attr.data-state]="serverState()"
+                [matTooltip]="serverLabelKey() | translate"
+                [matTooltipPosition]="'right'"
+                [attr.aria-label]="serverLabelKey() | translate"
+                data-test-id="rail-server-status"
+            >
+                <mat-icon aria-hidden="true">{{ serverIcon() }}</mat-icon>
+                <span class="rail-server__dot" aria-hidden="true"></span>
+            </a>
+        }
+        <a
+            class="rail-shortcut nav-item"
+            routerLink="/workspace/settings"
+            [class.is-active]="isSettingsRoute()"
+            [matTooltip]="'WORKSPACE.SHELL.RAIL_SETTINGS' | translate"
+            [matTooltipPosition]="'right'"
+            [attr.aria-label]="'WORKSPACE.SHELL.OPEN_SETTINGS' | translate"
+        >
+            <mat-icon aria-hidden="true">settings</mat-icon>
+        </a>
+    </div>
+</aside>

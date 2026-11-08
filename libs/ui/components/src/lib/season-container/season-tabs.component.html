@@ -1,0 +1,103 @@
+<div class="season-tabs">
+    @if (useDropdown()) {
+        <button
+            mat-flat-button
+            class="season-tabs__dropdown"
+            data-testid="season-dropdown"
+            [matMenuTriggerFor]="seasonMenu"
+            type="button"
+        >
+            {{
+                'PORTALS.SEASON_TAB'
+                    | translate: { number: selectedSeason() ?? '—' }
+            }}
+            <mat-icon class="season-tabs__chevron" iconPositionEnd>
+                expand_more
+            </mat-icon>
+        </button>
+        <mat-menu #seasonMenu="matMenu" class="season-tabs-menu">
+            @for (seasonKey of seasonKeys(); track seasonKey) {
+                @let episodeCount = episodeCounts()[seasonKey] ?? 0;
+                @let watchedCount = watchedCounts()[seasonKey] ?? 0;
+                <button
+                    mat-menu-item
+                    class="season-tabs__menu-item"
+                    data-testid="season-menu-item"
+                    [appMenuItemRadio]="seasonKey === selectedSeason()"
+                    (click)="selectSeason(seasonKey)"
+                >
+                    <mat-icon appMenuItemRadioCheck>check</mat-icon>
+                    <span class="season-tabs__menu-row">
+                        <span class="season-tabs__menu-name">
+                            {{
+                                'PORTALS.SEASON_TAB'
+                                    | translate: { number: seasonKey }
+                            }}
+                        </span>
+                        @if (isCountKnown(seasonKey)) {
+                            <small
+                                class="season-tabs__menu-count"
+                                data-testid="season-menu-count"
+                            >
+                                {{
+                                    (episodeCount === 1
+                                        ? 'PORTALS.EPISODE_COUNT_ONE'
+                                        : 'PORTALS.EPISODE_COUNT_OTHER'
+                                    ) | translate: { count: episodeCount }
+                                }}
+                                @if (watchedCount) {
+                                    ·
+                                    {{
+                                        'PORTALS.EPISODES_WATCHED_COUNT'
+                                            | translate: { count: watchedCount }
+                                    }}
+                                }
+                            </small>
+                        }
+                    </span>
+                </button>
+            }
+        </mat-menu>
+    } @else {
+        <!-- Only the tabs sit in the tab list; "Back to playing" is a
+             separate action beside it. -->
+        <div class="season-tabs__track" role="tablist">
+            @for (seasonKey of seasonKeys(); track seasonKey) {
+                <button
+                    #tab
+                    class="season-tabs__pill"
+                    type="button"
+                    role="tab"
+                    [id]="tabId(seasonKey)"
+                    [attr.aria-controls]="panelId"
+                    [attr.tabindex]="seasonKey === tabStop() ? 0 : -1"
+                    [attr.aria-selected]="seasonKey === selectedSeason()"
+                    [class.season-tabs__pill--active]="
+                        seasonKey === selectedSeason()
+                    "
+                    (click)="selectSeason(seasonKey)"
+                    (keydown)="onTabKeydown($event, seasonKey)"
+                >
+                    {{
+                        'PORTALS.SEASON_TAB' | translate: { number: seasonKey }
+                    }}
+                    @if (isSeasonCompleted(seasonKey)) {
+                        <mat-icon class="season-tabs__done">check</mat-icon>
+                    }
+                </button>
+            }
+        </div>
+    }
+
+    @if (showBackToPlaying()) {
+        <button
+            class="season-tabs__back-to-playing"
+            data-testid="back-to-playing"
+            type="button"
+            (click)="backToPlayingRequested.emit()"
+        >
+            <mat-icon>play_circle</mat-icon>
+            {{ 'PORTALS.BACK_TO_PLAYING_EPISODE' | translate }}
+        </button>
+    }
+</div>

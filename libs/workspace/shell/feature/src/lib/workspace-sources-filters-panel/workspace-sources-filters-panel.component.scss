@@ -1,0 +1,88 @@
+@use '../../../../../../ui/styles/app-controls' as controls;
+@use '../../../../../../ui/styles/side-list';
+
+:host {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+}
+
+.side-list {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+.side-list__header {
+    @include side-list.header;
+    flex-shrink: 0;
+}
+
+.side-list__heading {
+    flex: 1;
+    min-width: 0;
+}
+
+.side-list__title {
+    @include side-list.title;
+}
+
+.side-list__subtitle {
+    @include side-list.subtitle;
+}
+
+.side-list__action {
+    @include controls.ghost-icon-button(32px, 18px);
+    flex: none;
+}
+
+.side-list__groups {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.side-list__group {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.side-list__label {
+    @include side-list.label;
+}
+
+.side-list__row {
+    @include side-list.row;
+}
+
+.side-list__row-label {
+    @include side-list.row-label;
+}
+
+.side-list__row-count {
+    @include side-list.row-count;
+}
+
+// The status rows lead with a dot in the colour the source rows use.
+.side-list__dot {
+    width: 8px;
+    height: 8px;
+    margin: 0 4px;
+    border-radius: 50%;
+    background: var(--app-muted-color);
+
+    &[data-state='ok'] {
+        background: var(--app-success-color);
+    }
+
+    &[data-state='bad'] {
+        background: var(--app-live-color);
+    }
+}

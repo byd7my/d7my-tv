@@ -1,0 +1,259 @@
+import { Component, input, output, signal, Type } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { TranslateModule } from '@ngx-translate/core';
+import {
+    SeriesResumeTarget,
+    UnifiedCollectionItem,
+} from '@iptvnator/portal/shared/util';
+import { GlobalCollectionDetailHostComponent } from './global-collection-route.component';
+
+@Component({
+    selector: 'app-xtream-collection-detail',
+    template: '',
+})
+class MockXtreamCollectionDetailComponent {
+    readonly item = input<UnifiedCollectionItem | null>(null);
+    readonly seriesResume = input<SeriesResumeTarget | null>(null);
+    readonly closeRequested = output<void>();
+}
+
+@Component({
+    selector: 'app-stalker-collection-detail',
+    template: '',
+})
+class MockStalkerCollectionDetailComponent {
+    readonly item = input<UnifiedCollectionItem | null>(null);
+    readonly seriesResume = input<SeriesResumeTarget | null>(null);
+    readonly closeRequested = output<void>();
+}
+
+jest.unstable_mockModule('@iptvnator/portal/xtream/feature', () => ({
+    XtreamCollectionDetailComponent: MockXtreamCollectionDetailComponent,
+}));
+jest.unstable_mockModule('@iptvnator/portal/stalker/feature', () => ({
+    StalkerCollectionDetailComponent: MockStalkerCollectionDetailComponent,
+}));
+
+@Component({
+    imports: [GlobalCollectionDetailHostComponent],
+    template: `
+        <app-global-collection-detail-host
+            [item]="item()"
+            [seriesResume]="seriesResume()"
+            (closeRequested)="closeCount = closeCount + 1"
+        />
+    `,
+})
+class WrapperComponent {
+    readonly item = signal<UnifiedCollectionItem | null>(null);
+    readonly seriesResume = signal<SeriesResumeTarget | null>(null);
+    closeCount = 0;
+}
+
+const xtreamSeriesItem: UnifiedCollectionItem = {
+    uid: 'xtream::xtream-1::series:103',
+    name: 'Resume Series',
+    contentType: 'series',
+    sourceType: 'xtream',
+    playlistId: 'xtream-1',
+    playlistName: 'Xtream One',
+    xtreamId: 103,
+    categoryId: 3,
+};
+
+describe('GlobalCollectionDetailHostComponent', () => {
+    let fixture: ComponentFixture<WrapperComponent>;
+
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
+            imports: [WrapperComponent, TranslateModule.forRoot()],
+        }).compileComponents();
+
+        fixture = TestBed.createComponent(WrapperComponent);
+    });
+
+    afterEach(() => {
+        fixture?.destroy();
+    });
+
+    function queryDetail() {
+        return fixture.debugElement.query(
+            By.directive(MockXtreamCollectionDetailComponent)
+        );
+    }
+
+    async function stabilize(): Promise<void> {
+        fixture.detectChanges();
+        await fixture.whenStable();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        fixture.detectChanges();
+        await fixture.whenStable();
+        fixture.detectChanges();
+    }
+
+    it('mocks the xtream feature barrel', async () => {
+        const mod = await import('@iptvnator/portal/xtream/feature');
+        expect(mod.XtreamCollectionDetailComponent).toBe(
+            MockXtreamCollectionDetailComponent as never
+        );
+    });
+
+    it('renders nothing until an item arrives', async () => {
+        await stabilize();
+
+        expect(queryDetail()).toBeNull();
+    });
+
+    it.each(['xtream', 'stalker'] as const)(
+        'keeps the detail skeleton visible while the %s module loads',
+        async (sourceType) => {
+            const host = fixture.debugElement.query(
+                By.directive(GlobalCollectionDetailHostComponent)
+            ).componentInstance as GlobalCollectionDetailHostComponent;
+            let resolveComponent!: (component: Type<unknown>) => void;
+            jest.spyOn(
+                host as unknown as {
+                    loadDetailComponent: () => Promise<Type<unknown>>;
+                },
+                'loadDetailComponent'
+            ).mockReturnValueOnce(
+                new Promise((resolve) => (resolveComponent = resolve))
+            );
+            fixture.componentInstance.item.set({
+                ...xtreamSeriesItem,
+                sourceType,
+            });
+            fixture.detectChanges();
+            expect(
+                fixture.nativeElement.querySelector(
+                    '[data-test-id="hero-skeleton"]'
+                )
+            ).not.toBeNull();
+
+            resolveComponent(MockXtreamCollectionDetailComponent);
+            await stabilize();
+            expect(queryDetail()).not.toBeNull();
+            expect(
+                fixture.nativeElement.querySelector(
+                    '[data-test-id="hero-skeleton"]'
+                )
+            ).toBeNull();
+        }
+    );
+
+    it('ignores sources without a collection detail component', async () => {
+        fixture.componentInstance.item.set({
+            ...xtreamSeriesItem,
+            uid: 'm3u::pl-1::vod:1',
+            sourceType: 'm3u' as UnifiedCollectionItem['sourceType'],
+            playlistId: 'pl-1',
+        });
+        await stabilize();
+
+        expect(queryDetail()).toBeNull();
+    });
+
+    it('creates the Xtream detail with the series resume target attached', async () => {
+        const seriesResume = {
+            seriesXtreamId: 103,
+            contentXtreamId: 2001,
+            seasonNumber: 2,
+            episodeNumber: 1,
+        };
+        fixture.componentInstance.seriesResume.set(seriesResume);
+        fixture.componentInstance.item.set(xtreamSeriesItem);
+        await stabilize();
+
+        const detail = queryDetail();
+        expect(detail).not.toBeNull();
+
+        const instance =
+            detail?.componentInstance as MockXtreamCollectionDetailComponent;
+        expect(instance.item()?.xtreamId).toBe(103);
+        expect(instance.seriesResume()).toEqual(seriesResume);
+    });
+
+    it('creates the Stalker detail with the series resume target attached', async () => {
+        // A Stalker embedded-VOD show routes as a movie; the resume target
+        // still has to reach the detail so the series view can consume it.
+        const seriesResume = {
+            seriesXtreamId: 17672,
+            contentXtreamId: 1879880442,
+            seasonNumber: 2,
+            episodeNumber: 6,
+        };
+        fixture.componentInstance.seriesResume.set(seriesResume);
+        fixture.componentInstance.item.set({
+            uid: 'stalker::stalker-1::17672',
+            name: 'Old School',
+            contentType: 'movie',
+            sourceType: 'stalker',
+            playlistId: 'stalker-1',
+            playlistName: 'Portal',
+            stalkerId: '17672',
+            categoryId: '7',
+        });
+        await stabilize();
+
+        const detail = fixture.debugElement.query(
+            By.directive(MockStalkerCollectionDetailComponent)
+        );
+        expect(detail).not.toBeNull();
+        const instance =
+            detail?.componentInstance as MockStalkerCollectionDetailComponent;
+        expect(instance.item()?.stalkerId).toBe('17672');
+        expect(instance.seriesResume()).toEqual(seriesResume);
+    });
+
+    it('preserves playback state when polling refreshes the same detail', async () => {
+        fixture.componentInstance.item.set(xtreamSeriesItem);
+        await stabilize();
+        const original = queryDetail()?.componentInstance;
+        const refreshed = {
+            ...xtreamSeriesItem,
+            name: 'Synthetic refreshed title',
+        };
+        fixture.componentInstance.item.set(refreshed);
+        await stabilize();
+        expect(queryDetail()?.componentInstance).toBe(original);
+        expect(original.item()).toBe(refreshed);
+        fixture.componentInstance.item.set({
+            ...refreshed,
+            uid: 'xtream::xtream-1::series:104',
+            xtreamId: 104,
+        });
+        await stabilize();
+        expect(queryDetail()?.componentInstance).not.toBe(original);
+    });
+
+    it('replaces a detail when the same provider ID has a different known identity', async () => {
+        fixture.componentInstance.item.set({
+            ...xtreamSeriesItem,
+            xtreamIdentity: { tmdbId: 101, releaseYear: 2024 },
+        });
+        await stabilize();
+        const original = queryDetail()?.componentInstance;
+        fixture.componentInstance.item.set({
+            ...xtreamSeriesItem,
+            xtreamIdentity: { tmdbId: 102, releaseYear: 2025 },
+        });
+        await stabilize();
+        expect(queryDetail()?.componentInstance).not.toBe(original);
+    });
+
+    it('re-emits close requests and clears the detail with the item', async () => {
+        fixture.componentInstance.item.set(xtreamSeriesItem);
+        await stabilize();
+
+        const instance = queryDetail()
+            ?.componentInstance as MockXtreamCollectionDetailComponent;
+        instance.closeRequested.emit();
+        expect(fixture.componentInstance.closeCount).toBe(1);
+
+        fixture.componentInstance.item.set(null);
+        await stabilize();
+
+        expect(queryDetail()).toBeNull();
+    });
+});

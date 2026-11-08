@@ -1,0 +1,179 @@
+@use '../../../../styles/app-controls' as controls;
+
+:host {
+    display: block;
+    width: 100%;
+    container: inline-player / inline-size;
+}
+
+.player-shell {
+    display: grid;
+    gap: 16px;
+    padding: 16px;
+    margin-top: 8px;
+    border-radius: 16px;
+    border: 1px solid var(--app-widget-border);
+    background: var(--app-widget-bg);
+}
+
+.player-shell__header {
+    display: grid;
+    gap: 8px;
+    // Allow the nowrap title to shrink instead of widening the grid track
+    // and pushing the actions out of the viewport.
+    min-width: 0;
+}
+
+.player-shell__eyebrow {
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--app-muted-color);
+}
+
+.player-shell__title-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 0;
+}
+
+.player-shell__heading {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.player-shell__title {
+    margin: 0;
+    font-size: clamp(1.05rem, 1vw + 0.9rem, 1.25rem);
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--app-heading-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.player-shell__episode-meta {
+    color: var(--app-muted-color);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.player-shell__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+    align-items: center;
+    min-width: 0;
+}
+
+.player-shell__actions > .mat-mdc-icon-button {
+    @include controls.ghost-icon-button(40px, 18px);
+    app-region: no-drag;
+}
+
+.player-shell__actions > .mat-mdc-unelevated-button {
+    @include controls.secondary-button;
+    app-region: no-drag;
+}
+
+.player-shell__actions > button {
+    flex-shrink: 0;
+}
+
+// The viewport is the "theater stage": it spans the full content width and,
+// on wide-short windows, becomes wider than 16:9. The player is centered and
+// letterboxed inside it, so the leftover is always the black stage (or the
+// ambient fill) — never a stray strip of app background.
+.player-shell__viewport {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    // Definite width is load-bearing: with `width: auto`, `max-height` would
+    // transfer through `aspect-ratio` into a max-width and re-clamp the stage
+    // to 16:9 — recreating the app-surface gap on wide-short windows.
+    width: 100%;
+    // There is no global border-box reset, so the rail modifier's padding
+    // would otherwise widen the stage past its container and get clipped.
+    box-sizing: border-box;
+    min-height: 320px;
+    max-height: min(70vh, 720px);
+    aspect-ratio: 16 / 9;
+    border-radius: 14px;
+    background: #000;
+}
+
+// Player: largest 16:9 box that fits the stage height, horizontally centered.
+// The stage is never narrower than 16:9, so height-driven sizing never overflows.
+.player-shell__viewport > app-web-player-view {
+    position: relative;
+    z-index: 1;
+    display: block;
+    flex: 0 0 auto;
+    height: 100%;
+    width: auto;
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
+}
+
+// "Up Next" rail: instead of centering, the player docks left and the
+// leftover column becomes the episode rail. The rail is an opaque panel on
+// top of the stage, so the ambient fill stays behind it (and shows in the
+// flexible gap between player and rail on very wide stages).
+.player-shell__viewport--with-rail {
+    justify-content: space-between;
+    gap: 18px;
+    // Insets the docked player and the rail from the stage edges; the player
+    // keeps sizing itself as the largest 16:9 box fitting the (now smaller)
+    // content height.
+    padding: 12px;
+}
+
+.player-shell__rail {
+    position: relative;
+    z-index: 1;
+    flex: 1 1 auto;
+    align-self: stretch;
+    min-width: 0;
+    max-width: 440px;
+}
+
+// "Ambient mode": a blurred, dimmed copy of the poster fills the whole stage
+// behind the player, turning the letterbox margins into atmosphere.
+.player-shell__ambient {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-image: var(--ambient-image);
+    background-position: center;
+    background-size: cover;
+    filter: blur(34px) brightness(0.5) saturate(1.15);
+    transform: scale(1.18);
+    pointer-events: none;
+}
+
+@container inline-player (max-width: 600px) {
+    .player-shell {
+        padding: 14px;
+    }
+
+    .player-shell__title-row {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+    }
+
+    .player-shell__actions {
+        justify-content: flex-start;
+    }
+
+    .player-shell__viewport {
+        min-height: 220px;
+    }
+}

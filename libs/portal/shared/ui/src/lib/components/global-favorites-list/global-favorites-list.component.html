@@ -1,0 +1,90 @@
+<div
+    appChannelScrollFocus
+    [attr.aria-label]="'HOME.PLAYLISTS.CHANNELS' | translate"
+    class="nav-list app-scrollbar"
+    cdkDropList
+    [cdkDropListDisabled]="!canDragDrop()"
+    (cdkDropListDropped)="onDrop($event)"
+>
+    @if (enrichedChannels().length === 0) {
+        <div class="empty-state">
+            <mat-icon class="empty-icon">star_border</mat-icon>
+            @if (hasSearchTerm()) {
+                <p class="empty-title">
+                    {{ 'WORKSPACE.GLOBAL_FAVORITES.NO_RESULTS' | translate }}
+                </p>
+                <p class="empty-hint">
+                    {{
+                        'WORKSPACE.GLOBAL_FAVORITES.NO_RESULTS_HINT' | translate
+                    }}
+                </p>
+            } @else {
+                <p class="empty-title">
+                    {{ 'WORKSPACE.GLOBAL_FAVORITES.EMPTY_TITLE' | translate }}
+                </p>
+                <p class="empty-hint">
+                    {{ 'WORKSPACE.GLOBAL_FAVORITES.EMPTY_HINT' | translate }}
+                </p>
+            }
+        </div>
+    }
+
+    @for (ch of enrichedChannels(); track trackByUid($index, ch)) {
+        <app-channel-list-item
+            [isDraggable]="canDragDrop()"
+            [logo]="ch.logo"
+            [name]="ch.name"
+            [disabled]="isUnavailable(ch)"
+            [statusLabel]="
+                isUnavailable(ch)
+                    ? ((ch.catalogStatus === 'missing'
+                          ? 'WORKSPACE.GLOBAL_FAVORITES.CATALOG_MISSING'
+                          : 'WORKSPACE.GLOBAL_FAVORITES.CATALOG_UNKNOWN'
+                      ) | translate)
+                    : ch.catalogDisabled
+                      ? ('PORTALS.LIVE_TV' | translate) +
+                        ' — ' +
+                        ('SETTINGS.STATUS_DISABLED' | translate)
+                      : ''
+            "
+            [selected]="activeUid() === ch.uid"
+            [showEpg]="
+                !isUnavailable(ch) &&
+                showEpg() &&
+                ch.radio !== 'true' &&
+                guideBySource[ch.sourceType]
+            "
+            [isRadio]="ch.radio === 'true'"
+            [epgProgram]="ch.currentEpgProgram"
+            [progressPercentage]="ch.progressPercentage"
+            [catchupAvailable]="catchupAvailable(ch)"
+            [catchupDays]="catchupDays(ch)"
+            [showFavoriteButton]="true"
+            [isFavorite]="isChannelFavorite(ch)"
+            [showProgramInfoButton]="true"
+            [showDetailsContextMenu]="hasChannelContextMenu(ch)"
+            (clicked)="onChannelClick(ch)"
+            (activated)="onChannelActivate(ch)"
+            (keyboardActivated)="onPlaybackRequested(ch)"
+            (favoriteToggled)="onFavoriteToggled(ch)"
+            (contextMenuRequested)="onChannelContextMenu(ch, $event)"
+        />
+    }
+</div>
+
+<!-- A favorite whose catalog entry is missing keeps only the actions that
+     need no catalog: open in its playlist is gated by canOpenInPlaylist. -->
+<app-channel-context-menu
+    [showMapEpg]="supportsEpgMapping && !contextMenuUnavailable()"
+    [showDetails]="
+        !!contextMenuChannel()?.m3uChannel && !contextMenuUnavailable()
+    "
+    [openInPlaylistName]="
+        contextMenuCanOpenInPlaylist() ? contextMenuPlaylistName() : null
+    "
+    [showRemoveFromHistory]="mode() === 'recent'"
+    (mapEpg)="openEpgMapping()"
+    (details)="openChannelDetails()"
+    (openInPlaylist)="openContextMenuChannelInPlaylist()"
+    (removeFromHistory)="removeContextMenuChannel()"
+/>

@@ -1,0 +1,470 @@
+import { NgComponentOutlet } from '@angular/common';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    DestroyRef,
+    effect,
+    ElementRef,
+    inject,
+    OnDestroy,
+    OnInit,
+    signal,
+    untracked,
+    viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs/operators';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltip } from '@angular/material/tooltip';
+import { ActivatedRoute, Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
+import {
+    GridListComponent,
+    InfiniteScrollDirective,
+    PlaylistErrorViewComponent,
+} from '@iptvnator/portal/shared/ui';
+import {
+    MenuItemRadioCheckDirective,
+    MenuItemRadioDirective,
+} from '@iptvnator/ui/components';
+import {
+    clearNavigationStateKeys,
+    consumeStalkerReturnMarker,
+    getOpenStalkerItemState,
+    getStalkerReturnByHistoryState,
+    isProviderOnlyDetailState,
+    normalizeStalkerHandoffIdentity,
+    PortalCatalogFacade,
+    OPEN_STALKER_ITEM_STATE_KEY,
+    PORTAL_CATALOG_DETAIL_COMPONENT,
+    PORTAL_CATALOG_FACADE,
+    PROVIDER_ONLY_DETAIL_PRESENTATION_STATE_KEY,
+    PortalCatalogSortMode,
+} from '@iptvnator/portal/shared/util';
+import {
+    CATALOG_SORT_OPTIONS,
+    catalogSortLabels,
+} from './catalog-sort-options';
+
+import { createCatalogWatchFilter } from './catalog-watch-filter';
+import { createCatalogHideWatched } from './catalog-hide-watched';
+import { createCatalogItemSubtitle } from './catalog-item-subtitle';
+import { createCatalogReturnFocus } from './catalog-return-focus';
+
+interface CategoryContentItem {
+    id?: number | string;
+    is_series?: number | string | boolean;
+    movie_id?: number | string;
+    xtream_id?: number | string;
+    series_id?: number | string;
+    stream_id?: number | string;
+    category_id?: number | string;
+    [key: string]: unknown;
+}
+
+@Component({
+    selector: 'app-category-content-view',
+    templateUrl: './category-content-view.component.html',
+    styleUrls: ['./category-content-view.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        GridListComponent,
+        InfiniteScrollDirective,
+        MatButtonModule,
+        MatIcon,
+        MatMenuModule,
+        MatTooltip,
+        MenuItemRadioCheckDirective,
+        MenuItemRadioDirective,
+        NgComponentOutlet,
+        PlaylistErrorViewComponent,
+        TranslatePipe,
+    ],
+})
+export class CategoryContentViewComponent implements OnInit, OnDestroy {
+    private readonly activatedRoute = inject(ActivatedRoute);
+    private readonly destroyRef = inject(DestroyRef);
+    private readonly host = inject(ElementRef<HTMLElement>);
+    private readonly gridList = viewChild(GridListComponent);
+    private readonly router = inject(Router);
+    private readonly focus = createCatalogReturnFocus(this.host.nativeElement);
+    private readonly providerOnlyStalkerItemId = signal<string | null>(null);
+    private readonly catalog = inject(
+        PORTAL_CATALOG_FACADE
+    ) as PortalCatalogFacade<
+        CategoryContentItem,
+        CategoryContentItem,
+        CategoryContentItem
+    >;
+
+    readonly hideWatched = createCatalogHideWatched(
+        this.catalog,
+        this.host.nativeElement
+    );
+    readonly watchFilter = createCatalogWatchFilter(
+        this.catalog,
+        this.host.nativeElement
+    );
+    readonly detailComponent = inject(PORTAL_CATALOG_DETAIL_COMPONENT);
+    readonly contentType = this.catalog.contentType;
+    readonly selectedCategory = this.catalog.selectedCategory;
+    readonly paginatedContent = this.catalog.paginatedContent;
+    readonly selectedCategoryTitle = this.catalog.selectedCategoryTitle;
+    readonly categoryItemCount = this.catalog.categoryItemCount;
+    readonly selectedItem = this.catalog.selectedItem;
+    readonly contentSortMode = this.catalog.contentSortMode;
+    readonly isPaginatedContentLoading = this.catalog.isPaginatedContentLoading;
+    readonly sourceHasMore = this.catalog.hasMore;
+    readonly infiniteHasMore = computed(
+        () => this.sourceHasMore() && !this.hideWatched.paused()
+    );
+    readonly infiniteAppending = this.catalog.isAppending;
+    readonly infiniteAppendError = this.catalog.appendError;
+    readonly contentError = computed(
+        () => this.catalog.contentError?.() ?? false
+    );
+    retryContent(): void {
+        this.catalog.retryContent?.();
+    }
+    readonly isCatalogLoadingSubtitle = computed(() =>
+        this.isPaginatedContentLoading()
+    );
+    readonly categoryItemSubtitle = createCatalogItemSubtitle(
+        this.catalog,
+        this.watchFilter,
+        this.hideWatched
+    );
+    readonly canSortContent = computed(() => this.contentSortMode() !== null);
+    readonly supportsRatingSort = computed(
+        () => this.catalog.supportsRatingSort === true
+    );
+    readonly canFilterByRating = computed(
+        () =>
+            this.supportsRatingSort() &&
+            typeof this.catalog.setMinRating === 'function'
+    );
+    readonly minRating = computed(() =>
+        this.canFilterByRating() ? (this.catalog.minRating?.() ?? null) : null
+    );
+    readonly ratingThresholds = [9, 8, 7, 6, 5] as const;
+    readonly hasRefineControls = computed(
+        () =>
+            this.canSortContent() ||
+            this.canFilterByRating() ||
+            this.watchFilter.canFilter() ||
+            this.hideWatched.supported()
+    );
+    readonly activeRefinementCount = computed(
+        () =>
+            Number(this.minRating() !== null) +
+            Number(this.watchFilter.active()) +
+            Number(this.hideWatched.active())
+    );
+    readonly sortOptions = computed(() =>
+        CATALOG_SORT_OPTIONS.filter(
+            (option) => !option.byRating || this.supportsRatingSort()
+        )
+    );
+    readonly activeSortLabels = computed(() =>
+        catalogSortLabels(this.contentSortMode())
+    );
+    readonly searchTerm = toSignal(
+        this.activatedRoute.queryParamMap.pipe(map((p) => p.get('q') ?? '')),
+        { initialValue: '' }
+    );
+    readonly selectedDetailComponent = computed(() =>
+        this.selectedItem() ? this.detailComponent : null
+    );
+    readonly detailComponentInputs = computed<
+        Record<string, unknown> | undefined
+    >(() => {
+        if (this.catalog.provider !== 'stalker') {
+            return undefined;
+        }
+
+        const providerItemId = this.providerOnlyStalkerItemId();
+        return {
+            providerOnly:
+                providerItemId !== null &&
+                providerItemId ===
+                    this.stalkerItemIdentity(this.selectedItem()),
+        };
+    });
+    readonly contentWithProgress = computed(() =>
+        (this.paginatedContent() ?? []).map((item: CategoryContentItem) => ({
+            ...item,
+            ...this.catalog.getItemProgress(item),
+        }))
+    );
+    /**
+     * Identity of the rendered list. A change means the grid shows a
+     * different result set: the scroll resets to the top and the infinite
+     * scroll directive gets a fresh auto-fill budget. Appends keep the key
+     * stable, so they never scroll.
+     */
+    readonly gridResetKey = computed(() => {
+        const category = this.selectedCategory();
+        const categoryId = category?.category_id ?? category?.id ?? '';
+        return [
+            this.contentType() ?? '',
+            String(categoryId),
+            this.searchTerm(),
+            this.contentSortMode() ?? '',
+            String(this.minRating() ?? ''),
+            this.watchFilter.value() ?? '',
+            this.hideWatched.active(),
+        ].join('|');
+    });
+    private previousGridResetKey: string | null = null;
+    private hasAttemptedScrollRestore = false;
+    /**
+     * The grid's last reported offset. On destroy the view is already
+     * detached from the document, where `scrollTop` reads 0, so the hook
+     * saves this instead. Scroll events do not bubble but can be captured.
+     */
+    private lastGridScrollTop = 0;
+    private readonly trackGridScroll = (event: Event) => {
+        const target = event.target;
+        if (target instanceof HTMLElement && target.matches('app-grid-list')) {
+            this.lastGridScrollTop = target.scrollTop;
+        }
+    };
+    private readonly routeCategory = signal<{ id: string | null } | null>(null);
+    private initializedRoute: {
+        category: { id: string | null };
+        playlistId: string | null;
+    } | null = null;
+
+    constructor() {
+        const host = this.host.nativeElement;
+        host.addEventListener('scroll', this.trackGridScroll, {
+            capture: true,
+            passive: true,
+        });
+        this.destroyRef.onDestroy(() =>
+            host.removeEventListener('scroll', this.trackGridScroll, {
+                capture: true,
+            })
+        );
+        effect(() => {
+            const category = this.routeCategory();
+            if (!category || this.catalog.routeReady?.() === false) {
+                return;
+            }
+            const playlistId = this.catalog.playlist()?.id ?? null;
+            // Query-only navigation toggles readiness too; only a new
+            // category arrival or playlist should reset the open detail.
+            if (
+                this.initializedRoute?.category === category &&
+                this.initializedRoute.playlistId === playlistId
+            ) {
+                return;
+            }
+            this.initializedRoute = { category, playlistId };
+            untracked(() => {
+                this.providerOnlyStalkerItemId.set(null);
+                this.catalog.initialize(category.id);
+                this.catalog.setSearchQuery?.(this.searchTerm());
+                this.openStalkerItemFromNavigationState();
+            });
+        });
+
+        effect(() => {
+            const resetKey = this.gridResetKey();
+            if (
+                this.previousGridResetKey !== null &&
+                this.previousGridResetKey !== resetKey
+            ) {
+                this.scrollGridToTop();
+            }
+            this.previousGridResetKey = resetKey;
+        });
+
+        // One-shot scroll restore after a detail round-trip: once the list is
+        // rendered (not loading, no detail overlay), ask the facade for a
+        // saved position matching the current selection. An open detail
+        // re-arms the shot — Stalker details render inline in THIS instance,
+        // so closing one must restore just like a route round-trip does.
+        effect(() => {
+            if (this.selectedItem()) {
+                this.hasAttemptedScrollRestore = false;
+                return;
+            }
+
+            this.focus.recordReturnTrigger();
+            if (
+                this.hasAttemptedScrollRestore ||
+                this.isPaginatedContentLoading() ||
+                this.watchFilter.blocked()
+            ) {
+                return;
+            }
+
+            this.hasAttemptedScrollRestore = true;
+            const scrollTop =
+                this.catalog.consumeSavedScrollPosition?.() ?? null;
+            if ((scrollTop ?? 0) <= 0 && !this.focus.pending()) {
+                return;
+            }
+
+            // Two frames: one for change detection to render the restored
+            // window, one to apply the offset to the grown grid.
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    if (scrollTop !== null)
+                        this.gridList()?.restoreScrollPosition(scrollTop);
+                    this.focus.restore();
+                });
+            });
+        });
+    }
+
+    setContentSortMode(mode: PortalCatalogSortMode): void {
+        this.catalog.setContentSortMode(mode);
+    }
+
+    setMinRating(value: number | null): void {
+        this.catalog.setMinRating?.(value);
+    }
+
+    ngOnInit(): void {
+        this.activatedRoute.paramMap
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((params) => {
+                this.routeCategory.set({ id: params.get('categoryId') });
+            });
+
+        this.activatedRoute.queryParamMap
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((params) => {
+                this.catalog.setSearchQuery?.(params.get('q') ?? '');
+
+                // A search change resets the list in the facade; only a stale
+                // `?page=` from a legacy deep link needs cleaning up here.
+                if (params.has('page')) {
+                    this.clearPageQueryParam();
+                }
+            });
+    }
+
+    ngOnDestroy(): void {
+        // Leaving the list without opening a detail (e.g. switching portal
+        // tabs) still snapshots the spot; the facade validates the selection
+        // before ever restoring it. Angular detaches the view's DOM before
+        // this hook runs, and a detached grid reports a scrollTop of 0, so
+        // the tracked offset stands in for it.
+        if (!this.selectedItem()) {
+            const grid = this.gridElement();
+            if (grid) {
+                this.catalog.saveScrollPosition?.(
+                    grid.isConnected ? grid.scrollTop : this.lastGridScrollTop
+                );
+            }
+        }
+    }
+
+    onLoadMore(): void {
+        if (!this.watchFilter.blocked()) this.catalog.loadMore();
+    }
+
+    onRetryAppend(): void {
+        if (!this.watchFilter.blocked()) this.catalog.retryAppend();
+    }
+
+    onItemClick(item: CategoryContentItem): void {
+        this.focus.capture();
+        // Snapshot the grid offset before the detail replaces the list.
+        const grid = this.gridElement();
+        if (grid) {
+            this.catalog.saveScrollPosition?.(grid.scrollTop);
+        }
+
+        this.providerOnlyStalkerItemId.set(null);
+        const navigation = this.catalog.selectItem(item);
+        if (navigation?.length) {
+            this.router.navigate(navigation, {
+                relativeTo: this.activatedRoute,
+                queryParamsHandling: 'preserve',
+            });
+        }
+    }
+
+    private gridElement(): HTMLElement | null {
+        return this.host.nativeElement.querySelector(
+            'app-grid-list'
+        ) as HTMLElement | null;
+    }
+
+    private scrollGridToTop(): void {
+        // A grid already at the top fires no scroll event for this call.
+        this.lastGridScrollTop = 0;
+        this.gridElement()?.scrollTo?.({ top: 0 });
+    }
+
+    private clearPageQueryParam(): void {
+        void this.router.navigate([], {
+            relativeTo: this.activatedRoute,
+            queryParams: {
+                page: null,
+            },
+            queryParamsHandling: 'merge',
+            replaceUrl: true,
+        });
+    }
+
+    private openStalkerItemFromNavigationState(): void {
+        if (this.catalog.provider !== 'stalker') {
+            return;
+        }
+
+        const item = getOpenStalkerItemState(window.history.state);
+        if (!item) {
+            // The handoff item is gone, but its return contract can still sit
+            // on this entry: leaving with the browser's own Back never runs a
+            // back affordance, so nothing retired it. Landing here with no
+            // detail open means the handoff is over — any title opened from
+            // the list now is a fresh selection whose Back must close it
+            // rather than exit to the collection.
+            // Scoped to collection handoffs, which are the only ones that
+            // set the history-back marker: a plain `stalkerReturnTo` caller
+            // (the dashboard) keeps its existing re-navigating behaviour.
+            if (
+                !this.selectedItem() &&
+                getStalkerReturnByHistoryState(window.history.state)
+            ) {
+                consumeStalkerReturnMarker();
+            }
+            return;
+        }
+
+        const providerOnly = isProviderOnlyDetailState(window.history.state);
+        this.catalog.selectItem(item as CategoryContentItem);
+        // The item came from a stored snapshot, not the live list — let the
+        // provider refresh stale embedded data (e.g. episode lists).
+        this.catalog.refreshSnapshotSelection?.();
+        this.providerOnlyStalkerItemId.set(
+            providerOnly
+                ? this.stalkerItemIdentity(item as CategoryContentItem)
+                : null
+        );
+        clearNavigationStateKeys([
+            OPEN_STALKER_ITEM_STATE_KEY,
+            'openFavoriteItem',
+            'openRecentItem',
+            PROVIDER_ONLY_DETAIL_PRESENTATION_STATE_KEY,
+        ]);
+    }
+
+    private stalkerItemIdentity(
+        item: CategoryContentItem | null | undefined
+    ): string | null {
+        const rawId =
+            item?.id ?? item?.series_id ?? item?.movie_id ?? item?.stream_id;
+        // Shared with the return-marker binding in
+        // `resolveStalkerBackNavigation()` so the two cannot drift apart.
+        return normalizeStalkerHandoffIdentity(rawId) || null;
+    }
+}

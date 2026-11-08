@@ -1,0 +1,915 @@
+import { EpgPreferencesService } from './epg-preferences.service';
+import { EpgSourceSettingsService } from './epg-source-settings.service';
+import { Injector } from '@angular/core';
+import { StorageMap } from '@ngx-pwa/local-storage';
+import { of, Subject } from 'rxjs';
+import {
+    DashboardRailsSettings,
+    Language,
+    Settings,
+    StartupBehavior,
+    STORE_KEY,
+    StreamFormat,
+    Theme,
+    VideoPlayer,
+} from '@iptvnator/shared/interfaces';
+import { SettingsStore } from './settings-store.service';
+
+const expectedDashboardRails = (
+    overrides: Partial<DashboardRailsSettings> = {}
+): DashboardRailsSettings => ({
+    hero: true,
+    continueWatching: true,
+    liveFavorites: true,
+    recentlyWatchedLive: true,
+    favoriteMoviesAndSeries: true,
+    recentSources: true,
+    xtreamRecentlyAdded: true,
+    tmdbTrending: true,
+    tmdbRecommendations: true,
+    ...overrides,
+});
+
+describe('SettingsStore dashboard rail settings', () => {
+    let storedSettings: Partial<Settings> | null;
+    let injector: Injector;
+    let storage: {
+        get: jest.Mock;
+        set: jest.Mock;
+    };
+
+    beforeEach(() => {
+        storedSettings = null;
+        storage = {
+            get: jest.fn(() => of(storedSettings)),
+            set: jest.fn(() => of(undefined)),
+        };
+
+        injector = Injector.create({
+            providers: [
+                EpgPreferencesService,
+                SettingsStore,
+                EpgSourceSettingsService,
+                {
+                    provide: StorageMap,
+                    useValue: storage,
+                },
+            ],
+        });
+    });
+
+    it('defaults EPG on for old settings and preserves sources on opt-out', async () => {
+        storedSettings = { epgUrl: ['https://example.org/guide.xml'] };
+        const store = injector.get(SettingsStore);
+        await store.loadSettings();
+        const preferences = injector.get(EpgPreferencesService);
+        expect(store.getSettings().epgEnabled).toBe(true);
+        expect(preferences.enabled()).toBe(true);
+        await store.updateSettings({ epgEnabled: false });
+        expect(preferences.enabled()).toBe(false);
+        expect(store.epgUrl()).toEqual(['https://example.org/guide.xml']);
+        expect(storage.set).toHaveBeenLastCalledWith(
+            STORE_KEY.Settings,
+            expect.objectContaining({
+                epgEnabled: false,
+                epgUrl: ['https://example.org/guide.xml'],
+            })
+        );
+        const reconcile = jest
+            .spyOn(injector.get(EpgSourceSettingsService), 'synchronize')
+            .mockImplementation(async () => {
+                expect(preferences.enabled()).toBe(false);
+            });
+        await store.updateSettings({ epgEnabled: true });
+        expect(reconcile).toHaveBeenCalledWith([
+            'https://example.org/guide.xml',
+        ]);
+        expect(preferences.enabled()).toBe(true);
+    });
+
+    it.each([false, true])(
+        'uses the latest committed EPG save after an earlier enable finishes (later write fails: %s)',
+        async (failNewWrite) => {
+            storedSettings = { epgEnabled: false };
+            const store = injector.get(SettingsStore);
+            await store.loadSettings();
+            const preferences = injector.get(EpgPreferencesService);
+            let releaseReconciliation!: () => void;
+            let reconciliationStarted!: () => void;
+            const started = new Promise<void>((resolve) => {
+                reconciliationStarted = resolve;
+            });
+            const barrier = new Promise<void>((resolve) => {
+                releaseReconciliation = resolve;
+            });
+            jest.spyOn(
+                injector.get(EpgSourceSettingsService),
+                'synchronize'
+            ).mockImplementation(() => {
+                reconciliationStarted();
+                return barrier;
+            });
+            const enabling = store.updateSettings({ epgEnabled: true });
+            await started;
+            expect(preferences.enabled()).toBe(false);
+            if (failNewWrite) {
+                const failedWrite = new Subject<void>();
+                storage.set.mockReturnValueOnce(failedWrite);
+                const disabling = store.updateSettings({ epgEnabled: false });
+                failedWrite.error(new Error('Synthetic write failure'));
+                await expect(disabling).rejects.toThrow(
+                    'Synthetic write failure'
+                );
+            } else {
+                await store.updateSettings({ epgEnabled: false });
+            }
+            releaseReconciliation();
+            await enabling;
+            expect(store.getSettings().epgEnabled).toBe(failNewWrite);
+            expect(preferences.enabled()).toBe(failNewWrite);
+            const load = jest.fn().mockResolvedValue(['synthetic programme']);
+            await preferences.run(load, []);
+            expect(load).toHaveBeenCalledTimes(failNewWrite ? 1 : 0);
+        }
+    );
+
+    it('reconciles the latest committed sources after an older native opt-out acknowledgement', async () => {
+        const store = injector.get(SettingsStore);
+        await store.loadSettings();
+        const originalBridge = window.electron;
+        let releaseDisable!: () => void;
+        let disableStarted!: () => void;
+        const started = new Promise<void>((resolve) => {
+            disableStarted = resolve;
+        });
+        const barrier = new Promise<void>((resolve) => {
+            releaseDisable = resolve;
+        });
+        window.electron = {
+            ...originalBridge,
+            setEpgEnabled: jest.fn((enabled: boolean) => {
+                if (enabled) return Promise.resolve();
+                disableStarted();
+                return barrier;
+            }),
+        } as typeof window.electron;
+        const reconcile = jest
+            .spyOn(injector.get(EpgSourceSettingsService), 'synchronize')
+            .mockResolvedValue(undefined);
+        try {
+            const disabling = store.updateSettings({
+                epgEnabled: false,
+                epgUrl: ['https://example.org/earlier-guide.xml'],
+            });
+            await started;
+            await store.updateSettings({
+                epgEnabled: true,
+                epgUrl: ['https://example.org/latest-guide.xml'],
+            });
+            releaseDisable();
+            await disabling;
+            expect(reconcile).toHaveBeenLastCalledWith([
+                'https://example.org/latest-guide.xml',
+            ]);
+            expect(store.epgUrl()).toEqual([
+                'https://example.org/latest-guide.xml',
+            ]);
+            expect(injector.get(EpgPreferencesService).enabled()).toBe(true);
+        } finally {
+            releaseDisable();
+            window.electron = originalBridge;
+        }
+    });
+
+    it('keeps the committed EPG preference when persistence fails', async () => {
+        const store = injector.get(SettingsStore);
+        await store.loadSettings();
+        storage.set.mockReturnValue(new Subject<void>());
+        const pending = store.updateSettings({ epgEnabled: false });
+        expect(injector.get(EpgPreferencesService).enabled()).toBe(true);
+        const writing = storage.set.mock.results[0].value as Subject<void>;
+        writing.error(new Error('storage failed'));
+        await expect(pending).rejects.toThrow('storage failed');
+        expect(injector.get(EpgPreferencesService).enabled()).toBe(true);
+        expect(store.getSettings().epgEnabled).toBe(true);
+    });
+
+    it('preserves an explicit age-rating country across saved settings reloads', async () => {
+        storedSettings = { ageRatingCountry: 'DE' };
+        const store = injector.get(SettingsStore);
+        await store.loadSettings();
+        expect(store.getSettings().ageRatingCountry).toBe('DE');
+        await store.updateSettings({ theme: Theme.DarkTheme });
+        expect(storage.set).toHaveBeenLastCalledWith(
+            STORE_KEY.Settings,
+            expect.objectContaining({ ageRatingCountry: 'DE' })
+        );
+    });
+
+    it('migrates legacy Portuguese without losing unrelated settings', async () => {
+        storedSettings = {
+            language: 'pt' as Language,
+            theme: Theme.DarkTheme,
+            epgUrl: ['saved-guide'],
+        };
+        const store = injector.get(SettingsStore);
+        await store.loadSettings();
+        expect(store.language()).toBe('pt-BR');
+        expect(store.theme()).toBe(Theme.DarkTheme);
+        expect(store.epgUrl()).toEqual(['saved-guide']);
+        await store.updateSettings({ showDashboard: false });
+        expect(storage.set).toHaveBeenLastCalledWith(
+            STORE_KEY.Settings,
+            expect.objectContaining({
+                language: 'pt-BR',
+                theme: Theme.DarkTheme,
+                epgUrl: ['saved-guide'],
+            })
+        );
+        await store.updateSettings({ language: 'pt-PT' as Language });
+        expect(store.language()).toBe('pt-PT');
+    });
+
+    it.each([
+        'CREAM_THEME',
+        'MOCHA_THEME',
+        'NIGHT_OWL_THEME',
+        'BLACK_OLED_THEME',
+    ])(
+        'preserves saved theme %s through unrelated partial updates',
+        async (theme) => {
+            storedSettings = { theme: theme as Theme };
+            const store = injector.get(SettingsStore);
+            await store.loadSettings();
+            expect(store.theme()).toBe(theme);
+            await store.updateSettings({ showCaptions: true });
+            expect(storage.set).toHaveBeenLastCalledWith(
+                STORE_KEY.Settings,
+                expect.objectContaining({ theme })
+            );
+        }
+    );
+
+    it.each(['UNKNOWN_THEME', null, undefined])(
+        'normalizes invalid saved theme %p to System',
+        async (theme) => {
+            storedSettings = { theme: theme as unknown as Theme };
+            const store = injector.get(SettingsStore);
+            await store.loadSettings();
+            expect(store.theme()).toBe(Theme.SystemTheme);
+        }
+    );
+
+    it('normalizes an invalid theme update before persisting it', async () => {
+        const store = injector.get(SettingsStore);
+        await store.loadSettings();
+        await store.updateSettings({ theme: 'UNKNOWN_THEME' as Theme });
+        expect(store.theme()).toBe(Theme.SystemTheme);
+        expect(storage.set).toHaveBeenLastCalledWith(
+            STORE_KEY.Settings,
+            expect.objectContaining({ theme: Theme.SystemTheme })
+        );
+    });
+
+    it('reconciles only after persistence and restores the previous EPG list on a failed save', async () => {
+        storedSettings = { epgUrl: ['https://old.example/guide.xml'] };
+        const sources = injector.get(EpgSourceSettingsService);
+        const reconcile = jest
+            .spyOn(sources, 'synchronize')
+            .mockResolvedValue(undefined);
+        const store = injector.get(SettingsStore);
+        await store.loadSettings();
+        reconcile.mockClear();
+        const write = new Subject<void>();
+        storage.set.mockReturnValue(write);
+        const saving = store.updateSettings({ epgUrl: [] });
+        expect(reconcile).not.toHaveBeenCalled();
+        write.error(new Error('storage unavailable'));
+        await expect(saving).rejects.toThrow('storage unavailable');
+        expect(reconcile).not.toHaveBeenCalled();
+        expect(store.epgUrl()).toEqual(['https://old.example/guide.xml']);
+        storage.set.mockReturnValue(of(undefined));
+        await store.updateSettings({ epgUrl: [] });
+        expect(reconcile).toHaveBeenCalledWith([]);
+    });
+
+    it('never reconciles empty defaults after settings storage fails to load', async () => {
+        const pending = new Subject<unknown>();
+        storage.get.mockReturnValue(pending);
+        const reconcile = jest.spyOn(
+            injector.get(EpgSourceSettingsService),
+            'synchronize'
+        );
+        const store = injector.get(SettingsStore);
+        pending.error(new Error('cannot read settings'));
+        await store.loadSettings();
+        expect(reconcile).not.toHaveBeenCalled();
+    });
+
+    it('keeps persisted URLs authoritative when subsequent EPG cleanup fails', async () => {
+        const sources = injector.get(EpgSourceSettingsService);
+        const reconcile = jest
+            .spyOn(sources, 'synchronize')
+            .mockResolvedValue(undefined);
+        const store = injector.get(SettingsStore);
+        await store.loadSettings();
+        reconcile.mockRejectedValue(new Error('cleanup failed'));
+        await expect(
+            store.updateSettings({ epgUrl: ['new-source'] })
+        ).rejects.toThrow('cleanup failed');
+        expect(store.epgUrl()).toEqual(['new-source']);
+        expect(store.storageFailure()).toBeNull();
+        expect(storage.set).toHaveBeenLastCalledWith(
+            STORE_KEY.Settings,
+            expect.objectContaining({ epgUrl: ['new-source'] })
+        );
+    });
+
+    it.each([
+        { epgUrl: ['second', 'first'] },
+        { epgUrl: [' first ', 'second', 'first', ''] },
+    ])(
+        'persists unrelated settings without reconciling an unchanged normalized source set: %j',
+        async ({ epgUrl }) => {
+            storedSettings = { epgUrl: ['first', 'second'] };
+            const reconcile = jest
+                .spyOn(injector.get(EpgSourceSettingsService), 'synchronize')
+                .mockResolvedValue(undefined);
+            const store = injector.get(SettingsStore);
+            await store.loadSettings();
+            reconcile
+                .mockClear()
+                .mockRejectedValue(new Error('migration unavailable'));
+            await expect(
+                store.updateSettings({
+                    ...store.getSettings(),
+                    language: Language.FRENCH,
+                    epgUrl,
+                })
+            ).resolves.toBeUndefined();
+            expect(reconcile).not.toHaveBeenCalled();
+            expect(store.storageFailure()).toBeNull();
+            expect(storage.set).toHaveBeenLastCalledWith(
+                STORE_KEY.Settings,
+                expect.objectContaining({ language: Language.FRENCH })
+            );
+        }
+    );
+
+    it('keeps failed cleanup retryable only when an EPG save explicitly requests it', async () => {
+        storedSettings = { epgUrl: ['removed'] };
+        const reconcile = jest
+            .spyOn(injector.get(EpgSourceSettingsService), 'synchronize')
+            .mockResolvedValue(undefined);
+        const store = injector.get(SettingsStore);
+        await store.loadSettings();
+        reconcile.mockClear().mockRejectedValue(new Error('cleanup failed'));
+        await expect(store.updateSettings({ epgUrl: [] })).rejects.toThrow(
+            'cleanup failed'
+        );
+        reconcile.mockClear();
+        await expect(
+            store.updateSettings({
+                ...store.getSettings(),
+                language: Language.FRENCH,
+            })
+        ).resolves.toBeUndefined();
+        expect(reconcile).not.toHaveBeenCalled();
+        await expect(
+            store.updateSettings({ epgUrl: [] }, { retryEpgCleanup: true })
+        ).rejects.toThrow('cleanup failed');
+        reconcile.mockResolvedValue(undefined);
+        await store.updateSettings({ epgUrl: [] }, { retryEpgCleanup: true });
+        expect(reconcile).toHaveBeenCalledTimes(2);
+    });
+
+    it('defaults portal request pauses on and persists an explicit opt-out', async () => {
+        const store = injector.get(SettingsStore);
+        expect(store.getSettings().portalConnectivityGuard).toBe(true);
+        await store.updateSettings({ portalConnectivityGuard: false });
+        expect(store.getSettings().portalConnectivityGuard).toBe(false);
+    });
+
+    it('restores a portal pause opt-out and keeps it through partial updates', async () => {
+        storedSettings = { portalConnectivityGuard: false };
+        const store = injector.get(SettingsStore);
+        await store.loadSettings();
+        await store.updateSettings({ showCaptions: true });
+        expect(store.getSettings().portalConnectivityGuard).toBe(false);
+        expect(storage.set).toHaveBeenLastCalledWith(
+            STORE_KEY.Settings,
+            expect.objectContaining({ portalConnectivityGuard: false })
+        );
+    });
+
+    it('shares the pending initial settings load across startup waiters', async () => {
+        const pendingSettings = new Subject<Partial<Settings> | null>();
+        storage.get.mockReturnValue(pendingSettings.asObservable());
+        const store = injector.get(SettingsStore);
+
+        const firstWaiter = store.loadSettings();
+        const secondWaiter = store.loadSettings();
+        const allWaiters = Promise.all([firstWaiter, secondWaiter]);
+        let waitersResolved = false;
+        void allWaiters.then(() => {
+            waitersResolved = true;
+        });
+
+        await Promise.resolve();
+
+        expect(waitersResolved).toBe(false);
+        expect(store.getSettings().webPlayerSharedControls).toBe(true);
+
+        pendingSettings.next({ webPlayerSharedControls: false });
+        pendingSettings.complete();
+        await allWaiters;
+
+        expect(storage.get).toHaveBeenCalledTimes(1);
+        expect(firstWaiter).toBe(secondWaiter);
+        expect(waitersResolved).toBe(true);
+        expect(store.getSettings().webPlayerSharedControls).toBe(false);
+    });
+
+    it('retries the initial settings load after a storage error', async () => {
+        const failingSettings = new Subject<Partial<Settings> | null>();
+        storage.get
+            .mockReturnValueOnce(failingSettings.asObservable())
+            .mockReturnValueOnce(of({ webPlayerSharedControls: false }));
+        const consoleError = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+
+        try {
+            const store = injector.get(SettingsStore);
+            const initialLoad = store.loadSettings();
+
+            failingSettings.error(new Error('storage unavailable'));
+            await initialLoad;
+            await store.loadSettings();
+
+            expect(storage.get).toHaveBeenCalledTimes(2);
+            expect(store.getSettings().webPlayerSharedControls).toBe(false);
+        } finally {
+            consoleError.mockRestore();
+        }
+    });
+
+    it('uses enabled dashboard rail defaults when no settings are stored', async () => {
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().streamFormat).toBe('auto');
+        expect(store.getSettings().dashboardRails).toEqual(
+            expectedDashboardRails()
+        );
+    });
+
+    it('defaults shared web controls to true when the stored field is missing', async () => {
+        storedSettings = {};
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().webPlayerSharedControls).toBe(true);
+    });
+
+    it('restores a persisted false shared web controls opt-out', async () => {
+        storedSettings = {
+            webPlayerSharedControls: false,
+        };
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().webPlayerSharedControls).toBe(false);
+    });
+
+    it('defaults cover titles to shown when the stored field is missing', async () => {
+        storedSettings = {};
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().showCoverTitles).toBe(true);
+    });
+
+    it('restores a persisted posters-only opt-out and persists it back', async () => {
+        storedSettings = { showCoverTitles: false };
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+        expect(store.getSettings().showCoverTitles).toBe(false);
+
+        await store.updateSettings({ showCoverTitles: true });
+        expect(store.showCoverTitles?.()).toBe(true);
+        expect(storage.set).toHaveBeenLastCalledWith(
+            STORE_KEY.Settings,
+            expect.objectContaining({ showCoverTitles: true })
+        );
+
+        await store.updateSettings({
+            showCoverTitles: 'false' as unknown as boolean,
+        });
+        // Junk never opts out: only an explicit boolean false does.
+        expect(store.showCoverTitles?.()).toBe(true);
+    });
+
+    it('defaults embedded MPV auto-reconnect to true when the stored field is missing', async () => {
+        storedSettings = {};
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().embeddedMpvAutoReconnect).toBe(true);
+    });
+
+    it('restores a persisted false embedded MPV auto-reconnect opt-out', async () => {
+        storedSettings = { embeddedMpvAutoReconnect: false };
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().embeddedMpvAutoReconnect).toBe(false);
+    });
+
+    it('defaults strip country prefix to false when the stored field is missing', async () => {
+        storedSettings = {};
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().stripCountryPrefix).toBe(false);
+    });
+
+    it('defaults the startup window mode to normal when the stored field is missing', async () => {
+        storedSettings = {};
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().startupWindowMode).toBe('normal');
+    });
+
+    it('restores a persisted fullscreen startup window mode', async () => {
+        storedSettings = { startupWindowMode: 'fullscreen' };
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().startupWindowMode).toBe('fullscreen');
+    });
+
+    it('normalizes a persisted unknown startup window mode to normal', async () => {
+        storedSettings = {
+            startupWindowMode:
+                'kiosk' as unknown as Settings['startupWindowMode'],
+        };
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().startupWindowMode).toBe('normal');
+    });
+
+    it('defaults the EPG display offset to zero when the stored field is missing', async () => {
+        storedSettings = {};
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().epgOffsetMinutes).toBe(0);
+        expect(store.resolvedEpgOffsetMinutes()).toBe(0);
+    });
+
+    it('restores a persisted EPG display offset', async () => {
+        storedSettings = { epgOffsetMinutes: -90 };
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().epgOffsetMinutes).toBe(-90);
+        expect(store.resolvedEpgOffsetMinutes()).toBe(-90);
+    });
+
+    it('clamps a persisted out-of-range EPG display offset', async () => {
+        storedSettings = { epgOffsetMinutes: 5000 };
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.resolvedEpgOffsetMinutes()).toBe(720);
+    });
+
+    it('drops a persisted non-numeric EPG display offset', async () => {
+        storedSettings = { epgOffsetMinutes: 'soon' as unknown as number };
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.resolvedEpgOffsetMinutes()).toBe(0);
+    });
+
+    it('normalizes an updated EPG display offset before persisting it', async () => {
+        storedSettings = {};
+        const store = injector.get(SettingsStore);
+        await store.loadSettings();
+
+        await store.updateSettings({ epgOffsetMinutes: 61.7 });
+
+        expect(store.resolvedEpgOffsetMinutes()).toBe(61);
+        expect(storage.set).toHaveBeenLastCalledWith(
+            expect.any(String),
+            expect.objectContaining({ epgOffsetMinutes: 61 })
+        );
+    });
+
+    it('defaults ambient player mode to false when the stored field is missing', async () => {
+        storedSettings = {};
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().playerAmbientMode).toBe(false);
+    });
+
+    it('restores a persisted true ambient player mode preference', async () => {
+        storedSettings = { playerAmbientMode: true };
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().playerAmbientMode).toBe(true);
+    });
+
+    it('defaults the up next rail to true when the stored field is missing', async () => {
+        storedSettings = {};
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().playerUpNextRail).toBe(true);
+    });
+
+    it('restores a persisted false up next rail preference', async () => {
+        storedSettings = { playerUpNextRail: false };
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().playerUpNextRail).toBe(false);
+    });
+
+    it('defaults the up next card to true when the stored field is missing', async () => {
+        storedSettings = {};
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().playerUpNextCard).toBe(true);
+    });
+
+    it('restores a persisted false up next card preference', async () => {
+        storedSettings = { playerUpNextCard: false };
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().playerUpNextCard).toBe(false);
+    });
+
+    it('defaults the fullscreen channel panel to true when the stored field is missing', async () => {
+        storedSettings = {};
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().fullscreenChannelPanel).toBe(true);
+    });
+
+    it('restores a persisted false fullscreen channel panel preference', async () => {
+        storedSettings = { fullscreenChannelPanel: false };
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().fullscreenChannelPanel).toBe(false);
+    });
+
+    it('restores a persisted true strip country prefix preference', async () => {
+        storedSettings = {
+            stripCountryPrefix: true,
+        };
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        expect(store.getSettings().stripCountryPrefix).toBe(true);
+    });
+
+    it('normalizes a persisted non-boolean shared web controls value to the default', async () => {
+        storedSettings = {
+            webPlayerSharedControls: 'false' as unknown as boolean,
+        };
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+
+        // Only an explicit boolean false opts out; junk falls to the default.
+        expect(store.webPlayerSharedControls?.()).toBe(true);
+        expect(store.getSettings().webPlayerSharedControls).toBe(true);
+    });
+
+    it('persists an updated false shared web controls opt-out', async () => {
+        const store = injector.get(SettingsStore);
+
+        await store.updateSettings({
+            webPlayerSharedControls: false,
+        });
+
+        expect(store.webPlayerSharedControls?.()).toBe(false);
+        expect(storage.set).toHaveBeenCalledWith(
+            STORE_KEY.Settings,
+            expect.objectContaining({
+                webPlayerSharedControls: false,
+            })
+        );
+    });
+
+    it('serializes a malformed string shared web controls update as the default', async () => {
+        const store = injector.get(SettingsStore);
+
+        await store.updateSettings({
+            webPlayerSharedControls: 'false' as unknown as boolean,
+        });
+
+        expect(store.webPlayerSharedControls?.()).toBe(true);
+        expect(storage.set).toHaveBeenCalledWith(
+            STORE_KEY.Settings,
+            expect.objectContaining({
+                webPlayerSharedControls: true,
+            })
+        );
+    });
+
+    it('deep-merges partial stored dashboard rail settings with enabled defaults', async () => {
+        storedSettings = {
+            player: VideoPlayer.VideoJs,
+            streamFormat: StreamFormat.M3u8StreamFormat,
+            openStreamOnDoubleClick: false,
+            language: Language.ENGLISH,
+            showCaptions: false,
+            showDashboard: true,
+            startupBehavior: StartupBehavior.FirstView,
+            showExternalPlaybackBar: true,
+            theme: Theme.SystemTheme,
+            mpvPlayerPath: '',
+            mpvPlayerArguments: '',
+            mpvReuseInstance: false,
+            vlcPlayerPath: '',
+            vlcPlayerArguments: '',
+            vlcReuseInstance: false,
+            remoteControl: false,
+            remoteControlPort: 8765,
+            epgUrl: [],
+            dashboardRails: {
+                recentSources: false,
+            },
+        } as unknown as Partial<Settings>;
+
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+        await store.updateSettings({
+            dashboardRails: {
+                ...store.getSettings().dashboardRails,
+                liveFavorites: false,
+            },
+        });
+
+        expect(store.getSettings().dashboardRails).toEqual(
+            expectedDashboardRails({
+                liveFavorites: false,
+                recentSources: false,
+            })
+        );
+        expect(storage.set).toHaveBeenCalledWith(
+            STORE_KEY.Settings,
+            expect.objectContaining({
+                dashboardRails: expectedDashboardRails({
+                    liveFavorites: false,
+                    recentSources: false,
+                }),
+            })
+        );
+    });
+});
+
+describe('SettingsStore storage failure reporting', () => {
+    let injector: Injector;
+    let storage: {
+        get: jest.Mock;
+        set: jest.Mock;
+    };
+    let consoleError: jest.SpyInstance;
+
+    beforeEach(() => {
+        storage = {
+            get: jest.fn(() => of(null)),
+            set: jest.fn(() => of(undefined)),
+        };
+        consoleError = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+
+        injector = Injector.create({
+            providers: [
+                EpgPreferencesService,
+                SettingsStore,
+                EpgSourceSettingsService,
+                {
+                    provide: StorageMap,
+                    useValue: storage,
+                },
+            ],
+        });
+    });
+
+    afterEach(() => {
+        consoleError.mockRestore();
+    });
+
+    it('reports no failure while storage works', async () => {
+        const store = injector.get(SettingsStore);
+
+        await store.loadSettings();
+        await store.updateSettings({ language: Language.FRENCH });
+
+        expect(store.storageFailure()).toBeNull();
+    });
+
+    it('flags a failed initial load so defaults are not mistaken for saved values', async () => {
+        const failingSettings = new Subject<Partial<Settings> | null>();
+        storage.get.mockReturnValueOnce(failingSettings.asObservable());
+        const store = injector.get(SettingsStore);
+
+        const initialLoad = store.loadSettings();
+        failingSettings.error(new Error('storage unavailable'));
+        await initialLoad;
+
+        expect(store.storageFailure()).toBe('load');
+        expect(store.getSettings().language).toBe(Language.ENGLISH);
+    });
+
+    it('flags a failed save and rethrows instead of silently keeping the in-memory change', async () => {
+        storage.set.mockImplementationOnce(() => {
+            throw new Error('quota exceeded');
+        });
+        const store = injector.get(SettingsStore);
+        await store.loadSettings();
+
+        await expect(
+            store.updateSettings({ language: Language.FRENCH })
+        ).rejects.toThrow('quota exceeded');
+
+        expect(store.storageFailure()).toBe('save');
+        // The in-memory patch still applied — that is exactly why the flag
+        // matters: the UI shows French but nothing reached disk.
+        expect(store.getSettings().language).toBe(Language.FRENCH);
+    });
+
+    it('clears the failure once a later save succeeds', async () => {
+        storage.set.mockImplementationOnce(() => {
+            throw new Error('quota exceeded');
+        });
+        const store = injector.get(SettingsStore);
+        await store.loadSettings();
+
+        await expect(
+            store.updateSettings({ language: Language.FRENCH })
+        ).rejects.toThrow('quota exceeded');
+        expect(store.storageFailure()).toBe('save');
+
+        await store.updateSettings({ language: Language.GERMAN });
+
+        expect(store.storageFailure()).toBeNull();
+    });
+
+    it('clears a load failure once the retried load succeeds', async () => {
+        const failingSettings = new Subject<Partial<Settings> | null>();
+        storage.get
+            .mockReturnValueOnce(failingSettings.asObservable())
+            .mockReturnValueOnce(of({ language: Language.FRENCH }));
+        const store = injector.get(SettingsStore);
+
+        const initialLoad = store.loadSettings();
+        failingSettings.error(new Error('storage unavailable'));
+        await initialLoad;
+        expect(store.storageFailure()).toBe('load');
+
+        await store.loadSettings();
+
+        expect(store.storageFailure()).toBeNull();
+        expect(store.getSettings().language).toBe(Language.FRENCH);
+    });
+});

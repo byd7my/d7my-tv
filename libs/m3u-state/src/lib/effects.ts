@@ -1,0 +1,727 @@
+import { inject, Injectable } from '@angular/core';
+import { LazySnackBar } from '@iptvnator/services/lazy-snack-bar';
+import { Router } from '@angular/router';
+import { EpgService } from '@iptvnator/epg/data-access';
+import {
+    applyPlaylistEpgImportPreference,
+    isDashChannel,
+    isDashStreamUrl,
+    normalizeEpgUrls,
+} from '@iptvnator/shared/m3u-utils';
+import { Actions, createEffect, ofType } from '@ngrx/effects';
+import { Store } from '@ngrx/store';
+import { StorageMap } from '@ngx-pwa/local-storage';
+import { TranslateService } from '@ngx-translate/core';
+import {
+    EMPTY,
+    catchError,
+    concatMap,
+    defer,
+    filter,
+    firstValueFrom,
+    from,
+    map,
+    mergeMap,
+    of,
+    retry,
+    switchMap,
+    tap,
+    withLatestFrom,
+} from 'rxjs';
+import {
+    DataService,
+    EpgSourceSettingsService,
+    PlaylistsService,
+    SettingsStore,
+    RuntimeCapabilitiesService,
+    SplitAudioService,
+} from '@iptvnator/services';
+import {
+    getXtreamContentRoute,
+    OPEN_MPV_PLAYER,
+    OPEN_VLC_PLAYER,
+    Channel,
+    Playlist,
+    PlaylistMeta,
+    STORE_KEY,
+    VideoPlayer,
+} from '@iptvnator/shared/interfaces';
+import {
+    ChannelActions,
+    EpgActions,
+    FavoritesActions,
+    PlaylistActions,
+} from './actions';
+import {
+    selectActive,
+    selectActivePlaylist,
+    selectActivePlaylistId,
+    selectChannels,
+    selectFavorites,
+} from './selectors';
+import { resolveChannelEpgLookupKey } from './channel-epg-lookup.util';
+import {
+    buildExternalPlayerPayload,
+    type ExternalPlayerHeaderFallback,
+    shouldAutoLaunchExternalPlayer,
+} from './external-player-payload.util';
+import { resolvePlaylistScopedEpgFetchPlan } from './playlist-scoped-epg-fetch.util';
+import { resolveActiveEpgProgramAction } from './resolve-active-epg-program.util';
+import { persistPlaylistUpdate } from './playlist-update.effect-handler';
+
+@Injectable({ providedIn: 'any' })
+export class PlaylistEffects {
+    private actions$ = inject(Actions);
+    private playlistsService = inject(PlaylistsService);
+    private dataService = inject(DataService);
+    private splitAudio = inject(SplitAudioService);
+    private epgService = inject(EpgService);
+    private router = inject(Router);
+    private snackBar = inject(LazySnackBar);
+    private storage = inject(StorageMap);
+    private store = inject(Store);
+    private translate = inject(TranslateService);
+    private settingsStore = inject(SettingsStore);
+    private readonly runtime = inject(RuntimeCapabilitiesService);
+    private epgSources = inject(EpgSourceSettingsService);
+    private readonly playlistScopedEpgFetchKeys = new Map<string, string>();
+
+    updateFavorites$ = createEffect(
+        () => {
+            return this.actions$.pipe(
+                ofType(FavoritesActions.updateFavorites),
+                withLatestFrom(
+                    this.store.select(selectFavorites),
+                    this.store.select(selectActivePlaylistId)
+                ),
+                filter(([, , playlistId]) => !!playlistId),
+                // The toggle, applied to the favorites as stored at write
+                // time: another device's changes to other channels stay, also
+                // when a conflict makes the write run again on a fresh read.
+                mergeMap(([{ channel }, favorites, playlistId]) => {
+                    const added = favorites.includes(channel.url);
+                    return this.playlistsService.transformPlaylistFavorites(
+                        playlistId,
+                        (current) => {
+                            const others = current.filter(
+                                (favorite) => favorite !== channel.url
+                            );
+                            return added ? [...others, channel.url] : others;
+                        }
+                    );
+                }),
+                tap(() => {
+                    void this.snackBar.open(
+                        this.translate.instant('CHANNELS.FAVORITES_UPDATED'),
+                        undefined,
+                        { duration: 2000 }
+                    );
+                })
+            );
+        },
+        { dispatch: false }
+    );
+
+    setFavorites$ = createEffect(
+        () => {
+            return this.actions$.pipe(
+                ofType(FavoritesActions.setFavorites),
+                withLatestFrom(this.store.select(selectActivePlaylistId)),
+                filter(([, playlistId]) => !!playlistId),
+                // The new order, applied to the favorites as stored at write
+                // time: another device's additions stay, its removals hold.
+                mergeMap(([action, playlistId]) =>
+                    this.playlistsService.transformPlaylistFavorites(
+                        playlistId,
+                        (current) =>
+                            reorderFavorites(current, action.channelIds)
+                    )
+                )
+            );
+        },
+        {
+            dispatch: false,
+        }
+    );
+
+    resolveActiveEpgProgram$ = createEffect(() => {
+        return this.actions$.pipe(
+            ofType(EpgActions.setActiveEpgProgram),
+            withLatestFrom(this.store.select(selectActive)),
+            map(([action, activeChannel]) =>
+                resolveActiveEpgProgramAction(
+                    action.program,
+                    activeChannel,
+                    () =>
+                        void this.snackBar.open(
+                            this.translate.instant(
+                                'EPG.TIMELINE.CATCHUP_FAILED'
+                            ),
+                            undefined,
+                            { duration: 4000 }
+                        )
+                )
+            )
+        );
+    });
+
+    openArchivedPlayback$ = createEffect(
+        () => {
+            return this.actions$.pipe(
+                ofType(EpgActions.setActivePlaybackUrl),
+                withLatestFrom(
+                    this.store.select(selectActive),
+                    this.store.select(selectActivePlaylist)
+                ),
+                tap(([action, activeChannel, activePlaylist]) => {
+                    void this.openWithConfiguredExternalPlayer(
+                        action.playbackUrl,
+                        activeChannel,
+                        activePlaylist
+                    );
+                })
+            );
+        },
+        { dispatch: false }
+    );
+
+    returnToLivePlayback$ = createEffect(
+        () => {
+            return this.actions$.pipe(
+                ofType(EpgActions.returnToLivePlayback),
+                withLatestFrom(
+                    this.store.select(selectActive),
+                    this.store.select(selectActivePlaylist)
+                ),
+                filter(([, activeChannel]) => Boolean(activeChannel?.url)),
+                tap(([, activeChannel, activePlaylist]) => {
+                    void this.openWithConfiguredExternalPlayer(
+                        activeChannel?.url ?? '',
+                        activeChannel,
+                        activePlaylist
+                    );
+                })
+            );
+        },
+        { dispatch: false }
+    );
+
+    /** Lets the player bar offer "audio from another channel" for this one. */
+    splitAudioContext$ = createEffect(
+        () =>
+            this.actions$.pipe(
+                ofType(ChannelActions.setActiveChannel),
+                filter((action) => !!action.channel),
+                withLatestFrom(this.store.select(selectChannels)),
+                tap(([action, channels]) =>
+                    this.splitAudio.setContext({
+                        video: action.channel,
+                        channels,
+                    })
+                )
+            ),
+        { dispatch: false }
+    );
+
+    setActiveChannel$ = createEffect(() => {
+        return this.actions$.pipe(
+            ofType(ChannelActions.setActiveChannel),
+            // Skip the effect entirely when channel is falsy
+            filter((action) => !!action.channel),
+            withLatestFrom(this.store.select(selectActivePlaylist)),
+            map(([action, activePlaylist]) => {
+                const { channel } = action;
+
+                // Use modern EPG service to get channel programs
+                const channelId = resolveChannelEpgLookupKey(channel);
+                if (channelId) {
+                    this.epgService.getChannelPrograms(channelId);
+                }
+
+                void window.electron
+                    ?.setUserAgent(
+                        channel.http?.['user-agent'],
+                        channel.http?.referrer,
+                        channel.url
+                    )
+                    .catch((error: unknown) => {
+                        console.warn(
+                            '[PlaylistEffects] Failed to configure Electron request headers:',
+                            error
+                        );
+                    });
+
+                firstValueFrom(this.storage.get(STORE_KEY.Settings)).then(
+                    (settings: any) => {
+                        const payload = buildExternalPlayerPayload(
+                            channel,
+                            channel.url,
+                            activePlaylist
+                        );
+                        if (!payload) {
+                            return;
+                        }
+
+                        if (
+                            shouldAutoLaunchExternalPlayer(
+                                settings,
+                                action.startPlayback,
+                                channel,
+                                VideoPlayer.MPV
+                            )
+                        ) {
+                            this.dataService.sendIpcEvent(
+                                OPEN_MPV_PLAYER,
+                                this.withSplitAudio(payload)
+                            );
+                        } else if (
+                            shouldAutoLaunchExternalPlayer(
+                                settings,
+                                action.startPlayback,
+                                channel,
+                                VideoPlayer.VLC
+                            )
+                        ) {
+                            this.splitAudio.clear(); // VLC cannot mix two streams
+                            this.dataService.sendIpcEvent(
+                                OPEN_VLC_PLAYER,
+                                payload
+                            );
+                        }
+                    }
+                );
+
+                return ChannelActions.setActiveChannelSuccess({
+                    channel: action.channel,
+                });
+            })
+        );
+    });
+
+    loadPlaylists$ = createEffect(() => {
+        return this.actions$.pipe(
+            ofType(
+                PlaylistActions.loadPlaylists,
+                PlaylistActions.loadSharedPlaylists
+            ),
+            switchMap((action) =>
+                defer(() => this.playlistsService.getAllPlaylists()).pipe(
+                    // Recreate the storage request once for transient failures.
+                    // A final failure is state, not an empty source inventory.
+                    retry({ count: 1, delay: 300 }),
+                    switchMap((playlists) =>
+                        defer(async () => {
+                            // Settings can register initial cleanup after the
+                            // faster inventory read has already completed.
+                            await this.settingsStore.loadSettings();
+                            await this.epgSources.retryFailedReconciliation();
+                            return playlists;
+                        })
+                    ),
+                    tap((playlists) => {
+                        this.fetchPlaylistScopedEpgForPlaylists(playlists);
+                    }),
+                    map((playlists) =>
+                        PlaylistActions.loadPlaylistsSuccess({
+                            playlists,
+                            ...(action.type ===
+                            PlaylistActions.loadSharedPlaylists.type
+                                ? { authoritative: true }
+                                : {}),
+                        })
+                    ),
+                    catchError(() => of(PlaylistActions.loadPlaylistsFailure()))
+                )
+            )
+        );
+    });
+
+    private async openWithConfiguredExternalPlayer(
+        playbackUrl: string,
+        activeChannel: Channel | undefined | null,
+        activePlaylist?: ExternalPlayerHeaderFallback | null
+    ): Promise<void> {
+        if (isDashStreamUrl(playbackUrl) || isDashChannel(activeChannel)) {
+            return;
+        }
+
+        const payload = buildExternalPlayerPayload(
+            activeChannel,
+            playbackUrl,
+            activePlaylist
+        );
+        if (!payload) {
+            return;
+        }
+
+        const settings: any = await firstValueFrom(
+            this.storage.get(STORE_KEY.Settings)
+        );
+        if (!settings || Object.keys(settings).length === 0) {
+            return;
+        }
+
+        if (settings.player === VideoPlayer.MPV) {
+            this.dataService.sendIpcEvent(
+                OPEN_MPV_PLAYER,
+                this.withSplitAudio(payload)
+            );
+            return;
+        }
+
+        if (settings.player === VideoPlayer.VLC) {
+            this.splitAudio.clear();
+            this.dataService.sendIpcEvent(OPEN_VLC_PLAYER, payload);
+        }
+    }
+
+    /**
+     * Adds the "audio from another channel" request made from the channel
+     * list, if one is waiting. Taken once, so it only ever applies to the
+     * playback it was requested for.
+     */
+    private withSplitAudio<T extends object>(payload: T): T {
+        const override = this.splitAudio.take();
+        if (!override) {
+            return payload;
+        }
+        return {
+            ...payload,
+            audioUrl: override.streamUrl,
+            audioDelaySeconds: override.delaySeconds,
+        };
+    }
+
+    playlistRemovalCommitted$ = createEffect(
+        () =>
+            this.actions$.pipe(
+                ofType(PlaylistActions.playlistRemovalCommitted),
+                tap(({ playlistId }) =>
+                    this.playlistScopedEpgFetchKeys.delete(playlistId)
+                )
+            ),
+        { dispatch: false }
+    );
+
+    updatePlaylist$ = createEffect(
+        () => {
+            return this.actions$.pipe(
+                ofType(PlaylistActions.updatePlaylist),
+                switchMap((action) =>
+                    persistPlaylistUpdate(this.playlistsService, action).pipe(
+                        tap((persisted) =>
+                            this.publishRefresh(
+                                persisted,
+                                action.refreshEpg === true
+                            )
+                        )
+                    )
+                )
+            );
+        },
+        { dispatch: false }
+    );
+
+    parsePlaylist$ = createEffect(() => {
+        return this.actions$.pipe(
+            ofType(PlaylistActions.parsePlaylist),
+            mergeMap((action) =>
+                from(
+                    this.playlistsService
+                        .handlePlaylistParsing(
+                            action.uploadType,
+                            action.playlist,
+                            action.title,
+                            action.path
+                        )
+                        .then((playlist) =>
+                            applyPlaylistEpgImportPreference(
+                                playlist,
+                                action.autoImportEpg
+                            )
+                        )
+                )
+            ),
+            map((playlist) =>
+                PlaylistActions.addPlaylist({
+                    playlist,
+                })
+            )
+        );
+    });
+
+    // concatMap, not switchMap: every action carries a *different* playlist,
+    // so a newer one must never cancel the previous playlist's write. Under
+    // switchMap two adds in quick succession — the OS handing over several
+    // playlist files at once is the realistic case — dropped the first
+    // playlist's EPG fetch and navigation on the floor. Serialising also keeps
+    // the last-added playlist as the one that ends up active.
+    addPlaylist$ = createEffect(
+        () => {
+            return this.actions$.pipe(
+                ofType(
+                    PlaylistActions.addPlaylist,
+                    PlaylistActions.handleAddingPlaylistByUrl
+                ),
+                concatMap((action) => {
+                    if ('isTemporary' in action && action.isTemporary) {
+                        return EMPTY;
+                    }
+                    return this.playlistsService
+                        .addPlaylist(action.playlist)
+                        .pipe(
+                            tap((saved) => {
+                                const playlist = saved as Playlist;
+                                this.fetchPlaylistScopedEpg(playlist);
+                                this.navigateToPlaylist(playlist);
+                                if (playlist._id !== action.playlist._id) {
+                                    this.store.dispatch(
+                                        PlaylistActions.playlistRemovalCommitted(
+                                            { playlistId: action.playlist._id }
+                                        )
+                                    );
+                                }
+                                if (
+                                    playlist.sourceSyncBase ||
+                                    playlist._id !== action.playlist._id
+                                ) {
+                                    this.store.dispatch(
+                                        PlaylistActions.loadSharedPlaylists()
+                                    );
+                                }
+                            }),
+                            catchError(() => {
+                                this.store.dispatch(
+                                    PlaylistActions.playlistRemovalCommitted({
+                                        playlistId: action.playlist._id,
+                                    })
+                                );
+                                this.store.dispatch(
+                                    PlaylistActions.loadPlaylists()
+                                );
+                                return EMPTY;
+                            })
+                        );
+                })
+            );
+        },
+        { dispatch: false }
+    );
+
+    updatePlaylistMeta$ = createEffect(
+        () => {
+            return this.actions$.pipe(
+                ofType(PlaylistActions.updatePlaylistMeta),
+                tap((action) => {
+                    if (
+                        action.persist === false &&
+                        this.hasPlaylistScopedEpgSourceChange(action.playlist)
+                    ) {
+                        this.fetchPlaylistScopedEpg(action.playlist);
+                    }
+                }),
+                filter((action) => action.persist !== false),
+                switchMap((action) =>
+                    this.playlistsService
+                        .updatePlaylistMeta(action.playlist)
+                        .pipe(
+                            tap(() => {
+                                if (
+                                    this.hasPlaylistScopedEpgSourceChange(
+                                        action.playlist
+                                    )
+                                ) {
+                                    this.fetchPlaylistScopedEpg(
+                                        action.playlist
+                                    );
+                                }
+                            })
+                        )
+                )
+            );
+        },
+        { dispatch: false }
+    );
+
+    updatePlaylistPositions$ = createEffect(
+        () => {
+            return this.actions$.pipe(
+                ofType(PlaylistActions.updatePlaylistPositions),
+                switchMap((action) =>
+                    this.playlistsService.updatePlaylistPositions(
+                        action.positionUpdates
+                    )
+                )
+            );
+        },
+        { dispatch: false }
+    );
+
+    addManyPlaylists$ = createEffect(
+        () => {
+            return this.actions$.pipe(
+                ofType(PlaylistActions.addManyPlaylists),
+                switchMap((action) =>
+                    this.playlistsService.addManyPlaylists(action.playlists)
+                )
+            );
+        },
+        { dispatch: false }
+    );
+
+    updateManyPlaylists$ = createEffect(
+        () => {
+            return this.actions$.pipe(
+                ofType(PlaylistActions.updateManyPlaylists),
+                switchMap((action) =>
+                    this.playlistsService
+                        .updateManyPlaylists(action.playlists)
+                        .pipe(
+                            tap((persisted) => {
+                                persisted.forEach((playlist) =>
+                                    this.publishRefresh(playlist)
+                                );
+                            })
+                        )
+                )
+            );
+        },
+        { dispatch: false }
+    );
+
+    setAdjacentChannelAsActive$ = createEffect(() => {
+        return this.actions$.pipe(
+            ofType(ChannelActions.setAdjacentChannelAsActive),
+            withLatestFrom(
+                this.store.select(selectChannels),
+                this.store.select(selectActive)
+            ),
+            map(([action, channels, activeChannel]) => {
+                let adjacentChannel;
+                const index = channels.findIndex(
+                    (channel) => channel.id === activeChannel?.id
+                );
+                if (action.direction === 'next') {
+                    if (index === channels.length - 1)
+                        adjacentChannel = activeChannel;
+                    adjacentChannel = channels[index + 1];
+                } else if (action.direction === 'previous') {
+                    if (index === -1 || index === 0)
+                        adjacentChannel = activeChannel;
+                    adjacentChannel = channels[index - 1];
+                }
+                return ChannelActions.setActiveChannelSuccess({
+                    channel: adjacentChannel!,
+                });
+            })
+        );
+    });
+
+    private navigateToPlaylist(playlist: Playlist): void {
+        if (playlist.serverUrl) {
+            const section = this.runtime.supportsXtreamSqliteDataSource
+                ? getXtreamContentRoute(playlist.xtreamContentTypes)
+                : null;
+            void this.router.navigate([
+                '/workspace',
+                'xtreams',
+                playlist._id,
+                ...(section ? [section] : []),
+            ]);
+            return;
+        }
+
+        if (playlist.macAddress) {
+            void this.router.navigate(['/workspace', 'stalker', playlist._id]);
+            return;
+        }
+
+        void this.router.navigate(['/workspace', 'playlists', playlist._id]);
+    }
+
+    private publishRefresh(playlist: Playlist, force = false): void {
+        if (playlist.playlist)
+            this.store.dispatch(
+                PlaylistActions.hydrateSharedPlaylist({
+                    playlistId: playlist._id,
+                    playlist,
+                })
+            );
+        this.fetchPlaylistScopedEpg(playlist, { force });
+    }
+
+    private fetchPlaylistScopedEpg(
+        playlist: Pick<
+            Playlist,
+            '_id' | 'epgUrls' | 'macAddress' | 'manualEpgUrls' | 'serverUrl'
+        >,
+        options: { force?: boolean } = {}
+    ): void {
+        const plan = resolvePlaylistScopedEpgFetchPlan(
+            playlist,
+            this.getGlobalEpgUrls(),
+            this.playlistScopedEpgFetchKeys.get(playlist._id),
+            options
+        );
+        this.playlistScopedEpgFetchKeys.set(playlist._id, plan.key);
+
+        if (!plan.shouldFetch) {
+            return;
+        }
+
+        this.epgService.fetchEpg(plan.urls);
+    }
+
+    private hasPlaylistScopedEpgSourceChange(playlist: PlaylistMeta): boolean {
+        return (
+            Object.prototype.hasOwnProperty.call(playlist, 'epgUrls') ||
+            Object.prototype.hasOwnProperty.call(playlist, 'detectedEpgUrls') ||
+            Object.prototype.hasOwnProperty.call(playlist, 'manualEpgUrls') ||
+            Object.prototype.hasOwnProperty.call(playlist, 'disabledEpgUrls')
+        );
+    }
+
+    private fetchPlaylistScopedEpgForPlaylists(playlists: Playlist[]): void {
+        const epgUrls = new Set<string>();
+        const globalEpgUrls = this.getGlobalEpgUrls();
+
+        for (const playlist of playlists) {
+            const plan = resolvePlaylistScopedEpgFetchPlan(
+                playlist,
+                globalEpgUrls,
+                this.playlistScopedEpgFetchKeys.get(playlist._id)
+            );
+            this.playlistScopedEpgFetchKeys.set(playlist._id, plan.key);
+
+            if (!plan.shouldFetch) {
+                continue;
+            }
+
+            for (const url of plan.urls) {
+                epgUrls.add(url);
+            }
+        }
+
+        if (epgUrls.size > 0) {
+            this.epgService.fetchEpg(Array.from(epgUrls));
+        }
+    }
+
+    private getGlobalEpgUrls(): string[] {
+        return normalizeEpgUrls(this.settingsStore.getSettings().epgUrl ?? []);
+    }
+}
+
+/**
+ * `current` in the order of `order`: entries `order` no longer has stay out
+ * of its part, entries it never had (added elsewhere) follow it.
+ */
+export function reorderFavorites<T>(
+    current: readonly T[],
+    order: readonly T[]
+): T[] {
+    const present = new Set(current);
+    const ordered = order.filter((id) => present.has(id));
+    const placed = new Set(ordered);
+    return [...ordered, ...current.filter((id) => !placed.has(id))];
+}

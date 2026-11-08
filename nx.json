@@ -1,0 +1,196 @@
+{
+    "$schema": "./node_modules/nx/schemas/nx-schema.json",
+    "namedInputs": {
+        "default": [
+            "{projectRoot}/**/*",
+            "sharedGlobals"
+        ],
+        "production": [
+            "default",
+            "!{projectRoot}/.eslintrc.json",
+            "!{projectRoot}/eslint.config.mjs",
+            "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
+            "!{projectRoot}/tsconfig.spec.json",
+            "!{projectRoot}/jest.config.[jt]s",
+            "!{projectRoot}/src/test-setup.[jt]s",
+            "!{projectRoot}/test-setup.[jt]s"
+        ],
+        "sharedGlobals": [
+            "{workspaceRoot}/.github/workflows/ci.yml",
+            "{workspaceRoot}/.nvmrc",
+            {
+                "runtime": "node --version"
+            },
+            "{workspaceRoot}/package.json"
+        ]
+    },
+    "targetDefaults": {
+        "@angular/build:application": {
+            "cache": true,
+            "dependsOn": [
+                "^build"
+            ],
+            "inputs": [
+                "production",
+                "^production"
+            ]
+        },
+        "lint": {
+            "cache": true,
+            "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                "{workspaceRoot}/tools/eslint/**/*"
+            ]
+        },
+        "@nx/js:tsc": {
+            "cache": true,
+            "dependsOn": [
+                "^build"
+            ],
+            "inputs": [
+                "production",
+                "^production"
+            ]
+        },
+        "e2e-ci--src/*.e2e.ts": [
+            {
+                "filter": {
+                    "projects": [
+                        "electron-backend-e2e"
+                    ]
+                },
+                "dependsOn": [
+                    {
+                        "projects": [
+                            "electron-backend"
+                        ],
+                        "target": "build-e2e"
+                    }
+                ]
+            },
+            {
+                "filter": {
+                    "projects": [
+                        "web-e2e"
+                    ]
+                },
+                "dependsOn": []
+            },
+            {
+                "filter": {
+                    "projects": [
+                        "tv-e2e"
+                    ]
+                },
+                "dependsOn": [
+                    {
+                        "projects": [
+                            "tv",
+                            "tv-setup"
+                        ],
+                        "target": "build"
+                    }
+                ]
+            }
+        ],
+        "test": [
+            {
+                "filter": {
+                    "plugin": "@nx/jest/plugin"
+                },
+                "configurations": {
+                    "ci": {
+                        "ci": true,
+                        "coverage": true
+                    }
+                },
+                "options": {
+                    "passWithNoTests": true,
+                    "cwd": "{workspaceRoot}",
+                    "command": "jest --config {projectRoot}/jest.config.ts"
+                }
+            }
+        ]
+    },
+    "plugins": [
+        {
+            "plugin": "@nx/playwright/plugin",
+            "options": {
+                "targetName": "e2e",
+                "waitForWebServer": false
+            }
+        },
+        {
+            "plugin": "@nx/eslint/plugin",
+            "options": {
+                "targetName": "lint"
+            }
+        },
+        {
+            "plugin": "@nx/jest/plugin",
+            "options": {
+                "targetName": "test"
+            },
+            "include": [
+                "apps/electron-backend/**/*",
+                "apps/remote-control-web/**/*",
+                "apps/stalker-mock-server/**/*",
+                "apps/web-backend/**/*",
+                "apps/xtream-mock-server/**/*",
+                "libs/epg/data-access/**/*",
+                "libs/m3u-state/**/*",
+                "libs/playback/data-access/**/*",
+                "libs/playlist/import/feature/**/*",
+                "libs/playlist/shared/ui/**/*",
+                "libs/playlist/shared/util/**/*",
+                "libs/portal/catalog/feature/**/*",
+                "libs/portal/downloads/feature/**/*",
+                "libs/portal/shared/data-access/**/*",
+                "libs/portal/shared/ui/**/*",
+                "libs/portal/shared/util/**/*",
+                "libs/portal/stalker/data-access/**/*",
+                "libs/portal/stalker/feature/**/*",
+                "libs/portal/xtream/data-access/**/*",
+                "libs/portal/xtream/feature/**/*",
+                "libs/services/**/*",
+                "libs/shared/database/**/*",
+                "libs/shared/host-health/**/*",
+                "libs/shared/interfaces/**/*",
+                "libs/shared/logging/**/*",
+                "libs/shared/m3u-utils/**/*",
+                "libs/shared/marketing-fixtures/**/*",
+                "libs/shared/tmdb/**/*",
+                "libs/ui/remote-control/**/*",
+                "libs/ui/shared-portals/**/*",
+                "libs/workspace/dashboard/data-access/**/*",
+                "libs/workspace/dashboard/feature/**/*",
+                "libs/workspace/shell/feature/**/*",
+                "libs/workspace/shell/util/**/*"
+            ]
+        }
+    ],
+    "generators": {
+        "@nx/angular:application": {
+            "e2eTestRunner": "playwright",
+            "linter": "eslint",
+            "style": "scss",
+            "unitTestRunner": "jest"
+        },
+        "@nx/angular:library": {
+            "linter": "eslint",
+            "unitTestRunner": "jest"
+        },
+        "@nx/angular:component": {
+            "style": "scss"
+        }
+    },
+    "defaultProject": "web",
+    "analytics": false,
+    "affected": {
+        "legacy": true
+    }
+}

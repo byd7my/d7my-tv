@@ -1,0 +1,30 @@
+.web-player-view {
+    container-type: inline-size;
+    display: block;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+// The host owns DOM fullscreen (see `fullscreenSurface` in the component),
+// so the letterbox around a remounted player must be black, not app surface.
+.web-player-view:fullscreen {
+    background: #000;
+}
+
+app-art-player,
+app-embedded-mpv-player,
+app-vjs-player,
+app-html-video-player {
+    display: block;
+    height: 100%;
+}
+
+// Holds the player's space (black, no layout shift) for the one-frame gap
+// before a @defer (on immediate) player chunk resolves.
+.web-player-defer-placeholder {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #000;
+}

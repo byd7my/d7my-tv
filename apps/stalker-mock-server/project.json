@@ -1,0 +1,44 @@
+{
+    "name": "stalker-mock-server",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "projectType": "application",
+    "sourceRoot": "apps/stalker-mock-server/src",
+    "tags": ["scope:dev-tools", "domain:stalker", "type:dev-app"],
+    "targets": {
+        "serve": {
+            "continuous": true,
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "pnpm tsx --tsconfig tsconfig.base.json apps/stalker-mock-server/src/main.ts",
+                "cwd": "{workspaceRoot}",
+                "color": true,
+                "env": {
+                    "NODE_ENV": "development"
+                }
+            }
+        },
+        "serve-with-watch": {
+            "continuous": true,
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "pnpm tsx watch --tsconfig tsconfig.base.json apps/stalker-mock-server/src/main.ts",
+                "cwd": "{workspaceRoot}",
+                "color": true,
+                "env": {
+                    "NODE_ENV": "development"
+                }
+            }
+        },
+        "lint": {
+            "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                "{workspaceRoot}/tools/eslint/**/*"
+            ]
+        }
+    }
+}

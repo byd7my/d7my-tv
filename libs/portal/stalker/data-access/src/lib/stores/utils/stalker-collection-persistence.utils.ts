@@ -1,0 +1,77 @@
+import { Store } from '@ngrx/store';
+import { PlaylistActions } from '@iptvnator/m3u-state';
+import { PlaylistMeta, StalkerPortalItem } from '@iptvnator/shared/interfaces';
+import { firstNonBlankStalkerIdText } from '../../stalker-vod.utils';
+import {
+    StalkerContentType,
+    StalkerRecentlyViewedItem,
+} from '../stalker-store.contracts';
+
+export type StalkerCollectionPayload = StalkerPortalItem & {
+    cmd?: string;
+    cover?: string;
+    id?: string | number;
+    stream_id?: string | number;
+    title?: string;
+};
+
+export function resolveStalkerCategoryId(
+    value: unknown,
+    fallback: string
+): string {
+    const normalized = String(value ?? '').trim();
+    return normalized || fallback;
+}
+
+export function getStalkerSeriesRecentMetadata(
+    selectedContentType: StalkerContentType
+): {
+    category_id?: 'series';
+} {
+    if (selectedContentType !== 'series') {
+        return {};
+    }
+
+    return {
+        category_id: 'series',
+    };
+}
+
+export function buildStalkerRecentlyViewedPayload(
+    item: StalkerCollectionPayload,
+    selectedContentType: StalkerContentType
+): StalkerRecentlyViewedItem {
+    return {
+        ...item,
+        favoriteContentType: item.favoriteContentType ?? selectedContentType,
+        category_id: resolveStalkerCategoryId(
+            item.category_id,
+            selectedContentType
+        ),
+        ...getStalkerSeriesRecentMetadata(selectedContentType),
+        added_at: Date.now(),
+        id: firstNonBlankStalkerIdText(item.id, item.stream_id),
+        title: item.title ?? item.name ?? item.o_name ?? '',
+    };
+}
+
+export function dispatchStalkerPlaylistMetaUpdate(
+    ngrxStore: Store,
+    playlistId: string | undefined,
+    changes: Pick<PlaylistMeta, 'favorites' | 'recentlyViewed'>,
+    persist = true
+): void {
+    if (!playlistId) {
+        return;
+    }
+
+    ngrxStore.dispatch(
+        PlaylistActions.updatePlaylistMeta({
+            ...(persist ? {} : { persist: false }),
+            playlist: {
+                _id: playlistId,
+                ...changes,
+            } as PlaylistMeta,
+        })
+    );
+}

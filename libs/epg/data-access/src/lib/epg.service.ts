@@ -1,0 +1,288 @@
+import { inject, Injectable } from '@angular/core';
+import { LazySnackBar } from '@iptvnator/services/lazy-snack-bar';
+import { TranslateService } from '@ngx-translate/core';
+import { BehaviorSubject, from, Observable, of } from 'rxjs';
+import { catchError, map, tap, timeout } from 'rxjs/operators';
+import {
+    createDevLogger,
+    EpgChannelMetadata,
+    EpgProgram,
+    epgProviderClockMs,
+} from '@iptvnator/shared/interfaces';
+import {
+    EpgPreferencesService,
+    EpgSourceSettingsService,
+    SettingsStore,
+} from '@iptvnator/services';
+import {
+    EpgLookupOptions,
+    EpgRuntimeBridgeService,
+} from './epg-runtime-bridge.service';
+import { normalizeEpgPrograms } from './epg-program-normalization.util';
+import { EpgProgramCache } from './epg-program-cache';
+import { EpgLookupLoader } from './epg-lookup-loader';
+import type { EpgLookupContext } from './epg-lookup-context';
+import {
+    normalizeLookupChannelIds,
+    normalizeLookupSourceUrls,
+} from './epg-lookup-normalization.util';
+import { normalizeEpgUrls } from '@iptvnator/shared/m3u-utils';
+
+const debugEpgService = createDevLogger('EpgService');
+
+@Injectable({
+    providedIn: 'root',
+})
+export class EpgService {
+    private snackBar = inject(LazySnackBar);
+    private translate = inject(TranslateService);
+    private readonly epgBridge = inject(EpgRuntimeBridgeService);
+    private readonly settingsStore = inject(SettingsStore);
+    private readonly sourceSettings = inject(EpgSourceSettingsService);
+    private readonly epgPreferences = inject(EpgPreferencesService);
+
+    constructor() {
+        let wasEnabled = this.epgPreferences.enabled();
+        this.sourceSettings.changed$.subscribe(() => {
+            this.clearCache();
+            this.currentEpgPrograms.next([]);
+            const enabled = this.epgPreferences.enabled();
+            this.epgAvailable.next(enabled);
+            if (enabled && !wasEnabled) {
+                void this.fetchEpg(this.sourceSettings.getFetchableSourceUrls());
+            }
+            wasEnabled = enabled;
+        });
+    }
+
+    private epgAvailable = new BehaviorSubject<boolean>(false);
+    private currentEpgPrograms = new BehaviorSubject<EpgProgram[]>([]);
+
+    /** 60 s "currently airing" memory, keyed by scope + display offset. */
+    private readonly programCache = new EpgProgramCache(
+        () => this.epgOffsetMinutes(),
+        () => this.sourceSettings.guard()
+    );
+
+    /** The whole "what is on air" scope ladder, single channel or batch. */
+    private readonly lookupContext: EpgLookupContext = {
+        bridge: this.epgBridge,
+        cache: this.programCache,
+        guard: () => (source) =>
+            source.pipe(
+                this.sourceSettings.guard(),
+                this.epgPreferences.guard()
+            ),
+        offsetMinutes: () => this.epgOffsetMinutes(),
+        clockMs: () => this.epgClockMs(),
+        globalSourceUrls: (excluding) => this.getGlobalEpgSourceUrls(excluding),
+    };
+    private readonly lookups = new EpgLookupLoader(
+        this.lookupContext,
+        () => this.epgPreferences.enabled(),
+        () => this.sourceSettings.revision()
+    );
+
+    /** Display offset every "currently airing" decision in here is made with. */
+    private epgOffsetMinutes(): number {
+        return this.settingsStore.resolvedEpgOffsetMinutes();
+    }
+
+    /**
+     * Wall-clock now expressed in the provider's uncorrected EPG clock. Raw
+     * programme rows are compared against this instant, so the row picked
+     * as "now" is the one the UI also renders as "now" once it shifts the
+     * times for display (`epg-display-offset.util.ts`, clock form).
+     */
+    private epgClockMs(): number {
+        return epgProviderClockMs(Date.now(), this.epgOffsetMinutes());
+    }
+
+    readonly epgAvailable$ = this.epgAvailable.asObservable();
+    readonly currentEpgPrograms$ = this.currentEpgPrograms.asObservable();
+
+    /**
+     * Fetches EPG from the given URLs
+     */
+    async fetchEpg(urls: string[]): Promise<void> {
+        if (!this.epgBridge.supportsImport) return;
+
+        // Filter out empty and duplicate URLs and send all URLs at once.
+        const revision = this.sourceSettings.revision();
+        await this.settingsStore.loadSettings();
+        if (!this.epgPreferences.enabled()) return;
+        await this.sourceSettings.waitForReconciliation();
+        const validUrls = this.sourceSettings.retainCurrentSources(
+            normalizeEpgUrls(urls),
+            revision
+        );
+        if (validUrls.length === 0) return;
+
+        from(
+            this.epgBridge.fetchEpg(
+                validUrls,
+                this.settingsStore.getTrustOptions()
+            )
+        )
+            .pipe(
+                this.sourceSettings.guard(),
+                this.epgPreferences.guard(),
+                tap((result) => {
+                    if (result === null) return;
+
+                    if (result.success) {
+                        this.clearCache();
+                        this.epgAvailable.next(true);
+                    } else {
+                        this.epgAvailable.next(false);
+                        // With progress reporting, every failed source is a
+                        // row of the import panel, with its error and a
+                        // Retry; a toast would repeat the backend's text
+                        // beside that row. A runtime that imports without
+                        // reporting progress has no row, so it keeps the
+                        // generic toast.
+                        if (!this.epgBridge.supportsProgress) {
+                            this.showErrorSnackbar();
+                        }
+                    }
+                }),
+                catchError((err) => {
+                    console.error('EPG fetch error:', err);
+                    this.epgAvailable.next(false);
+                    this.showErrorSnackbar();
+                    return of(null);
+                })
+            )
+            .subscribe();
+    }
+
+    /**
+     * Gets EPG programs for a specific channel
+     */
+    getChannelPrograms(channelId: string): void {
+        if (
+            !this.epgPreferences.enabled() ||
+            !this.epgBridge.supportsProgramLookup
+        )
+            return;
+        debugEpgService('Fetching EPG for channel ID:', channelId);
+
+        from(this.epgBridge.getChannelPrograms(channelId))
+            .pipe(
+                this.sourceSettings.guard(),
+                this.epgPreferences.guard(),
+                timeout(3000),
+                map((programs) => normalizeEpgPrograms(programs ?? [])),
+                catchError((err) => {
+                    console.error('EPG get programs error:', err);
+                    this.showErrorSnackbar();
+                    this.currentEpgPrograms.next([]);
+                    this.epgAvailable.next(false);
+                    return of([]);
+                })
+            )
+            .subscribe((programs) => {
+                this.epgAvailable.next(programs.length > 0);
+                this.currentEpgPrograms.next(programs);
+            });
+    }
+
+    /**
+     * The generic EPG failure toast, for failures no import panel row
+     * reports (the bridge call itself, a programme lookup). Material's
+     * default bottom-centre position, as every other toast.
+     */
+    private showErrorSnackbar(): void {
+        void this.snackBar.open(
+            this.translate.instant('EPG.ERROR'),
+            this.translate.instant('CLOSE'),
+            { duration: 3000 }
+        );
+    }
+
+    /**
+     * Gets the current EPG program for a specific channel (with caching)
+     * @param channelId Channel ID (tvg-id or channel name)
+     * @returns Observable of current program or null
+     */
+    getCurrentProgramForChannel(
+        channelId: string,
+        options?: EpgLookupOptions
+    ): Observable<EpgProgram | null> {
+        if (
+            !this.epgPreferences.enabled() ||
+            !this.epgBridge.supportsProgramLookup ||
+            !channelId
+        ) {
+            return of(null);
+        }
+        return this.lookups.run(
+            ({ single }) => single.forChannel(channelId, options),
+            null
+        );
+    }
+
+    /**
+     * Gets current programs for multiple channels (batch operation)
+     * @param channelIds Array of channel IDs
+     * @returns Observable of Map with channelId -> current program
+     */
+    getCurrentProgramsForChannels(
+        channelIds: string[],
+        options?: EpgLookupOptions
+    ): Observable<Map<string, EpgProgram | null>> {
+        if (
+            !this.epgPreferences.enabled() ||
+            !this.epgBridge.supportsProgramLookup
+        ) {
+            return of(new Map());
+        }
+        if (!channelIds || channelIds.length === 0) {
+            return of(new Map());
+        }
+        return this.lookups.run(
+            ({ current }) => current.forChannels(channelIds, options),
+            new Map<string, EpgProgram | null>()
+        );
+    }
+
+    getChannelMetadataForChannels(
+        channelIds: string[],
+        options?: EpgLookupOptions
+    ): Observable<Map<string, EpgChannelMetadata | null>> {
+        if (
+            !this.epgPreferences.enabled() ||
+            !this.epgBridge.supportsChannelMetadata
+        ) {
+            return of(new Map());
+        }
+
+        const normalizedChannelIds = normalizeLookupChannelIds(channelIds);
+        if (normalizedChannelIds.length === 0) {
+            return of(new Map());
+        }
+
+        return this.lookups.run(
+            ({ metadata }) =>
+                metadata.forChannels(
+                    normalizedChannelIds,
+                    normalizeLookupSourceUrls(options)
+                ),
+            new Map<string, EpgChannelMetadata | null>()
+        );
+    }
+
+    private getGlobalEpgSourceUrls(excluding: string[] = []): string[] {
+        const excludedUrls = new Set(excluding);
+        return normalizeEpgUrls(
+            this.settingsStore.getSettings().epgUrl ?? []
+        ).filter((url) => !excludedUrls.has(url));
+    }
+
+    /**
+     * Clears the program cache (useful when EPG is refreshed)
+     */
+    clearCache(): void {
+        this.programCache.clear();
+    }
+}

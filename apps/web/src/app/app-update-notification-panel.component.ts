@@ -1,0 +1,116 @@
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    OnDestroy,
+    OnInit,
+    signal,
+} from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
+import {
+    ELECTRON_BRIDGE_APP_UPDATE_STATUSES,
+    ElectronBridgeAppUpdateStatus,
+} from '@iptvnator/shared/interfaces';
+import { AppUpdateNotificationCardComponent } from './app-update-notification-card.component';
+import { PwaUpdateNotificationComponent } from './pwa-update-notification.component';
+import { shouldEnableServiceWorker } from './services/runtime-config';
+
+/**
+ * Follows the main process's update status and shows the notification card
+ * once an update is available. The panel is mounted on every launch, so the
+ * card and its Material buttons, icons and dialog load with the first
+ * notification instead of with the app. Should that chunk fail to load, a
+ * notice points at the settings, where the update can still be installed.
+ */
+@Component({
+    selector: 'app-update-notification-panel',
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        AppUpdateNotificationCardComponent,
+        PwaUpdateNotificationComponent,
+        TranslatePipe,
+    ],
+    template: `
+        @defer (when visibleStatus()) {
+            @if (visibleStatus(); as current) {
+                <app-update-notification-card
+                    [status]="current"
+                    (statusChange)="status.set($event)"
+                    (dismissed)="dismiss()"
+                />
+            }
+        } @error {
+            @if (visibleStatus()) {
+                <div class="app-update-notification-unavailable" role="alert">
+                    {{ 'SETTINGS.APP_UPDATE_PANEL_UNAVAILABLE' | translate }}
+                </div>
+            }
+        }
+        @defer (when browserUpdates) {
+            <app-pwa-update-notification />
+        } @error {
+            <div class="app-update-notification-unavailable" role="alert">
+                {{ 'PWA_RELOAD_REQUIRED' | translate }}
+                <a href="" (click)="$event.preventDefault(); reloadWindow()">
+                    {{ 'REFRESH' | translate }}
+                </a>
+            </div>
+        }
+    `,
+    styleUrl: './app-update-notification-panel.component.scss',
+})
+export class AppUpdateNotificationPanelComponent implements OnInit, OnDestroy {
+    readonly browserUpdates = shouldEnableServiceWorker();
+    reloadWindow = () => window.location.reload();
+    private unsubscribeStatus: (() => void) | null = null;
+
+    readonly status = signal<ElectronBridgeAppUpdateStatus | null>(null);
+    readonly dismissedVersion = signal<string | null>(null);
+    readonly isVisible = computed(() => {
+        const status = this.status();
+
+        if (!status?.latestVersion) {
+            return false;
+        }
+
+        if (this.dismissedVersion() === status.latestVersion) {
+            return false;
+        }
+
+        return (
+            status.status === ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Available ||
+            status.status === ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Checking ||
+            status.status === ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Error ||
+            status.status === ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Downloading ||
+            status.status === ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Downloaded
+        );
+    });
+    /** The status the card shows, or null while there is nothing to show. */
+    readonly visibleStatus = computed(() =>
+        this.isVisible() ? this.status() : null
+    );
+
+    ngOnInit(): void {
+        if (!window.electron?.getAppUpdateStatus) {
+            return;
+        }
+
+        this.unsubscribeStatus =
+            window.electron.onAppUpdateStatusChange?.((status) => {
+                this.status.set(status);
+            }) ?? null;
+
+        void window.electron.getAppUpdateStatus().then((status) => {
+            this.status.set(status);
+        });
+    }
+
+    ngOnDestroy(): void {
+        this.unsubscribeStatus?.();
+        this.unsubscribeStatus = null;
+    }
+
+    dismiss(): void {
+        this.dismissedVersion.set(this.status()?.latestVersion ?? null);
+    }
+}

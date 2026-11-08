@@ -1,0 +1,501 @@
+import { TestBed } from '@angular/core/testing';
+import { DataService, EpgPreferencesService } from '@iptvnator/services';
+import { XTREAM_REQUEST } from '@iptvnator/shared/interfaces';
+import { XtreamApiService, XtreamCredentials } from './xtream-api.service';
+
+describe('XtreamApiService', () => {
+    let service: XtreamApiService;
+    let dataService: {
+        sendIpcEvent: jest.Mock<Promise<unknown>, [string, unknown]>;
+    };
+
+    const credentials: XtreamCredentials = {
+        serverUrl: 'http://demo.example',
+        username: 'demo',
+        password: 'secret',
+    };
+
+    beforeEach(() => {
+        dataService = {
+            sendIpcEvent: jest.fn(),
+        };
+
+        TestBed.configureTestingModule({
+            providers: [
+                XtreamApiService,
+                { provide: DataService, useValue: dataService },
+            ],
+        });
+
+        service = TestBed.inject(XtreamApiService);
+    });
+
+    it('passes browser cancellation outside the serializable request payload', async () => {
+        const signal = new AbortController().signal;
+        dataService.sendIpcEvent.mockResolvedValue({ payload: [] });
+        await service.getCategories(credentials, 'live', { signal });
+        expect(dataService.sendIpcEvent).toHaveBeenCalledWith(
+            XTREAM_REQUEST, expect.not.objectContaining({ signal }), signal
+        );
+        expect(dataService.sendIpcEvent.mock.calls[0][1]).not.toHaveProperty('signal');
+    });
+
+    describe.each(['live', 'vod', 'series'] as const)(
+        '%s catalog validation',
+        (type) => {
+            it.each([
+                { user_info: { auth: 0 } },
+                { error: 'Unavailable' },
+                null,
+                '<html>Failure</html>',
+            ])('rejects a non-array catalog response: %j', async (payload) => {
+                dataService.sendIpcEvent.mockResolvedValue({ payload });
+                await expect(
+                    service.getCategories(credentials, type)
+                ).rejects.toThrow('catalog');
+                await expect(
+                    service.getStreams(
+                        credentials,
+                        type === 'vod' ? 'movie' : type
+                    )
+                ).rejects.toThrow('catalog');
+            });
+
+            it('accepts a genuine empty catalog', async () => {
+                dataService.sendIpcEvent.mockResolvedValue({ payload: [] });
+                await expect(
+                    service.getCategories(credentials, type)
+                ).resolves.toEqual([]);
+                await expect(
+                    service.getStreams(
+                        credentials,
+                        type === 'vod' ? 'movie' : type
+                    )
+                ).resolves.toEqual([]);
+            });
+        }
+    );
+
+    it('skips every EPG endpoint while disabled but keeps catalog requests working', async () => {
+        await TestBed.inject(EpgPreferencesService).apply(false);
+        expect(await service.getShortEpg(credentials, 101)).toEqual([]);
+        expect(await service.getFullEpg(credentials, 101)).toEqual([]);
+        expect(dataService.sendIpcEvent).not.toHaveBeenCalled();
+        dataService.sendIpcEvent.mockResolvedValue({ payload: [] });
+        await service.getCategories(credentials, 'live');
+        expect(dataService.sendIpcEvent).toHaveBeenCalledTimes(1);
+    });
+
+    it('forwards the connection User-Agent on account variants and catalog requests', async () => {
+        dataService.sendIpcEvent.mockResolvedValueOnce({
+            type: 'ERROR',
+            message: 'blocked',
+        });
+        dataService.sendIpcEvent.mockResolvedValueOnce({
+            payload: { user_info: { auth: 1 } },
+        });
+        const custom = {
+            ...credentials,
+            userAgent:
+                ' Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ',
+        };
+        await service.getAccountInfo(custom);
+        dataService.sendIpcEvent.mockResolvedValue({ payload: [] });
+        await service.getCategories(custom, 'live');
+        expect(dataService.sendIpcEvent).toHaveBeenCalledTimes(3);
+        for (const [, payload] of dataService.sendIpcEvent.mock.calls) {
+            expect(payload).toMatchObject({
+                userAgent:
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            });
+            expect(payload).toHaveProperty('params');
+            expect((payload as { params: unknown }).params).not.toHaveProperty(
+                'userAgent'
+            );
+        }
+    });
+
+    it('normalizes account-info server URLs and trims credentials before IPC', async () => {
+        dataService.sendIpcEvent.mockResolvedValue({
+            payload: {
+                user_info: {
+                    auth: 1,
+                    exp_date: '0',
+                    status: 'Active',
+                },
+                server_info: {},
+            },
+        });
+
+        await service.getAccountInfo({
+            serverUrl:
+                ' https://demo.example/base/player_api.php?username=old&password=old ',
+            username: ' demo ',
+            password: ' secret ',
+        });
+
+        expect(dataService.sendIpcEvent).toHaveBeenCalledWith(
+            XTREAM_REQUEST,
+            expect.objectContaining({
+                url: 'https://demo.example/base',
+                params: {
+                    action: 'get_account_info',
+                    password: 'secret',
+                    username: 'demo',
+                },
+            })
+        );
+    });
+
+    it('falls back through Xtream account actions until user_info is returned', async () => {
+        dataService.sendIpcEvent.mockImplementation(
+            async (_type: string, payload: unknown) => {
+                const action = (
+                    payload as {
+                        params: { action?: string };
+                    }
+                ).params.action;
+
+                if (action === 'get_profile') {
+                    return {
+                        payload: {
+                            user_info: {
+                                auth: 1,
+                                exp_date: '0',
+                                status: 'Active',
+                            },
+                            server_info: {},
+                        },
+                    };
+                }
+
+                return { payload: { server_info: {} } };
+            }
+        );
+
+        const response = await service.getAccountInfo(credentials);
+
+        expect(response.user_info.auth).toBe(1);
+        expect(dataService.sendIpcEvent).toHaveBeenCalledTimes(3);
+        expect(dataService.sendIpcEvent).toHaveBeenNthCalledWith(
+            2,
+            XTREAM_REQUEST,
+            expect.objectContaining({
+                params: {
+                    password: 'secret',
+                    username: 'demo',
+                },
+            })
+        );
+        expect(dataService.sendIpcEvent).toHaveBeenNthCalledWith(
+            3,
+            XTREAM_REQUEST,
+            expect.objectContaining({
+                params: {
+                    action: 'get_profile',
+                    password: 'secret',
+                    username: 'demo',
+                },
+            })
+        );
+    });
+
+    it('loads one VOD catalog item from its category', async () => {
+        dataService.sendIpcEvent.mockResolvedValue({
+            payload: [
+                {
+                    stream_id: 41,
+                    category_id: '7',
+                    container_extension: 'mkv',
+                },
+                {
+                    stream_id: 42,
+                    category_id: '7',
+                    container_extension: 'mp4',
+                },
+            ],
+        });
+
+        const item = await service.getVodStream(credentials, 42, 7);
+
+        expect(item).toEqual(
+            expect.objectContaining({
+                stream_id: 42,
+                container_extension: 'mp4',
+            })
+        );
+        expect(dataService.sendIpcEvent).toHaveBeenCalledWith(
+            XTREAM_REQUEST,
+            expect.objectContaining({
+                params: {
+                    action: 'get_vod_streams',
+                    category_id: '7',
+                    password: 'secret',
+                    username: 'demo',
+                },
+            })
+        );
+    });
+
+    it('falls back to the legacy full-epg action and normalizes the response', async () => {
+        dataService.sendIpcEvent.mockImplementation(
+            async (_type: string, payload: unknown) => {
+                const action = (
+                    payload as {
+                        params: { action: string };
+                    }
+                ).params.action;
+
+                if (action === 'get_simple_data_table') {
+                    return { payload: { epg_listings: [] } };
+                }
+
+                return {
+                    payload: {
+                        epg_listings: [
+                            {
+                                id: 'later',
+                                epg_id: 'channel-101.mock',
+                                title: Buffer.from('Later Show').toString(
+                                    'base64'
+                                ),
+                                description:
+                                    Buffer.from('Later description').toString(
+                                        'base64'
+                                    ),
+                                start: '2026-04-04 11:00:00',
+                                end: '2026-04-04 11:30:00',
+                                start_timestamp: '1775300400',
+                                stop_timestamp: '1775302200',
+                                channel_id: 'channel-101.mock',
+                            },
+                            {
+                                id: 'current',
+                                epg_id: 'channel-101.mock',
+                                title: Buffer.from('Current Show').toString(
+                                    'base64'
+                                ),
+                                description: Buffer.from(
+                                    'Current description'
+                                ).toString('base64'),
+                                start: '2026-04-04 10:30:00',
+                                end: '2026-04-04 11:00:00',
+                                start_timestamp: '1775298600',
+                                stop_timestamp: '1775300400',
+                                channel_id: 'channel-101.mock',
+                            },
+                        ],
+                    },
+                };
+            }
+        );
+
+        const items = await service.getFullEpg(credentials, 101);
+
+        expect(dataService.sendIpcEvent).toHaveBeenNthCalledWith(
+            1,
+            XTREAM_REQUEST,
+            expect.objectContaining({
+                url: 'http://demo.example',
+                params: expect.objectContaining({
+                    action: 'get_simple_data_table',
+                    stream_id: '101',
+                    username: 'demo',
+                    password: 'secret',
+                }),
+            })
+        );
+        expect(dataService.sendIpcEvent).toHaveBeenNthCalledWith(
+            2,
+            XTREAM_REQUEST,
+            expect.objectContaining({
+                params: expect.objectContaining({
+                    action: 'get_simple_date_table',
+                }),
+            })
+        );
+        expect(items).toHaveLength(2);
+        expect(items.map((item) => item.title)).toEqual([
+            'Current Show',
+            'Later Show',
+        ]);
+        expect(items[0]).toEqual(
+            expect.objectContaining({
+                description: 'Current description',
+                start: '2026-04-04T10:30:00.000Z',
+                stop: '2026-04-04T11:00:00.000Z',
+                start_timestamp: '1775298600',
+                stop_timestamp: '1775300400',
+            })
+        );
+    });
+
+    it('normalizes short epg items from unix timestamps for display', async () => {
+        const startTimestamp = Math.floor(
+            Date.parse('2026-04-05T05:30:00.000Z') / 1000
+        );
+        const stopTimestamp = Math.floor(
+            Date.parse('2026-04-05T06:00:00.000Z') / 1000
+        );
+
+        dataService.sendIpcEvent.mockResolvedValue({
+            payload: {
+                epg_listings: [
+                    {
+                        id: 'current',
+                        epg_id: 'channel-101.mock',
+                        title: Buffer.from('Current Show').toString('base64'),
+                        description: Buffer.from(
+                            'Current description'
+                        ).toString('base64'),
+                        start: '2026-04-05 03:00:00',
+                        end: '2026-04-05 03:30:00',
+                        start_timestamp: String(startTimestamp),
+                        stop_timestamp: String(stopTimestamp),
+                        channel_id: 'channel-101.mock',
+                    },
+                ],
+            },
+        });
+
+        const items = await service.getShortEpg(credentials, 101, 4);
+
+        expect(items).toEqual([
+            expect.objectContaining({
+                title: 'Current Show',
+                description: 'Current description',
+                start: '2026-04-05T05:30:00.000Z',
+                stop: '2026-04-05T06:00:00.000Z',
+                start_timestamp: String(startTimestamp),
+                stop_timestamp: String(stopTimestamp),
+            }),
+        ]);
+    });
+
+    it('falls back to parsed short epg date strings when unix timestamps are absent', async () => {
+        const rawStart = '2026-04-05 03:00:00';
+        const rawStop = '2026-04-05 03:30:00';
+
+        dataService.sendIpcEvent.mockResolvedValue({
+            payload: {
+                epg_listings: [
+                    {
+                        id: 'current',
+                        epg_id: 'channel-101.mock',
+                        title: Buffer.from('Current Show').toString('base64'),
+                        description: Buffer.from(
+                            'Current description'
+                        ).toString('base64'),
+                        start: rawStart,
+                        end: rawStop,
+                        channel_id: 'channel-101.mock',
+                    },
+                ],
+            },
+        });
+
+        const items = await service.getShortEpg(credentials, 101, 4);
+
+        expect(items).toEqual([
+            expect.objectContaining({
+                start: new Date(rawStart.replace(' ', 'T')).toISOString(),
+                stop: new Date(rawStop.replace(' ', 'T')).toISOString(),
+                start_timestamp: '',
+                stop_timestamp: '',
+            }),
+        ]);
+    });
+
+    it('reads timestamp-less epg date strings in the server timezone the credentials carry (issue #1562)', async () => {
+        // A panel at UTC+3 wrote 22:30 for 19:30 UTC; the viewer's clock
+        // must not enter the conversion.
+        const listing = {
+            id: 'current',
+            epg_id: 'channel-101.mock',
+            title: Buffer.from('Current Show').toString('base64'),
+            description: '',
+            start: '2026-09-06 22:30:00',
+            end: '2026-09-06 23:00:00',
+            channel_id: 'channel-101.mock',
+        };
+        dataService.sendIpcEvent.mockResolvedValue({
+            payload: { epg_listings: [listing] },
+        });
+
+        const shortItems = await service.getShortEpg(
+            { ...credentials, serverTimezone: 'UTC+03:00' },
+            101,
+            4
+        );
+        const fullItems = await service.getFullEpg(
+            { ...credentials, serverTimezone: 'Europe/Moscow' },
+            101
+        );
+
+        expect(shortItems[0]).toEqual(
+            expect.objectContaining({
+                start: '2026-09-06T19:30:00.000Z',
+                stop: '2026-09-06T20:00:00.000Z',
+            })
+        );
+        expect(fullItems[0]).toEqual(
+            expect.objectContaining({
+                start: '2026-09-06T19:30:00.000Z',
+                stop: '2026-09-06T20:00:00.000Z',
+            })
+        );
+    });
+
+    it('normalizes short and full epg items consistently for the same timestamps', async () => {
+        const startTimestamp = Math.floor(
+            Date.parse('2026-04-05T05:30:00.000Z') / 1000
+        );
+        const stopTimestamp = Math.floor(
+            Date.parse('2026-04-05T06:00:00.000Z') / 1000
+        );
+
+        dataService.sendIpcEvent.mockImplementation(
+            async (_type: string, payload: unknown) => {
+                const action = (
+                    payload as {
+                        params: { action: string };
+                    }
+                ).params.action;
+
+                const listing = {
+                    id: 'current',
+                    epg_id: 'channel-101.mock',
+                    title: Buffer.from('Current Show').toString('base64'),
+                    description: Buffer.from('Current description').toString(
+                        'base64'
+                    ),
+                    start: '2026-04-05 03:00:00',
+                    end: '2026-04-05 03:30:00',
+                    start_timestamp: String(startTimestamp),
+                    stop_timestamp: String(stopTimestamp),
+                    channel_id: 'channel-101.mock',
+                };
+
+                if (action === 'get_short_epg') {
+                    return { payload: { epg_listings: [listing] } };
+                }
+
+                return {
+                    payload: {
+                        epg_listings: [listing],
+                    },
+                };
+            }
+        );
+
+        const shortItems = await service.getShortEpg(credentials, 101, 4);
+        const fullItems = await service.getFullEpg(credentials, 101);
+
+        expect(shortItems[0].start).toBe(fullItems[0].start);
+        expect(shortItems[0].stop).toBe(fullItems[0].stop);
+        expect(shortItems[0].start_timestamp).toBe(
+            fullItems[0].start_timestamp
+        );
+        expect(shortItems[0].stop_timestamp).toBe(fullItems[0].stop_timestamp);
+    });
+});

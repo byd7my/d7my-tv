@@ -1,0 +1,30 @@
+{
+    "name": "shared-host-health",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/shared/host-health/src",
+    "projectType": "library",
+    "tags": ["scope:shared", "domain:shared-runtime", "type:util"],
+    "targets": {
+        "build": {
+            "executor": "@nx/js:tsc",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/libs/shared/host-health",
+                "main": "libs/shared/host-health/src/index.ts",
+                "tsConfig": "libs/shared/host-health/tsconfig.lib.json",
+                "assets": []
+            }
+        },
+        "lint": {
+            "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                "{workspaceRoot}/tools/eslint/**/*"
+            ]
+        }
+    }
+}

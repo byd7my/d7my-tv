@@ -1,0 +1,320 @@
+{
+    "compileOnSave": false,
+    "compilerOptions": {
+        "rootDir": ".",
+        "sourceMap": true,
+        "declaration": false,
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "isolatedModules": true,
+        "importHelpers": true,
+        "target": "es2015",
+        "module": "esnext",
+        "lib": ["es2020", "dom"],
+        "skipLibCheck": true,
+        "skipDefaultLibCheck": true,
+        "baseUrl": ".",
+        "paths": {
+            "@iptvnator/shared/interfaces/history-sync": [
+                "libs/shared/interfaces/src/history-sync.ts"
+            ],
+            "@iptvnator/shared/database/history-sync": [
+                "libs/shared/database/src/history-sync.ts"
+            ],
+            "@iptvnator/services/history-sync": [
+                "libs/services/src/history-sync.ts"
+            ],
+            "@iptvnator/services/history-events": [
+                "libs/services/src/history-events.ts"
+            ],
+            "@iptvnator/shared/tmdb": ["libs/shared/tmdb/src/index.ts"],
+            "@iptvnator/shared/tmdb/credits": [
+                "libs/shared/tmdb/src/lib/tmdb-credits.ts"
+            ],
+            "@iptvnator/shared/tmdb/season": [
+                "libs/shared/tmdb/src/lib/tmdb-season-client.ts"
+            ],
+            "@iptvnator/shared/tmdb/matcher": [
+                "libs/shared/tmdb/src/lib/tmdb-matcher.ts"
+            ],
+            "@iptvnator/shared/epg": ["libs/shared/epg/src/index.ts"],
+            "@iptvnator/portal/catalog/feature": [
+                "libs/portal/catalog/feature/src/index.ts"
+            ],
+            "@iptvnator/portal/downloads/feature": [
+                "libs/portal/downloads/feature/src/index.ts"
+            ],
+            "@iptvnator/portal/shared/ui": [
+                "libs/portal/shared/ui/src/index.ts"
+            ],
+            "@iptvnator/portal/shared/ui/global-favorites-list": [
+                "libs/portal/shared/ui/src/lib/components/global-favorites-list/global-favorites-list.component.ts"
+            ],
+            "@iptvnator/portal/shared/data-access": [
+                "libs/portal/shared/data-access/src/index.ts"
+            ],
+            "@iptvnator/portal/shared/util": [
+                "libs/portal/shared/util/src/index.ts"
+            ],
+            "@iptvnator/portal/shared/util/collection-view-state": [
+                "libs/portal/shared/util/src/lib/navigation/collection-view-state.ts"
+            ],
+            "@iptvnator/portal/shared/util/logger": [
+                "libs/portal/shared/util/src/lib/logger.ts"
+            ],
+            "@iptvnator/portal/shared/util/tokens": [
+                "libs/portal/shared/util/src/tokens.ts"
+            ],
+            "@iptvnator/epg/data-access": ["libs/epg/data-access/src/index.ts"],
+            "@iptvnator/playback/data-access": [
+                "libs/playback/data-access/src/index.ts"
+            ],
+            "@iptvnator/playback/util": ["libs/playback/util/src/index.ts"],
+            "@iptvnator/playlist/shared/ui": [
+                "libs/playlist/shared/ui/src/index.ts"
+            ],
+            "@iptvnator/playlist/shared/ui/stalker-connection-editor": [
+                "libs/playlist/shared/ui/src/lib/recent-playlists/playlist-info/stalker-playlist-connection-editor.token.ts"
+            ],
+            "@iptvnator/playlist/shared/util": [
+                "libs/playlist/shared/util/src/index.ts"
+            ],
+            "@iptvnator/playlist/shared/util/playlist-file-import": [
+                "libs/playlist/shared/util/src/lib/playlist-file-import.service.ts"
+            ],
+            "@iptvnator/ui/epg": ["libs/ui/epg/src/index.ts"],
+            "@iptvnator/ui/epg/date": ["libs/ui/epg/src/lib/epg-date.ts"],
+            "@iptvnator/ui/epg/progress-panel": [
+                "libs/ui/epg/src/lib/epg-progress-panel/epg-progress-panel.component.ts"
+            ],
+            "@iptvnator/ui/playback/external-player-info-dialog": [
+                "libs/ui/playback/src/lib/external-player-info-dialog/external-player-info-dialog.component.ts"
+            ],
+            "@iptvnator/ui/playback/embedded-mpv-player": [
+                "libs/ui/playback/src/lib/embedded-mpv-player/index.ts"
+            ],
+            "@iptvnator/ui/playback": ["libs/ui/playback/src/index.ts"],
+            "@iptvnator/playlist/import/feature": [
+                "libs/playlist/import/feature/src/index.ts"
+            ],
+            "@iptvnator/playlist/m3u/feature-player": [
+                "libs/playlist/m3u/feature-player/src/index.ts"
+            ],
+            "@iptvnator/portal/stalker/feature": [
+                "libs/portal/stalker/feature/src/index.ts"
+            ],
+            "@iptvnator/portal/stalker/data-access": [
+                "libs/portal/stalker/data-access/src/index.ts"
+            ],
+            "@iptvnator/portal/xtream/feature": [
+                "libs/portal/xtream/feature/src/index.ts"
+            ],
+            "@iptvnator/portal/xtream/data-access": [
+                "libs/portal/xtream/data-access/src/index.ts"
+            ],
+            "@iptvnator/workspace/shell/feature": [
+                "libs/workspace/shell/feature/src/index.ts"
+            ],
+            "@iptvnator/workspace/shell/util": [
+                "libs/workspace/shell/util/src/index.ts"
+            ],
+            "@iptvnator/workspace/shell/util/settings-context": [
+                "libs/workspace/shell/util/src/lib/settings-context.service.ts"
+            ],
+            "@iptvnator/workspace/shell/util/settings-search": [
+                "libs/workspace/shell/util/src/lib/settings-search/index.ts"
+            ],
+            "@iptvnator/pipes": ["libs/ui/pipes/src/index.ts"],
+            "@iptvnator/pipes/date-format": [
+                "libs/ui/pipes/src/lib/date-format.util.ts"
+            ],
+            "@iptvnator/ui/components": ["libs/ui/components/src/index.ts"],
+            "@iptvnator/ui/components/confirm-dialog": [
+                "libs/ui/components/src/lib/confirm-dialog/dialog.service.ts"
+            ],
+            "@iptvnator/ui/components/dialog-size": [
+                "libs/ui/components/src/lib/dialog-shell/dialog-size.ts"
+            ],
+            "@iptvnator/ui/components/form-field-defaults": [
+                "libs/ui/components/src/lib/form-field-defaults/form-field-defaults.ts"
+            ],
+            "@iptvnator/ui/components/lazy-dialog": [
+                "libs/ui/components/src/lib/lazy-dialog/lazy-mat-dialog.ts"
+            ],
+            "@iptvnator/ui/components/parental-lock-pin-dialog": [
+                "libs/ui/components/src/lib/parental-lock-pin-dialog/parental-lock-pin-dialog.component.ts"
+            ],
+            "@iptvnator/ui/components/password-visibility-toggle": [
+                "libs/ui/components/src/lib/password-visibility-toggle/password-visibility-toggle.directive.ts"
+            ],
+            "@iptvnator/ui/components/radio-group": [
+                "libs/ui/components/src/lib/radio-group/radio-group.directive.ts"
+            ],
+            "@iptvnator/ui/components/reveal-details": [
+                "libs/ui/components/src/lib/reveal-details/reveal-details.directive.ts"
+            ],
+            "@iptvnator/ui/components/window-controls": [
+                "libs/ui/components/src/lib/window-controls/window-controls.component.ts"
+            ],
+            "@iptvnator/m3u-state": ["libs/m3u-state/src/index.ts"],
+            "@iptvnator/shared/m3u-utils": [
+                "libs/shared/m3u-utils/src/index.ts"
+            ],
+            "@iptvnator/shared/testing": ["libs/shared/testing/src/index.ts"],
+            "@iptvnator/shared/testing/runtime-coverage": [
+                "libs/shared/testing/src/lib/runtime-coverage.ts"
+            ],
+            "@iptvnator/shared/logging": ["libs/shared/logging/src/index.ts"],
+            "@iptvnator/shared/host-health": [
+                "libs/shared/host-health/src/index.ts"
+            ],
+            "@iptvnator/services": ["libs/services/src/index.ts"],
+            "@iptvnator/services/tmdb-match": [
+                "libs/services/src/lib/tmdb/tmdb-match.service.ts"
+            ],
+            "@iptvnator/services/lazy-snack-bar": [
+                "libs/services/src/lib/lazy-snack-bar/lazy-snack-bar.ts"
+            ],
+            "@iptvnator/services/xtream-catalog-refresh": [
+                "libs/services/src/lib/xtream-selected-catalog-refresh.service.ts"
+            ],
+            "@iptvnator/services/xtream-catalog-restore": [
+                "libs/services/src/lib/xtream-deferred-catalog-restore.service.ts"
+            ],
+            "@iptvnator/services/playlist-backup": [
+                "libs/services/src/lib/playlist-backup.service.ts"
+            ],
+            "@iptvnator/services/source-sync": [
+                "libs/services/src/lib/source-sync/index.ts"
+            ],
+            "@iptvnator/services/source-sync/authorization": [
+                "libs/services/src/lib/source-sync/source-authorization.ts"
+            ],
+            "@iptvnator/services/source-sync/connection": [
+                "libs/services/src/lib/source-sync/source-connection.ts"
+            ],
+            "@iptvnator/services/source-sync/profile-user-data": [
+                "libs/services/src/lib/source-sync/source-profile-user-data.ts"
+            ],
+            "@iptvnator/services/pwa-xtream-backup-storage": [
+                "libs/services/src/lib/pwa-xtream-backup-storage.ts"
+            ],
+            "@iptvnator/services/server-storage": [
+                "libs/services/src/lib/server-storage/index.ts"
+            ],
+            "@iptvnator/shared/interfaces": [
+                "libs/shared/interfaces/src/index.ts"
+            ],
+            "@iptvnator/shared/interfaces/stalker-session": [
+                "libs/shared/interfaces/src/lib/stalker-session-fingerprint.util.ts"
+            ],
+            "@iptvnator/shared/interfaces/source-definition": [
+                "libs/shared/interfaces/src/lib/source-definition.util.ts"
+            ],
+            "@iptvnator/shared/interfaces/provider-import": [
+                "libs/shared/interfaces/src/lib/provider-import-detection.util.ts"
+            ],
+            "@iptvnator/shared/interfaces/xtream-restore-state": [
+                "libs/shared/interfaces/src/lib/xtream-restore-state.util.ts"
+            ],
+            "@iptvnator/shared/interfaces/xtream-category-visibility": [
+                "libs/shared/interfaces/src/lib/xtream-category-visibility.ts"
+            ],
+            "@iptvnator/shared/interfaces/ipc-commands": [
+                "libs/shared/interfaces/src/lib/ipc-commands.ts"
+            ],
+            "@iptvnator/shared/interfaces/zoom-level": [
+                "libs/shared/interfaces/src/lib/zoom-level.util.ts"
+            ],
+            "@iptvnator/ui/shared-portals": [
+                "libs/ui/shared-portals/src/index.ts"
+            ],
+            "@iptvnator/ui/remote-control": [
+                "libs/ui/remote-control/src/index.ts"
+            ],
+            "@iptvnator/shared/database": ["libs/shared/database/src/index.ts"],
+            "@iptvnator/shared/database/schema": [
+                "libs/shared/database/src/lib/schema.ts"
+            ],
+            "@iptvnator/shared/database/app-playlist": [
+                "libs/shared/database/src/lib/app-playlist.ts"
+            ],
+            "@iptvnator/shared/database/path-utils": [
+                "libs/shared/database/src/lib/path-utils.ts"
+            ],
+            "@iptvnator/shared/database/connection-observer": [
+                "libs/shared/database/src/lib/connection-observer.ts"
+            ],
+            "@iptvnator/workspace/dashboard/feature": [
+                "libs/workspace/dashboard/feature/src/index.ts"
+            ],
+            "@iptvnator/workspace/dashboard/data-access": [
+                "libs/workspace/dashboard/data-access/src/index.ts"
+            ],
+            "@package": ["./package.json"],
+            "@iptvnator/shared/marketing-fixtures": [
+                "./libs/shared/marketing-fixtures/src/index.ts"
+            ],
+            "@iptvnator/tv/util": ["libs/tv/util/src/index.ts"],
+            "@iptvnator/tv/data-access": ["libs/tv/data-access/src/index.ts"],
+            "@iptvnator/tv/ui": ["libs/tv/ui/src/index.ts"],
+            "@iptvnator/tv/feature": ["libs/tv/feature/src/index.ts"],
+            "@iptvnator/portal/xtream/client": [
+                "libs/portal/xtream/data-access/src/client.ts"
+            ],
+            "@iptvnator/portal/stalker/client": [
+                "libs/portal/stalker/data-access/src/client.ts"
+            ],
+            "@iptvnator/services/age-rating": [
+                "libs/services/src/lib/age-rating/age-rating-presentation.service.ts"
+            ],
+            "@iptvnator/services/tmdb-merge": [
+                "libs/services/src/lib/tmdb/tmdb-merge.ts"
+            ],
+            "@iptvnator/shared/database/activity-sync": [
+                "libs/shared/database/src/activity-sync.ts"
+            ],
+            "@iptvnator/services/activity-changes": [
+                "libs/services/src/lib/activity-sync/activity-changes.ts"
+            ],
+            "@iptvnator/services/activity-events": [
+                "libs/services/src/lib/activity-sync/activity-events.token.ts"
+            ],
+            "@iptvnator/services/activity-sync": [
+                "libs/services/src/activity-sync.ts"
+            ],
+            "@iptvnator/shared/interfaces/favorites-sync": [
+                "libs/shared/interfaces/src/favorites-sync.ts"
+            ],
+            "@iptvnator/shared/database/favorites-sync": [
+                "libs/shared/database/src/favorites-sync.ts"
+            ],
+            "@iptvnator/shared/m3u-utils/favorites": [
+                "libs/shared/m3u-utils/src/favorites.ts"
+            ],
+            "@iptvnator/services/favorites-events": [
+                "libs/services/src/favorites-events.ts"
+            ],
+            "@iptvnator/services/favorites-sync": [
+                "libs/services/src/favorites-sync.ts"
+            ],
+            "@iptvnator/shared/interfaces/activity-sync": [
+                "libs/shared/interfaces/src/activity-sync.ts"
+            ],
+            "@iptvnator/shared/interfaces/age-rating": [
+                "libs/shared/interfaces/src/age-rating.ts"
+            ],
+            "@iptvnator/shared/tmdb/certifications": [
+                "libs/shared/tmdb/src/lib/tmdb-certifications.ts"
+            ]
+        },
+        "strict": false,
+        "noUncheckedSideEffectImports": false,
+        "types": ["*"],
+        "ignoreDeprecations": "6.0"
+    },
+    "exclude": ["node_modules", "tmp"],
+    "files": ["global.d.ts"]
+}

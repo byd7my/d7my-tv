@@ -1,0 +1,22 @@
+{
+    "name": "portal-downloads-feature",
+    "$schema": "../../../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/portal/downloads/feature/src",
+    "prefix": "lib",
+    "projectType": "library",
+    "tags": ["scope:portal", "domain:portal-shared", "type:feature"],
+    "implicitDependencies": ["ui-styles"],
+    "targets": {
+        "lint": {
+            "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                "{workspaceRoot}/tools/eslint/**/*"
+            ]
+        }
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "name": "portal-shared-util",
+    "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/portal/shared/util/src",
+    "prefix": "lib",
+    "projectType": "library",
+    "tags": ["scope:portal", "domain:portal-shared", "type:util"],
+    "targets": {
+        "lint": {
+            "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                "{workspaceRoot}/tools/eslint/**/*"
+            ]
+        }
+    }
+}

@@ -1,0 +1,55 @@
+@use '../../../../../../ui/styles/app-controls' as controls;
+
+:host {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+}
+
+:host app-empty-state {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+.sources-list {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+// A 1px line between rows, hidden around the hovered row so its fill
+// reads as one shape.
+app-source-row + app-source-row {
+    border-top: 1px solid var(--app-widget-header-border);
+}
+
+app-source-row:hover,
+app-source-row:hover + app-source-row,
+app-source-row:focus-within,
+app-source-row:focus-within + app-source-row {
+    border-top-color: transparent;
+}
+
+.sources-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 64px 16px;
+    text-align: center;
+}
+
+.sources-empty__message {
+    margin: 0;
+    font-size: 13px;
+    color: var(--app-body-color);
+}
+
+.sources-empty__reset {
+    @include controls.ghost-button(sm);
+}

@@ -1,0 +1,101 @@
+# See http://help.github.com/ignore-files/ for more about ignoring files. 
+
+#compiled output 
+/dist 
+/build 
+/tmp 
+/out-tsc 
+/app-builds 
+/release 
+/e2e/tracing
+/e2e/screenshots 
+/test-results 
+api.js 
+epg-worker.js 
+main.js 
+menu.js 
+src/**/*.js
+!src/karma.conf.js 
+*.js.map 
+data.db 
+preload.js 
+shared/*.js 
+playwright-report 
+.nx
+server.js 
+.github/skills
+.github/prompts
+
+# dependencies 
+node_modules
+package-lock.json
+
+# IDEs and editors 
+/.idea 
+.project
+.classpath 
+.c9/ 
+*.launch 
+.settings/ 
+*.sublime-workspace 
+
+# Local editor and session state
+/.vscode/
+/.entire/
+
+# misc 
+/.sass-cache 
+/connect.lock 
+/coverage
+/libpeerconnection.log 
+npm-debug.log 
+testem.log 
+/typings 
+.angular/* 
+
+# e2e
+/e2e/*.js 
+!/e2e/protractor.conf.js 
+/e2e/*.map 
+/e2e/db 
+
+# System Files 
+.DS_Store
+Thumbs.db
+.angular
+.astro
+
+.gemini
+.cursor
+.agent
+# Shared sources live in .agents/skills; agent-specific configuration stays local.
+.agents/*
+!.agents/skills/
+!.agents/skills/**
+# Track only the shared Claude directory symlinks; personal skills stay local.
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/iptvnator-nx-architecture
+!.claude/skills/iptvnator-sqlite-db-worker
+!.claude/skills/iptvnator-theme-style
+!.claude/skills/iptvnator-ui-design
+!.claude/skills/release-cut
+!.claude/skills/release-notes
+!.claude/skills/stalker-portal
+!.claude/skills/xtream-electron
+.codex/
+.plans
+
+# Native Electron addons
+apps/electron-backend/native/build/
+apps/electron-backend/src/app/options/electron-builder.metadata.generated.json
+vendor/embedded-mpv/*/bin/
+vendor/embedded-mpv/*/include/
+vendor/embedded-mpv/*/lib/
+vendor/embedded-mpv/*/notices/
+vendor/embedded-mpv/*/runtime-manifest.json
+
+# MemPalace per-project files (issue #185)
+mempalace.yaml
+entities.json

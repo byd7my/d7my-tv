@@ -1,0 +1,197 @@
+{
+    "appId": "com.fourgray.iptvnator",
+    "productName": "IPTVnator",
+    "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
+    "fileAssociations": [
+        {
+            "ext": "m3u",
+            "name": "M3U Playlist",
+            "description": "IPTV playlist",
+            "mimeType": "audio/x-mpegurl",
+            "role": "Viewer"
+        },
+        {
+            "ext": "m3u8",
+            "name": "M3U8 Playlist",
+            "description": "IPTV playlist",
+            "mimeType": "application/vnd.apple.mpegurl",
+            "role": "Viewer"
+        }
+    ],
+    "publish": [
+        {
+            "provider": "github",
+            "owner": "byd7my",
+            "repo": "iptvnator"
+        }
+    ],
+    "directories": {
+        "buildResources": "dist/apps",
+        "output": "dist/executables"
+    },
+    "files": [
+        {
+            "from": "dist/apps/remote-control-web",
+            "to": "remote-control-web",
+            "filter": ["**/*"]
+        },
+        "electron-backend/**/*",
+        "!electron-backend/native{,/**/*}",
+        "web/**/*",
+        "!**/*.map"
+    ],
+    "asarUnpack": [
+        "**/better-sqlite3/**",
+        "**/bindings/**",
+        "**/file-uri-to-path/**",
+        "**/*.node",
+        "**/*.dylib",
+        "**/*.dll",
+        "**/*.so",
+        "**/*.so.*",
+        "**/embedded-mpv-runtime.json"
+    ],
+    "extraMetadata": {
+        "name": "iptvnator",
+        "productName": "IPTVnator",
+        "desktopName": "iptvnator",
+        "main": "electron-backend/main.js"
+    },
+    "extraResources": ["dist/apps/electron-backend/workers"],
+    "mac": {
+        "target": [
+            {
+                "target": "dmg",
+                "arch": ["x64", "arm64"]
+            },
+            {
+                "target": "zip",
+                "arch": ["x64", "arm64"]
+            }
+        ],
+        "category": "public.app-category.video",
+        "forceCodeSigning": true,
+        "gatekeeperAssess": false,
+        "hardenedRuntime": true,
+        "entitlements": "apps/electron-backend/macos/entitlements.mac.plist",
+        "entitlementsInherit": "apps/electron-backend/macos/entitlements.mac.inherit.plist",
+        "notarize": true,
+        "icon": "apps/web/src/assets/icons/favicon.icns"
+    },
+    "linux": {
+        "category": "Video",
+        "executableName": "iptvnator",
+        "executableArgs": ["--ozone-platform=x11"],
+        "target": [
+            {
+                "target": "AppImage",
+                "arch": ["x64", "armv7l", "arm64"]
+            },
+            {
+                "target": "deb",
+                "arch": ["x64", "armv7l", "arm64"]
+            },
+            {
+                "target": "Snap",
+                "arch": ["x64", "armv7l"]
+            },
+            {
+                "target": "rpm",
+                "arch": ["x64"]
+            },
+            {
+                "target": "pacman",
+                "arch": ["x64"]
+            },
+            {
+                "target": "flatpak",
+                "arch": ["x64"]
+            }
+        ],
+        "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
+        "icon": "apps/web/src/assets/icons"
+    },
+    "appImage": {
+        "desktop": {
+            "entry": {
+                "X-AppImage-Name": "IPTVnator",
+                "X-AppImage-Homepage": "https://github.com/4gray/iptvnator",
+                "X-AppImage-UpdateURL": "https://github.com/4gray/iptvnator"
+            }
+        }
+    },
+    "flatpak": {
+        "branch": "stable",
+        "runtime": "org.freedesktop.Platform",
+        "runtimeVersion": "24.08",
+        "sdk": "org.freedesktop.Sdk",
+        "base": "org.electronjs.Electron2.BaseApp",
+        "baseVersion": "24.08",
+        "finishArgs": [
+            "--socket=wayland",
+            "--socket=x11",
+            "--share=ipc",
+            "--device=dri",
+            "--socket=pulseaudio",
+            "--filesystem=home",
+            "--share=network",
+            "--talk-name=org.freedesktop.Notifications",
+            "--talk-name=org.freedesktop.Flatpak"
+        ],
+        "files": [
+            [
+                "apps/electron-backend/linux/com.fourgray.iptvnator.metainfo.xml",
+                "/share/metainfo/com.fourgray.iptvnator.metainfo.xml"
+            ]
+        ]
+    },
+    "afterPack": "./tools/packaging/electron-after-pack.cjs",
+    "snap": {
+        "base": "core22",
+        "confinement": "strict",
+        "grade": "stable",
+        "summary": "IPTV application for M3U playlists, Xtream Codes API, and Stalker portals",
+        "executableArgs": ["--ozone-platform=x11"],
+        "plugs": [
+            "default",
+            {
+                "graphics-core22": {
+                    "interface": "content",
+                    "target": "$SNAP/graphics",
+                    "default-provider": "mesa-core22"
+                }
+            },
+            {
+                "shared-memory": {
+                    "interface": "shared-memory",
+                    "private": true
+                }
+            }
+        ],
+        "environment": {
+            "DISABLE_WAYLAND": "1"
+        },
+        "layout": {
+            "/usr/share/libdrm": {
+                "bind": "$SNAP/graphics/libdrm"
+            },
+            "/usr/share/drirc.d": {
+                "symlink": "$SNAP/graphics/drirc.d"
+            }
+        }
+    },
+    "win": {
+        "compression": "maximum",
+        "target": [
+            {
+                "target": "nsis",
+                "arch": ["x64", "ia32"]
+            }
+        ],
+        "artifactName": "${name}-${version}-windows-${arch}-setup.${ext}",
+        "icon": "apps/web/src/assets/icons/icon.png"
+    },
+    "nsis": {
+        "artifactName": "${name}-${version}-windows-${arch}-setup.${ext}"
+    }
+}
