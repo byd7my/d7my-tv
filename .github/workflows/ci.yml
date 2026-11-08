@@ -592,6 +592,9 @@ jobs:
               run: pnpm run coverage:ci
               env:
                   CI: true
+                  # Jest workers of the playback specs run out of the default
+                  # heap on the hosted runner; a larger heap keeps them alive.
+                  NODE_OPTIONS: --max-old-space-size=4096
                   NX_TASKS_RUNNER_DYNAMIC_OUTPUT: false
                   JEST_CACHE_DIRECTORY: ${{ runner.temp }}/jest-cache
 
