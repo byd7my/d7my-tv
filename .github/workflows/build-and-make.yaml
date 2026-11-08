@@ -391,6 +391,8 @@ jobs:
 
     build-cross-platform:
         name: Build on ${{ matrix.os }} ${{ matrix.arch }}
+        # A Windows release (publish_release) builds only build-windows-release.
+        if: ${{ inputs.publish_release != true }}
         needs: nightly-version
         runs-on: ${{ matrix.runner }}
         timeout-minutes: 120
@@ -420,8 +422,6 @@ jobs:
                       embedded_mpv_platform: win32
                       embedded_mpv_arch: x64
                       embedded_mpv_build_runtime: false
-                # A Windows release (publish_release) builds only the Windows leg.
-                exclude: ${{ fromJSON(inputs.publish_release == true && '[{"os":"macos"}]' || '[]') }}
 
         steps: &electron-build-steps
             - name: Checkout code
@@ -1440,12 +1440,38 @@ jobs:
 
         steps: *electron-build-steps
 
+    # Windows-only stable release: the same build steps as build-cross-platform,
+    # for the Windows leg only, run when the workflow is dispatched with
+    # publish_release.
+    build-windows-release:
+        name: Build Windows release (${{ matrix.arch }})
+        if: ${{ inputs.publish_release == true }}
+        needs: nightly-version
+        runs-on: ${{ matrix.runner }}
+        timeout-minutes: 120
+        concurrency:
+            group: ${{ github.workflow }}-windows-release-${{ github.ref }}
+            cancel-in-progress: false
+        strategy:
+            fail-fast: true
+            matrix:
+                include:
+                    - os: windows
+                      runner: windows-2022
+                      arch: x64
+                      embedded_mpv_platform: win32
+                      embedded_mpv_arch: x64
+                      embedded_mpv_build_runtime: false
+
+        steps: *electron-build-steps
+
     create-release:
         name: Create Draft Release
         needs:
             - nightly-version
             - build-cross-platform
             - build-linux
+            - build-windows-release
         # !cancelled() lets the release go out when a platform that needs
         # signing secrets this fork does not have (macOS) failed; its files
         # are simply missing from the release.
@@ -1756,7 +1782,7 @@ jobs:
             # (latest.yml and the .blockmap) are attached; the release is
             # published, not a draft, and is not a prerelease.
             - name: Publish Windows release
-              if: inputs.publish_release == true && needs.build-cross-platform.result == 'success'
+              if: inputs.publish_release == true && needs.build-windows-release.result == 'success'
               uses: softprops/action-gh-release@v3
               with:
                   draft: false

@@ -492,6 +492,7 @@ test('keeps non-Linux builds independent from the Linux runtime prerequisite', (
         'nightly-version',
         'build-cross-platform',
         'build-linux',
+        'build-windows-release',
     ]);
     assert.match(buildWorkflow, /steps:\s+&electron-build-steps/);
     assert.match(buildWorkflow, /steps:\s+\*electron-build-steps/);
