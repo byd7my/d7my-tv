@@ -2540,7 +2540,7 @@ Napi::Value SetExternalAudio(const Napi::CallbackInfo& info)
         const std::string trackId = restoreAudioId >= 0 ? std::to_string(restoreAudioId) : "auto";
         const int aidResult = mpv_set_property_string(session->handle, "aid", trackId.c_str());
         if (aidResult < 0) throw Napi::Error::New(env, mpv_error_string(aidResult));
-        const double noDelay = 0;
+        double noDelay = 0;
         const int delayResult = mpv_set_property(session->handle, "audio-delay", MPV_FORMAT_DOUBLE, &noDelay);
         if (delayResult < 0) throw Napi::Error::New(env, mpv_error_string(delayResult));
     } else {

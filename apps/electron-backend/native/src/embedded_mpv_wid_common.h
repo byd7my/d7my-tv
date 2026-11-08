@@ -2560,7 +2560,7 @@ Napi::Value SetExternalAudio(const Napi::CallbackInfo& info)
         if (aidResult < 0) {
             throw Napi::Error::New(env, mpv_error_string(aidResult));
         }
-        const double noDelay = 0;
+        double noDelay = 0;
         const int delayResult = mpv_set_property(session->handle, "audio-delay", MPV_FORMAT_DOUBLE, &noDelay);
         if (delayResult < 0) {
             throw Napi::Error::New(env, mpv_error_string(delayResult));
