@@ -6,6 +6,28 @@
             'CHANNELS.SPLIT_AUDIO.VIDEO_FROM' | translate
         }}</span>
         {{ data.video.name }}
+        <span class="split-audio__favorites">
+            <button
+                type="button"
+                class="split-audio__favorite"
+                (click)="toggleFavorite(data.video, 'video')"
+            >
+                <mat-icon>{{
+                    splitAudio.isFavorite(data.video.url, 'video')
+                        ? 'star'
+                        : 'star_outline'
+                }}</mat-icon>
+                {{ 'CHANNELS.SPLIT_AUDIO.FAVORITE_VIDEO' | translate }}
+            </button>
+            <button
+                type="button"
+                class="split-audio__favorite"
+                (click)="toggleBothFavorites(data.video)"
+            >
+                <mat-icon>stars</mat-icon>
+                {{ 'CHANNELS.SPLIT_AUDIO.FAVORITE_BOTH' | translate }}
+            </button>
+        </span>
     </p>
 
     @if (!data.onSelect) {
@@ -27,41 +49,132 @@
         (input)="onQuery($event)"
     />
 
-    <ul class="split-audio__list" role="listbox">
+    <button
+        type="button"
+        class="split-audio__favorites-filter"
+        [class.is-active]="favoritesOnly()"
+        (click)="toggleFavoritesOnly()"
+    >
+        <mat-icon>{{ favoritesOnly() ? 'star' : 'star_outline' }}</mat-icon>
+        {{ 'CHANNELS.SPLIT_AUDIO.SHOW_FAVORITES' | translate }}
+    </button>
+
+    <ul class="split-audio__list">
         @for (channel of visibleChannels(); track channel.url) {
             <li>
-                <button
-                    type="button"
-                    role="option"
-                    class="split-audio__option"
-                    [class.split-audio__option--selected]="
-                        selected()?.url === channel.url
-                    "
-                    [attr.aria-selected]="selected()?.url === channel.url"
-                    (click)="select(channel)"
-                >
-                    {{ channel.name }}
-                </button>
+                <div class="split-audio__row">
+                    <button
+                        type="button"
+                        class="split-audio__option"
+                        [class.split-audio__option--selected]="
+                            selected()?.url === channel.url
+                        "
+                        [attr.aria-pressed]="selected()?.url === channel.url"
+                        (click)="select(channel)"
+                    >
+                        {{ channel.name }}
+                    </button>
+                    <span class="split-audio__row-favorites">
+                        <button
+                            type="button"
+                            class="split-audio__favorite-icon"
+                            [attr.aria-label]="
+                                'CHANNELS.SPLIT_AUDIO.FAVORITE_VIDEO'
+                                    | translate
+                            "
+                            (click)="toggleFavorite(channel, 'video')"
+                        >
+                            <mat-icon>{{
+                                splitAudio.isFavorite(channel.url, 'video')
+                                    ? 'star'
+                                    : 'star_outline'
+                            }}</mat-icon>
+                        </button>
+                        <button
+                            type="button"
+                            class="split-audio__favorite-icon"
+                            [attr.aria-label]="
+                                'CHANNELS.SPLIT_AUDIO.FAVORITE_AUDIO'
+                                    | translate
+                            "
+                            (click)="toggleFavorite(channel, 'audio')"
+                        >
+                            <mat-icon>{{
+                                splitAudio.isFavorite(channel.url, 'audio')
+                                    ? 'volume_up'
+                                    : 'volume_mute'
+                            }}</mat-icon>
+                        </button>
+                        <button
+                            type="button"
+                            class="split-audio__favorite-icon"
+                            [attr.aria-label]="
+                                'CHANNELS.SPLIT_AUDIO.FAVORITE_BOTH' | translate
+                            "
+                            (click)="toggleBothFavorites(channel)"
+                        >
+                            <mat-icon>stars</mat-icon>
+                        </button>
+                    </span>
+                </div>
             </li>
         }
     </ul>
 
-    <label class="split-audio__label" for="split-audio-delay">{{
-        'CHANNELS.SPLIT_AUDIO.DELAY' | translate
-    }}</label>
-    <input
-        id="split-audio-delay"
-        class="split-audio__input split-audio__input--short"
-        type="number"
-        step="0.1"
-        [min]="-maxDelay"
-        [max]="maxDelay"
-        [value]="delay()"
-        (input)="onDelay($event)"
-    />
-    <p class="split-audio__hint">
-        {{ 'CHANNELS.SPLIT_AUDIO.DELAY_HINT' | translate }}
-    </p>
+    <section
+        class="split-audio__delay-panel"
+        aria-labelledby="split-audio-delay-label"
+    >
+        <div class="split-audio__delay-heading">
+            <span class="split-audio__label" id="split-audio-delay-label">{{
+                'CHANNELS.SPLIT_AUDIO.DELAY' | translate
+            }}</span>
+            <output class="split-audio__delay-value"
+                >{{ delay() > 0 ? '+' : '' }}{{ delay() | number: '1.1-2' }}
+                {{ 'CHANNELS.SPLIT_AUDIO.SECONDS' | translate }}</output
+            >
+        </div>
+        <div class="split-audio__delay-stepper">
+            <button
+                type="button"
+                class="split-audio__step"
+                (click)="adjustDelay(-0.1)"
+                [attr.aria-label]="'CHANNELS.SPLIT_AUDIO.ADVANCE' | translate"
+            >
+                <mat-icon>remove</mat-icon>
+            </button>
+            <input
+                id="split-audio-delay"
+                type="range"
+                [min]="-maxDelay"
+                [max]="maxDelay"
+                step="0.1"
+                [value]="delay()"
+                (input)="onDelay($event)"
+            />
+            <button
+                type="button"
+                class="split-audio__step"
+                (click)="adjustDelay(0.1)"
+                [attr.aria-label]="'CHANNELS.SPLIT_AUDIO.DELAY' | translate"
+            >
+                <mat-icon>add</mat-icon>
+            </button>
+        </div>
+        <div class="split-audio__presets">
+            @for (step of [0.5, 1, 2, 5, 10]; track step) {
+                <button type="button" (click)="adjustDelay(step)">
+                    +{{ step }}s
+                </button>
+                <button type="button" (click)="adjustDelay(-step)">
+                    −{{ step }}s
+                </button>
+            }
+        </div>
+        <p class="split-audio__hint">
+            {{ 'CHANNELS.SPLIT_AUDIO.DELAY_HINT' | translate }}
+        </p>
+    </section>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">

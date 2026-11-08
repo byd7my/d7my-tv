@@ -5,6 +5,7 @@ import {
     inject,
     signal,
 } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import {
@@ -40,9 +41,6 @@ export interface SplitAudioDialogData {
     onSelect?: (audio: ExternalAudioOverride | null) => void;
 }
 
-/** More rows than this are never useful to scroll; the search narrows the rest. */
-const MAX_VISIBLE_CHANNELS = 300;
-
 /**
  * Picks another channel's audio while the current live video continues in its
  * existing player. External-player entry points retain their launch behavior.
@@ -52,7 +50,13 @@ const MAX_VISIBLE_CHANNELS = 300;
     templateUrl: './split-audio-dialog.component.html',
     styleUrl: './split-audio-dialog.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatButtonModule, MatDialogModule, MatIconModule, TranslatePipe],
+    imports: [
+        MatButtonModule,
+        MatDialogModule,
+        MatIconModule,
+        TranslatePipe,
+        DecimalPipe,
+    ],
 })
 export class SplitAudioDialogComponent {
     protected readonly data = inject<SplitAudioDialogData>(MAT_DIALOG_DATA);
@@ -65,6 +69,7 @@ export class SplitAudioDialogComponent {
 
     protected readonly maxDelay = SPLIT_AUDIO_MAX_DELAY_SECONDS;
     protected readonly query = signal('');
+    protected readonly favoritesOnly = signal(false);
     protected readonly selected = signal<Channel | null>(
         this.data.channels.find(
             (item) => item.url === this.splitAudio.activeAudio()?.streamUrl
@@ -75,14 +80,14 @@ export class SplitAudioDialogComponent {
     protected readonly visibleChannels = computed(() => {
         const needle = this.query().trim().toLowerCase();
         const videoUrl = this.data.video.url;
-        return this.data.channels
-            .filter(
-                (channel) =>
-                    channel.url !== videoUrl &&
-                    (!needle ||
-                        (channel.name ?? '').toLowerCase().includes(needle))
-            )
-            .slice(0, MAX_VISIBLE_CHANNELS);
+        return this.data.channels.filter(
+            (channel) =>
+                channel.url !== videoUrl &&
+                (!this.favoritesOnly() ||
+                    this.splitAudio.isFavorite(channel.url, 'audio') ||
+                    this.splitAudio.isFavorite(channel.url, 'video')) &&
+                (!needle || (channel.name ?? '').toLowerCase().includes(needle))
+        );
     });
 
     /** Opens the dialog with the size every entry point shares. */
@@ -125,6 +130,22 @@ export class SplitAudioDialogComponent {
     protected onDelay(event: Event): void {
         const value = Number((event.target as HTMLInputElement).value);
         this.delay.set(this.splitAudio.clampDelay(value));
+    }
+
+    protected adjustDelay(delta: number): void {
+        this.delay.update((value) => this.splitAudio.clampDelay(value + delta));
+    }
+
+    protected toggleFavoritesOnly(): void {
+        this.favoritesOnly.update((value) => !value);
+    }
+
+    protected toggleFavorite(channel: Channel, role: 'video' | 'audio'): void {
+        this.splitAudio.toggleFavorite(channel.url, role);
+    }
+
+    protected toggleBothFavorites(channel: Channel): void {
+        this.splitAudio.toggleBothFavorites(channel.url);
     }
 
     /**

@@ -2528,7 +2528,8 @@ Napi::Value SetExternalAudio(const Napi::CallbackInfo& info)
     }
     if (wasActive) {
         const char* removeArgs[] = {"audio-remove", nullptr};
-        mpv_command_async(session->handle, nextAsyncRequestId(), removeArgs);
+        const int result = mpv_command(session->handle, removeArgs);
+        if (result < 0) throw Napi::Error::New(env, mpv_error_string(result));
     }
     const auto setProperty = [&](const char* property, const std::string& value) {
         const char* args[] = {"set_property", property, value.c_str(), nullptr};
@@ -2536,8 +2537,12 @@ Napi::Value SetExternalAudio(const Napi::CallbackInfo& info)
         if (result < 0) throw Napi::Error::New(env, mpv_error_string(result));
     };
     if (clear) {
-        setProperty("aid", restoreAudioId >= 0 ? std::to_string(restoreAudioId) : "auto");
-        setProperty("audio-delay", "0");
+        const std::string trackId = restoreAudioId >= 0 ? std::to_string(restoreAudioId) : "auto";
+        const int aidResult = mpv_set_property_string(session->handle, "aid", trackId.c_str());
+        if (aidResult < 0) throw Napi::Error::New(env, mpv_error_string(aidResult));
+        const double noDelay = 0;
+        const int delayResult = mpv_set_property(session->handle, "audio-delay", MPV_FORMAT_DOUBLE, &noDelay);
+        if (delayResult < 0) throw Napi::Error::New(env, mpv_error_string(delayResult));
     } else {
         setProperty("user-agent", userAgent);
         setProperty("referrer", referer);

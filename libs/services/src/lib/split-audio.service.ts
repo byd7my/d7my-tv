@@ -10,6 +10,7 @@ export const SPLIT_AUDIO_PENDING_TTL_MS = 10_000;
 export const SPLIT_AUDIO_MAX_DELAY_SECONDS = 60;
 
 const DELAY_STORAGE_PREFIX = 'iptvnator.splitAudioDelay.';
+const FAVORITE_STORAGE_PREFIX = 'iptvnator.splitAudioFavorite.';
 
 /**
  * "Video from channel A, audio from channel B" for the external MPV player.
@@ -34,6 +35,8 @@ export const SPLIT_AUDIO_DIALOG_OPENER = new InjectionToken<
     ) => void
 >('SPLIT_AUDIO_DIALOG_OPENER');
 
+export type SplitAudioFavoriteRole = 'video' | 'audio';
+
 /** The live channel being watched and the channels its audio can come from. */
 export interface SplitAudioContext {
     readonly video: Channel;
@@ -48,6 +51,45 @@ export class SplitAudioService {
      */
     readonly context = signal<SplitAudioContext | null>(null);
     readonly activeAudio = signal<ExternalAudioOverride | null>(null);
+    readonly favoritesRevision = signal(0);
+
+    isFavorite(channelUrl: string, role: SplitAudioFavoriteRole): boolean {
+        this.favoritesRevision();
+        try {
+            return (
+                localStorage.getItem(this.favoriteKey(channelUrl, role)) === '1'
+            );
+        } catch {
+            return false;
+        }
+    }
+
+    toggleFavorite(channelUrl: string, role: SplitAudioFavoriteRole): void {
+        const key = this.favoriteKey(channelUrl, role);
+        try {
+            if (localStorage.getItem(key) === '1') {
+                localStorage.removeItem(key);
+            } else {
+                localStorage.setItem(key, '1');
+            }
+            this.favoritesRevision.update((revision) => revision + 1);
+        } catch {
+            // Favorites improve the picker but are optional when storage is unavailable.
+        }
+    }
+
+    toggleBothFavorites(channelUrl: string): void {
+        const both =
+            this.isFavorite(channelUrl, 'video') &&
+            this.isFavorite(channelUrl, 'audio');
+        for (const role of ['video', 'audio'] as const) {
+            const shouldBeFavorite = !both;
+            const isFavorite = this.isFavorite(channelUrl, role);
+            if (isFavorite !== shouldBeFavorite) {
+                this.toggleFavorite(channelUrl, role);
+            }
+        }
+    }
 
     setContext(context: SplitAudioContext | null): void {
         const previous = this.context();
@@ -122,6 +164,13 @@ export class SplitAudioService {
 
     private storageKey(videoUrl: string, audioUrl: string): string {
         return DELAY_STORAGE_PREFIX + fnv1a(`${videoUrl}\n${audioUrl}`);
+    }
+
+    private favoriteKey(
+        channelUrl: string,
+        role: SplitAudioFavoriteRole
+    ): string {
+        return `${FAVORITE_STORAGE_PREFIX}${role}.${fnv1a(channelUrl)}`;
     }
 }
 

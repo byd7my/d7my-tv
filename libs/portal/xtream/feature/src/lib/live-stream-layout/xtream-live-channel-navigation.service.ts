@@ -89,6 +89,8 @@ export class XtreamLiveChannelNavigationService {
             (item) => categories.has(Number(item.category_id))
         );
     });
+    /** Every visible live channel in this playlist, across all categories. */
+    readonly audioChannels = this.accessibleChannels;
     readonly remoteChannels = computed(() => {
         const available = new Map(
             this.accessibleChannels().map((item) => [

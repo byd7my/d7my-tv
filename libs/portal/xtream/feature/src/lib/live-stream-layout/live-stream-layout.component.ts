@@ -743,7 +743,10 @@ export class LiveStreamLayoutComponent
             this.buildSplitAudioContext(item);
         } catch (error) {
             this.splitAudio.setContext(null);
-            console.warn('Could not prepare split audio for this channel', error);
+            console.warn(
+                'Could not prepare split audio for this channel',
+                error
+            );
         }
     }
 
@@ -777,7 +780,7 @@ export class LiveStreamLayoutComponent
             }) as Channel;
         this.splitAudio.setContext({
             video: toChannel(item),
-            channels: this.getVisibleChannels().map(toChannel),
+            channels: this.channelNavigation.audioChannels().map(toChannel),
         });
     }
 
