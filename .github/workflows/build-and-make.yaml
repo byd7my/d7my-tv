@@ -478,6 +478,7 @@ jobs:
 
             - name: Apply automatic stable version
               if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'byd7my/d7my-tv'
+              shell: bash
               env:
                   VERSION: ${{ needs.nightly-version.outputs.stable_version }}
               run: |

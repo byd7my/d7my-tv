@@ -29,6 +29,7 @@ import {
 import {
     Channel,
     ExternalAudioOverride,
+    foldSearchText,
     OPEN_MPV_PLAYER,
 } from '@iptvnator/shared/interfaces';
 import { dialogSize } from '../../dialog-shell/dialog-size';
@@ -78,7 +79,7 @@ export class SplitAudioDialogComponent {
     protected readonly delay = signal(0);
 
     protected readonly visibleChannels = computed(() => {
-        const needle = this.query().trim().toLowerCase();
+        const needle = foldSearchText(this.query().trim());
         const videoUrl = this.data.video.url;
         return this.data.channels.filter(
             (channel) =>
@@ -86,7 +87,7 @@ export class SplitAudioDialogComponent {
                 (!this.favoritesOnly() ||
                     this.splitAudio.isFavorite(channel.url, 'audio') ||
                     this.splitAudio.isFavorite(channel.url, 'video')) &&
-                (!needle || (channel.name ?? '').toLowerCase().includes(needle))
+                (!needle || foldSearchText(channel.name ?? '').includes(needle))
         );
     });
 
