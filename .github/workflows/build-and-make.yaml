@@ -1772,7 +1772,7 @@ jobs:
                       artifacts/windows-artifacts/*-setup.exe
                       artifacts/windows-artifacts/*.msi
                       artifacts/windows-artifacts/*.zip
-                      artifacts/windows-artifacts/latest.yml
+                      artifacts/latest.yml
                       artifacts/windows-artifacts/*.blockmap
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -1795,9 +1795,9 @@ jobs:
                   generate_release_notes: false
                   fail_on_unmatched_files: true
                   files: |
-                      artifacts/windows-artifacts/*-windows-x64-setup.exe
-                      artifacts/windows-artifacts/latest.yml
-                      artifacts/windows-artifacts/*-windows-x64-setup.exe.blockmap
+                      artifacts/*-windows-x64-setup.exe
+                      artifacts/latest.yml
+                      artifacts/*-windows-x64-setup.exe.blockmap
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
