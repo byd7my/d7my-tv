@@ -14,6 +14,7 @@ import {
     FullscreenOverlayContainer,
     OverlayContainer,
 } from '@angular/cdk/overlay';
+import { MatDialog } from '@angular/material/dialog';
 import {
     ApplicationConfig,
     inject,
@@ -28,6 +29,10 @@ import { provideStore } from '@ngrx/store';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { PlaylistEffects, playlistReducer } from '@iptvnator/m3u-state';
+import {
+    SPLIT_AUDIO_DIALOG_OPENER,
+    type SplitAudioContext,
+} from '@iptvnator/services';
 import { NgxIndexedDBModule } from 'ngx-indexed-db';
 import { NgxSkeletonLoaderModule } from 'ngx-skeleton-loader';
 import {
@@ -94,6 +99,19 @@ export function DataFactory() {
 export const appConfig: ApplicationConfig = {
     providers: [
         provideZonelessChangeDetection(),
+        {
+            provide: SPLIT_AUDIO_DIALOG_OPENER,
+            useFactory: () => {
+                const dialog = inject(MatDialog);
+                // Loaded on demand: the dialog is opened rarely and its
+                // component library is large.
+                return (context: SplitAudioContext) =>
+                    void import('./services/split-audio-dialog.lazy').then(
+                        ({ SplitAudioDialogComponent }) =>
+                            SplitAudioDialogComponent.open(dialog, context)
+                    );
+            },
+        },
         provideRouter(routes, withComponentInputBinding()),
         // No provideAnimations(): nothing declares an Angular animation
         // trigger, and Material 22 animates with CSS, reading

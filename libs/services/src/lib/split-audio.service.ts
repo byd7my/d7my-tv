@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, InjectionToken, signal } from '@angular/core';
 import type { Channel, ExternalAudioOverride } from '@iptvnator/shared/interfaces';
 
 /** How long a requested override waits for the playback launch that should use it. */
@@ -20,6 +20,14 @@ const DELAY_STORAGE_PREFIX = 'iptvnator.splitAudioDelay.';
  * Pairs are stored under a hash, so stream URLs (which often carry the
  * provider login) never end up as storage keys.
  */
+/**
+ * Opens the "audio from another channel" dialog. Provided by the app, so the
+ * player controls do not have to import the dialog's component library.
+ */
+export const SPLIT_AUDIO_DIALOG_OPENER = new InjectionToken<
+    (context: SplitAudioContext) => void
+>('SPLIT_AUDIO_DIALOG_OPENER');
+
 /** The live channel being watched and the channels its audio can come from. */
 export interface SplitAudioContext {
     readonly video: Channel;
