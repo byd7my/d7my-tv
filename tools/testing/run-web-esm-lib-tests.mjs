@@ -55,7 +55,9 @@ const jestConfig = path.resolve(
 
 const result = spawnSync(
     process.execPath,
-    [jestBin, '--config', jestConfig, '--runTestsByPath', ...specFiles, ...jestArgs],
+    // 4 GiB heap: a two-core runner runs Jest in-band for big projects
+    // (ui-playback), and Node's default heap there is 2 GiB.
+    ['--max-old-space-size=4096', jestBin, '--config', jestConfig, '--runTestsByPath', ...specFiles, ...jestArgs],
     {
         env: process.env,
         stdio: 'inherit',
