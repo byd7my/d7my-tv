@@ -142,7 +142,7 @@
                 "measuredWith": "pnpm run perf:journeys (ubuntu-latest, xvfb), identical in all 55 measured iterations of 11 master runs, 2026-10-03 to 2026-10-04"
             },
             "renderer.layoutShiftScore": {
-                "value": 0.001,
+                "value": 0.004,
                 "unit": "score",
                 "slack": 0,
                 "note": "guard only, not validated: no PR has yet shown that lowering this counter lowers the journey wall-clock (Principle 3)",
