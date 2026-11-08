@@ -1,9 +1,9 @@
 /**
  * Desktop update channel. Electron only.
  *
- * `stable` follows the tagged releases of `4gray/iptvnator`; `nightly`
+ * `stable` follows the tagged releases of `byd7my/d7my-tv`; `nightly`
  * follows the prereleases that every master merge publishes to
- * `4gray/iptvnator-nightly`. The value is persisted with the other settings
+ * `byd7my/d7my-tv-nightly`. The value is persisted with the other settings
  * in the renderer and mirrored into the main-process config by the
  * `SETTINGS_UPDATE` handler, because the startup update check runs before
  * any renderer exists to ask.
@@ -44,8 +44,8 @@ interface AppUpdateRepository {
 }
 
 const APP_UPDATE_REPOSITORIES: Record<AppUpdateChannel, AppUpdateRepository> = {
-    stable: { owner: 'byd7my', repo: 'iptvnator' },
-    nightly: { owner: 'byd7my', repo: 'iptvnator-nightly' },
+    stable: { owner: 'byd7my', repo: 'd7my-tv' },
+    nightly: { owner: 'byd7my', repo: 'd7my-tv-nightly' },
 };
 
 export function appUpdateRepository(

@@ -292,7 +292,7 @@ test('GitHub Releases auto-update metadata is generated and uploaded', () => {
         {
             provider: 'github',
             owner: 'byd7my',
-            repo: 'iptvnator',
+            repo: 'd7my-tv',
         },
     ]);
     assert.deepEqual(electronBuilderConfig.mac?.target, [

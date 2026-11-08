@@ -23,27 +23,27 @@ describe('app update channel util', () => {
     it('maps each channel to its repository and pages', () => {
         expect(appUpdateRepository('stable')).toEqual({
             owner: 'byd7my',
-            repo: 'iptvnator',
+            repo: 'd7my-tv',
         });
         expect(appUpdateRepository('nightly')).toEqual({
             owner: 'byd7my',
-            repo: 'iptvnator-nightly',
+            repo: 'd7my-tv-nightly',
         });
         // /releases/latest never resolves to a prerelease.
         expect(appUpdateReleasesPageUrl('stable')).toBe(
-            'https://github.com/byd7my/iptvnator/releases/latest'
+            'https://github.com/byd7my/d7my-tv/releases/latest'
         );
         expect(appUpdateReleasesPageUrl('nightly')).toBe(
-            'https://github.com/byd7my/iptvnator-nightly/releases'
+            'https://github.com/byd7my/d7my-tv-nightly/releases'
         );
         expect(appUpdateReleasesApiUrl('nightly')).toBe(
-            'https://api.github.com/repos/byd7my/iptvnator-nightly/releases'
+            'https://api.github.com/repos/byd7my/d7my-tv-nightly/releases'
         );
         expect(appUpdateReleasesListUrl('stable')).toBe(
-            'https://github.com/byd7my/iptvnator/releases'
+            'https://github.com/byd7my/d7my-tv/releases'
         );
         expect(appUpdateReleasesListUrl('nightly')).toBe(
-            'https://github.com/byd7my/iptvnator-nightly/releases'
+            'https://github.com/byd7my/d7my-tv-nightly/releases'
         );
     });
 
