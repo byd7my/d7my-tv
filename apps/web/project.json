@@ -237,7 +237,7 @@
                     "apps/web/jest.config.ts"
                 ],
                 "env": {
-                    "NODE_OPTIONS": "--experimental-vm-modules"
+                    "NODE_OPTIONS": "--experimental-vm-modules --max-old-space-size=4096"
                 },
                 "forwardAllArgs": true
             }

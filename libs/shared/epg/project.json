@@ -10,7 +10,7 @@
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
                 "command": "node ./tools/testing/run-web-esm-lib-tests.mjs libs/shared/epg/src",
-                "env": { "NODE_OPTIONS": "--experimental-vm-modules" },
+                "env": { "NODE_OPTIONS": "--experimental-vm-modules --max-old-space-size=4096" },
                 "forwardAllArgs": true
             }
         },
