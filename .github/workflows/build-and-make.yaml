@@ -1551,7 +1551,9 @@ jobs:
               if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'byd7my/d7my-tv'
               env:
                   VERSION: ${{ needs.nightly-version.outputs.stable_version }}
-              run: node tools/release/build-release-notes.mjs --version "$VERSION" --consume
+              run: |
+                  node tools/release/build-release-notes.mjs --version "$VERSION" --format changelog
+                  node tools/release/build-release-notes.mjs --version "$VERSION" --consume
 
             - name: Download all artifacts
               uses: actions/download-artifact@v8

@@ -10,6 +10,12 @@
             <button
                 type="button"
                 class="split-audio__favorite"
+                [class.is-active]="
+                    splitAudio.isFavorite(data.video.url, 'video')
+                "
+                [attr.aria-pressed]="
+                    splitAudio.isFavorite(data.video.url, 'video')
+                "
                 (click)="toggleFavorite(data.video, 'video')"
             >
                 <mat-icon>{{
@@ -22,6 +28,14 @@
             <button
                 type="button"
                 class="split-audio__favorite"
+                [class.is-active]="
+                    splitAudio.isFavorite(data.video.url, 'video') &&
+                    splitAudio.isFavorite(data.video.url, 'audio')
+                "
+                [attr.aria-pressed]="
+                    splitAudio.isFavorite(data.video.url, 'video') &&
+                    splitAudio.isFavorite(data.video.url, 'audio')
+                "
                 (click)="toggleBothFavorites(data.video)"
             >
                 <mat-icon>stars</mat-icon>
@@ -78,6 +92,12 @@
                         <button
                             type="button"
                             class="split-audio__favorite-icon"
+                            [class.is-active]="
+                                splitAudio.isFavorite(channel.url, 'video')
+                            "
+                            [attr.aria-pressed]="
+                                splitAudio.isFavorite(channel.url, 'video')
+                            "
                             [attr.aria-label]="
                                 'CHANNELS.SPLIT_AUDIO.FAVORITE_VIDEO'
                                     | translate
@@ -93,6 +113,12 @@
                         <button
                             type="button"
                             class="split-audio__favorite-icon"
+                            [class.is-active]="
+                                splitAudio.isFavorite(channel.url, 'audio')
+                            "
+                            [attr.aria-pressed]="
+                                splitAudio.isFavorite(channel.url, 'audio')
+                            "
                             [attr.aria-label]="
                                 'CHANNELS.SPLIT_AUDIO.FAVORITE_AUDIO'
                                     | translate
@@ -108,6 +134,14 @@
                         <button
                             type="button"
                             class="split-audio__favorite-icon"
+                            [class.is-active]="
+                                splitAudio.isFavorite(channel.url, 'video') &&
+                                splitAudio.isFavorite(channel.url, 'audio')
+                            "
+                            [attr.aria-pressed]="
+                                splitAudio.isFavorite(channel.url, 'video') &&
+                                splitAudio.isFavorite(channel.url, 'audio')
+                            "
                             [attr.aria-label]="
                                 'CHANNELS.SPLIT_AUDIO.FAVORITE_BOTH' | translate
                             "
