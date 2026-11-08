@@ -1772,7 +1772,7 @@ jobs:
                       artifacts/windows-artifacts/*-setup.exe
                       artifacts/windows-artifacts/*.msi
                       artifacts/windows-artifacts/*.zip
-                      artifacts/latest.yml
+                      artifacts/windows-artifacts/latest.yml
                       artifacts/windows-artifacts/*.blockmap
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
