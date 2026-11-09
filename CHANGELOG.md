@@ -11,6 +11,12 @@ this marker — see `.changes/README.md`.
 
 <!-- next-release -->
 
+# 0.26.3 (2026-11-09)
+
+### Features
+
+- **playback** — The "Audio" button in the player now opens a light panel over the video instead of a dialog, so the picture keeps playing while you choose. It lists your favorite audio channels first, searches any channel as you type, adjusts the audio delay in steps, saves the delay per channel pair, and returns to the original audio in one tap. ([398d25c](https://github.com/4gray/iptvnator/commit/398d25c807fdabb37409b4871085065d5c0ddf83))
+
 # 0.26.2 (2026-11-08)
 
 ### Features
