@@ -104,6 +104,8 @@ export interface PlayerControlsState {
     status: PlayerStatus;
     /** Loading/error text for the player surface; '' when nothing to show. */
     statusMessage: string;
+    /** Why the audio from another channel failed; the picture is unaffected. */
+    externalAudioError?: string;
     stalled: boolean;
     positionSeconds: number;
     durationSeconds: number | null;

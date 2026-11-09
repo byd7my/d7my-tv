@@ -1,4 +1,9 @@
-import { Injector, runInInjectionContext, signal } from '@angular/core';
+import {
+    Injector,
+    runInInjectionContext,
+    signal,
+    type WritableSignal,
+} from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslateModule } from '@ngx-translate/core';
 import {
@@ -29,6 +34,7 @@ describe('SplitAudioPanelComponent', () => {
     let fixture: ComponentFixture<SplitAudioPanelComponent>;
     let controls: ControlsSplitAudio;
     let service: SplitAudioService;
+    let state: WritableSignal<PlayerControlsState>;
 
     const root = () => fixture.nativeElement as HTMLElement;
     const names = () =>
@@ -59,9 +65,10 @@ describe('SplitAudioPanelComponent', () => {
         });
         service = TestBed.inject(SplitAudioService);
         service.setContext({ video, channels: () => channels });
+        state = signal({ isLive: true } as PlayerControlsState);
         controls = runInInjectionContext(TestBed.inject(Injector), () =>
             new ControlsSplitAudio(
-                signal({ isLive: true } as PlayerControlsState),
+                state,
                 () =>
                     ({
                         setExternalAudio,
@@ -144,5 +151,12 @@ describe('SplitAudioPanelComponent', () => {
             new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
         );
         expect(closed).toBe(1);
+    });
+
+    it('tells the user when the audio channel failed, without touching the picture', () => {
+        expect(root().querySelector('[data-test-id="split-audio-error"]')).toBeNull();
+        state.update((value) => ({ ...value, externalAudioError: 'failed' }));
+        fixture.detectChanges();
+        expect(root().querySelector('[data-test-id="split-audio-error"]')).not.toBeNull();
     });
 });

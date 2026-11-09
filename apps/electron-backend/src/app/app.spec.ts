@@ -19,6 +19,7 @@ jest.mock('electron', () => ({
     },
     screen: {
         getPrimaryDisplay: jest.fn(),
+        getAllDisplays: jest.fn(),
     },
     session: {
         defaultSession: {
@@ -155,6 +156,9 @@ describe('Electron app security helpers', () => {
         (screen.getPrimaryDisplay as jest.Mock).mockReturnValue({
             workAreaSize: { height: 720, width: 1280 },
         });
+        (screen.getAllDisplays as jest.Mock).mockReturnValue([
+            { workArea: { x: 0, y: 0, width: 1280, height: 720 } },
+        ]);
         (store.get as jest.Mock).mockReturnValue(undefined);
         mockHasSwitch.mockReturnValue(false);
     });

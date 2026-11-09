@@ -158,6 +158,7 @@ export class EmbeddedMpvControlsAdapter implements PlayerController {
 
         return {
             ...mappedStatus,
+            externalAudioError: session?.externalAudioError,
             stalled: this.controller.stalled(),
             positionSeconds: Math.max(0, session?.positionSeconds ?? 0),
             durationSeconds,

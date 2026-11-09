@@ -1494,13 +1494,50 @@ jobs:
 
         steps: *electron-build-steps
 
+    # Nothing reaches the in-app updater unless the main checks pass first:
+    # every push to main of this repository publishes a stable release, so a
+    # broken commit would otherwise ship straight to the installed app.
+    quality-gate:
+        name: Quality gate
+        if: ${{ inputs.publish_release == true || (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'byd7my/d7my-tv') }}
+        runs-on: ubuntu-latest
+        timeout-minutes: 60
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v7
+
+            - name: Install pnpm
+              uses: pnpm/action-setup@v6.1.0
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v7
+              with:
+                  node-version-file: '.nvmrc'
+                  cache: 'pnpm'
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Translations are complete
+              run: node tools/i18n/check-drift.mjs
+
+            - name: Packaging contract tests
+              run: node --test tools/packaging/*.test.mjs
+
+            - name: Lint and unit tests of the player and update code
+              env:
+                  CI: true
+              run: pnpm nx run-many -t lint,test --projects=ui-playback,services,m3u-state,portal-xtream-feature,ui-components,web --parallel=2
+
     # Windows-only stable release: the same build steps as build-cross-platform,
     # for the Windows leg only, run when the workflow is dispatched with
     # publish_release.
     build-windows-release:
         name: Build Windows release (${{ matrix.arch }})
         if: ${{ inputs.publish_release == true || (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'byd7my/d7my-tv') }}
-        needs: nightly-version
+        needs:
+            - nightly-version
+            - quality-gate
         runs-on: ${{ matrix.runner }}
         timeout-minutes: 120
         concurrency:

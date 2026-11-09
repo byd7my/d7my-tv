@@ -158,7 +158,7 @@ handleEmbeddedMpv(
     (
         sessionId: string,
         playback: ResolvedPortalPlayback | null,
-        delaySeconds: number = 0
+        delaySeconds = 0
     ) => getService().setExternalAudio(sessionId, playback, delaySeconds)
 );
 handleEmbeddedMpv(

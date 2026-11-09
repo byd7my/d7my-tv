@@ -131,6 +131,9 @@ struct SnapshotState {
     std::string recordingTargetPath;
     std::string recordingStartedAt;
     std::string recordingError;
+    /* Why the audio taken from another channel could not be played; empty
+     * while it works. Independent of `error`, which belongs to the video. */
+    std::string externalAudioError;
     std::string error;
     /* True when `error` is the engine's own failure (a fatal libmpv log)
      * rather than the stream's: the app must not reload media for it. */
@@ -158,7 +161,18 @@ struct HelperState {
     std::atomic<bool> running{true};
     int64_t originalAudioTrackId = -1;
     bool externalAudioActive = false;
+    /* The video stream's request options, kept while the external audio's
+     * own headers are applied so they can be put back (see
+     * restoreVideoRequestOptions). */
+    bool requestOptionsSwapped = false;
+    std::string savedUserAgent;
+    std::string savedReferrer;
+    std::string savedHeaderFields;
 };
+
+/* Reply id of the async `audio-add`; command ids from nextCommandRequestId
+ * start at 1 and never reach it. */
+constexpr uint64_t kAudioAddReplyId = 0x41554449ULL;
 
 HelperState g_state;
 
@@ -301,6 +315,8 @@ std::string composeSnapshotLocked() {
         recording.str("startedAt", s.recordingStartedAt);
     if (!s.recordingError.empty()) recording.str("error", s.recordingError);
     writer.raw("recording", recording.finish());
+    /* Always emitted, like chapters: an omitted key would keep an old error. */
+    writer.str("externalAudioError", s.externalAudioError);
     if (!s.error.empty()) {
         writer.str("error", s.error);
         if (s.engineError) writer.str("errorOrigin", "engine");
@@ -602,6 +618,8 @@ void handlePropertyChange(const mpv_event_property& property) {
     markDirtyLocked();
 }
 
+void restoreVideoRequestOptions();
+
 void runMpvEventLoop() {
     while (g_state.running.load()) {
         mpv_event* event = mpv_wait_event(g_state.mpv, 0.1);
@@ -611,6 +629,7 @@ void runMpvEventLoop() {
             continue;
         }
 
+        bool replyToAudioAdd = false;
         {
             std::lock_guard<std::mutex> lock(g_state.mutex);
             SnapshotState& s = g_state.snapshot;
@@ -660,6 +679,19 @@ void runMpvEventLoop() {
                     markDirtyLocked();
                     break;
                 }
+                case MPV_EVENT_COMMAND_REPLY:
+                    /* The external audio's stream failed to open. Only the
+                     * audio is affected: the video keeps playing. */
+                    if (event->reply_userdata == kAudioAddReplyId) {
+                        if (event->error < 0) {
+                            s.externalAudioError =
+                                mpv_error_string(event->error);
+                            g_state.externalAudioActive = false;
+                            markDirtyLocked();
+                        }
+                        replyToAudioAdd = true;
+                    }
+                    break;
                 case MPV_EVENT_PROPERTY_CHANGE: {
                     const auto* property =
                         static_cast<mpv_event_property*>(event->data);
@@ -701,6 +733,7 @@ void runMpvEventLoop() {
                     break;
             }
         }
+        if (replyToAudioAdd) restoreVideoRequestOptions();
         maybeEmitSnapshot();
     }
     maybeEmitSnapshot(true);
@@ -728,6 +761,7 @@ void handleLoadCommand(const Command& command) {
         g_state.snapshot.streamUrl = url;
         g_state.externalAudioActive = false;
         g_state.originalAudioTrackId = -1;
+        g_state.snapshot.externalAudioError.clear();
         g_state.snapshot.error.clear();
         g_state.snapshot.engineError = false;
         g_state.snapshot.status = "loading";
@@ -793,6 +827,92 @@ void handleRecordCommand(const Command& command) {
     g_state.dirty = true;
 }
 
+/* The external audio is opened with its own user agent, referer and
+ * headers, which libmpv only has as global options. They apply while the
+ * `audio-add` opens its stream; afterwards the video's values go back, so a
+ * later reconnect or reload of the video never sends the audio's headers. */
+void restoreVideoRequestOptions() {
+    std::string userAgent;
+    std::string referrer;
+    std::string headerFields;
+    {
+        std::lock_guard<std::mutex> lock(g_state.mutex);
+        if (!g_state.requestOptionsSwapped) return;
+        g_state.requestOptionsSwapped = false;
+        userAgent = g_state.savedUserAgent;
+        referrer = g_state.savedReferrer;
+        headerFields = g_state.savedHeaderFields;
+    }
+    setPropertyString("user-agent", userAgent);
+    setPropertyString("referrer", referrer);
+    setPropertyString("http-header-fields", headerFields);
+}
+
+std::string readStringProperty(const char* name) {
+    char* value = mpv_get_property_string(g_state.mpv, name);
+    std::string result = value ? value : "";
+    if (value) mpv_free(value);
+    return result;
+}
+
+void handleExternalAudioCommand(const Command& command) {
+    const bool clear = command.get("clear") == "1";
+    bool wasActive = false;
+    int64_t originalAudioTrackId = -1;
+    {
+        std::lock_guard<std::mutex> lock(g_state.mutex);
+        wasActive = g_state.externalAudioActive;
+        if (!wasActive && !clear) {
+            g_state.originalAudioTrackId =
+                g_state.snapshot.selectedAudioTrackId;
+        }
+        originalAudioTrackId = g_state.originalAudioTrackId;
+        g_state.externalAudioActive = !clear;
+        g_state.snapshot.externalAudioError.clear();
+        g_state.dirty = true;
+    }
+    if (wasActive) {
+        const char* removeArgs[] = {"audio-remove", nullptr};
+        mpv_command_async(g_state.mpv, g_state.nextCommandRequestId++,
+                          removeArgs);
+    }
+    if (clear) {
+        restoreVideoRequestOptions();
+        if (wasActive) {
+            setPropertyString("aid", originalAudioTrackId >= 0
+                                         ? std::to_string(originalAudioTrackId)
+                                         : "auto");
+            double noDelay = 0;
+            mpv_set_property(g_state.mpv, "audio-delay", MPV_FORMAT_DOUBLE,
+                             &noDelay);
+        }
+        return;
+    }
+    const std::string url = command.get("url");
+    if (url.empty()) return;
+    restoreVideoRequestOptions();
+    {
+        const std::string userAgent = readStringProperty("user-agent");
+        const std::string referrer = readStringProperty("referrer");
+        const std::string headerFields =
+            readStringProperty("http-header-fields");
+        std::lock_guard<std::mutex> lock(g_state.mutex);
+        g_state.savedUserAgent = userAgent;
+        g_state.savedReferrer = referrer;
+        g_state.savedHeaderFields = headerFields;
+        g_state.requestOptionsSwapped = true;
+    }
+    setPropertyString("user-agent", command.get("user-agent"));
+    setPropertyString("referrer", command.get("referer"));
+    setPropertyString("http-header-fields", command.get("headers"));
+    double delay = std::clamp(command.getDouble("delay", 0), -60.0, 60.0);
+    mpv_set_property(g_state.mpv, "audio-delay", MPV_FORMAT_DOUBLE, &delay);
+    const std::string title = command.get("title");
+    const char* addArgs[] = {"audio-add", url.c_str(), "select",
+                             title.c_str(), nullptr};
+    mpv_command_async(g_state.mpv, kAudioAddReplyId, addArgs);
+}
+
 void handleCommand(const Command& command) {
     if (command.name == "load") {
         handleLoadCommand(command);
@@ -825,44 +945,7 @@ void handleCommand(const Command& command) {
         setPropertyString(command.name.c_str(),
                           value == "-1" ? "no" : value);
     } else if (command.name == "external-audio") {
-        const bool clear = command.get("clear") == "1";
-        bool wasActive = false;
-        int64_t originalAudioTrackId = -1;
-        {
-            std::lock_guard<std::mutex> lock(g_state.mutex);
-            wasActive = g_state.externalAudioActive;
-            if (!wasActive && !clear) {
-                g_state.originalAudioTrackId = g_state.snapshot.selectedAudioTrackId;
-            }
-            originalAudioTrackId = g_state.originalAudioTrackId;
-            g_state.externalAudioActive = !clear;
-        }
-        if (wasActive) {
-            const char* removeArgs[] = {"audio-remove", nullptr};
-            mpv_command_async(g_state.mpv, g_state.nextCommandRequestId++, removeArgs);
-        }
-        if (clear) {
-            if (wasActive) {
-                setPropertyString("aid", originalAudioTrackId >= 0
-                    ? std::to_string(originalAudioTrackId) : "auto");
-                double noDelay = 0;
-                mpv_set_property(g_state.mpv, "audio-delay", MPV_FORMAT_DOUBLE,
-                                 &noDelay);
-            }
-        } else {
-            setPropertyString("user-agent", command.get("user-agent"));
-            setPropertyString("referrer", command.get("referer"));
-            setPropertyString("http-header-fields", command.get("headers"));
-            double delay = std::clamp(command.getDouble("delay", 0), -60.0, 60.0);
-            mpv_set_property(g_state.mpv, "audio-delay", MPV_FORMAT_DOUBLE, &delay);
-            const std::string url = command.get("url");
-            const std::string title = command.get("title");
-            if (!url.empty()) {
-                const char* addArgs[] = {"audio-add", url.c_str(), "select",
-                                         title.c_str(), nullptr};
-                mpv_command_async(g_state.mpv, g_state.nextCommandRequestId++, addArgs);
-            }
-        }
+        handleExternalAudioCommand(command);
     } else if (command.name == "audio-delay") {
         double delay = std::clamp(command.getDouble("value", 0), -60.0, 60.0);
         mpv_set_property(g_state.mpv, "audio-delay", MPV_FORMAT_DOUBLE, &delay);

@@ -1,4 +1,9 @@
-import { Injector, runInInjectionContext, signal } from '@angular/core';
+import {
+    Injector,
+    runInInjectionContext,
+    signal,
+    type WritableSignal,
+} from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
     SPLIT_AUDIO_OVERRIDE_BUILDER,
@@ -20,6 +25,7 @@ describe('ControlsSplitAudio', () => {
     const setExternalAudio = jest.fn();
     const setExternalAudioDelay = jest.fn();
     let controls: ControlsSplitAudio;
+    let state: WritableSignal<PlayerControlsState>;
     let service: SplitAudioService;
     let channelsBuilt: number;
     let opened: number;
@@ -50,7 +56,7 @@ describe('ControlsSplitAudio', () => {
                 return [video, commentary];
             },
         });
-        const state = signal({ isLive: true } as PlayerControlsState);
+        state = signal({ isLive: true } as PlayerControlsState);
         controls = runInInjectionContext(TestBed.inject(Injector), () =>
             new ControlsSplitAudio(
                 state,
@@ -113,5 +119,17 @@ describe('ControlsSplitAudio', () => {
         expect(controls.available()).toBe(true);
         service.setContext(null);
         expect(controls.available()).toBe(false);
+    });
+
+    it('drops the selected audio when its channel fails to open', () => {
+        controls.select(commentary);
+        expect(controls.activeAudio()).not.toBeNull();
+        state.update((value) => ({
+            ...value,
+            externalAudioError: 'loading failed',
+        }));
+        TestBed.tick();
+        expect(controls.error()).toBe('loading failed');
+        expect(controls.activeAudio()).toBeNull();
     });
 });

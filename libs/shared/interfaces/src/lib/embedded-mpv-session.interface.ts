@@ -167,6 +167,11 @@ export interface EmbeddedMpvSession {
     /** Live diagnostics for the info popover; absent when mpv reports none. */
     stats?: EmbeddedMpvStreamStats;
     recording?: EmbeddedMpvRecordingState;
+    /**
+     * Why the audio taken from another channel could not be played. The video
+     * is unaffected; absent while the audio works.
+     */
+    externalAudioError?: string;
     startedAt: string;
     updatedAt: string;
     error?: string;

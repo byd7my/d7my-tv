@@ -1,4 +1,11 @@
-import { computed, inject, signal, type Signal } from '@angular/core';
+import {
+    computed,
+    effect,
+    inject,
+    signal,
+    untracked,
+    type Signal,
+} from '@angular/core';
 import {
     SPLIT_AUDIO_DIALOG_OPENER,
     SPLIT_AUDIO_OVERRIDE_BUILDER,
@@ -38,8 +45,19 @@ export class ControlsSplitAudio {
         private readonly state: Signal<PlayerControlsState>,
         private readonly commands?: () => PlayerControlsCommands,
         private readonly onPanelOpened?: () => void
-    ) {}
+    ) {
+        // The audio channel failed to open: it is not playing, so it must not
+        // stay marked as the selected one. The picture keeps playing.
+        effect(() => {
+            if (this.error() && untracked(this.activeAudio)) {
+                this.splitAudio.setActiveAudio(null);
+                this.savedDelay.set(null);
+            }
+        });
+    }
 
+    /** Why the chosen audio channel does not play; null while it works. */
+    readonly error = computed(() => this.state().externalAudioError ?? null);
     readonly panelOpen = signal(false);
     readonly activeAudio = this.splitAudio.activeAudio;
 

@@ -80,6 +80,8 @@ export interface NativeEmbeddedMpvSessionSnapshot {
     videoHeight?: number;
     stats?: EmbeddedMpvStreamStats;
     recording?: EmbeddedMpvRecordingState;
+    /** Set when the audio taken from another channel could not be played. */
+    externalAudioError?: string;
     error?: string;
     /**
      * `engine` when the error is the engine's own failure (a render context
@@ -1355,6 +1357,9 @@ export class EmbeddedMpvNativeService {
                 ? { stats: snapshot.stats }
                 : {}),
             recording: snapshot.recording ?? { active: false },
+            ...(snapshot.externalAudioError
+                ? { externalAudioError: snapshot.externalAudioError }
+                : {}),
             startedAt: session.startedAt,
             updatedAt: new Date().toISOString(),
             ...(snapshot.error ? { error: snapshot.error } : {}),

@@ -1030,7 +1030,8 @@
             "BACK_TO_ORIGINAL": "Back to original audio",
             "COMMENTARY_LATER": "+ delay commentary",
             "PICTURE_LATER": "− delay picture",
-            "SECONDS_SHORT": "s"
+            "SECONDS_SHORT": "s",
+            "AUDIO_FAILED": "This channel's audio could not be played. The picture is unaffected; try another channel."
         },
         "FAVORITES_UPDATED": "¡Se actualizaron los favoritos!",
         "SELECT_CHANNEL_PLAYBACK": "Selecciona un canal para iniciar la reproducción",

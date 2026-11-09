@@ -1030,7 +1030,8 @@
             "BACK_TO_ORIGINAL": "رجوع للصوت الأصلي",
             "COMMENTARY_LATER": "+ تأخير التعليق",
             "PICTURE_LATER": "− تأخير الصورة",
-            "SECONDS_SHORT": "ث"
+            "SECONDS_SHORT": "ث",
+            "AUDIO_FAILED": "تعذّر تشغيل صوت هذه القناة. الصورة ما تأثرت، جرّب قناة ثانية."
         },
         "FAVORITES_UPDATED": "تم تحديث المفضلة!",
         "SELECT_CHANNEL_PLAYBACK": "يرجى اختيار قناة لبدء التشغيل",

@@ -1,4 +1,5 @@
 import { app, BrowserWindow, Menu, screen, session, shell } from 'electron';
+import { usableSavedBounds } from './startup/saved-window-bounds.util';
 import {
     ElectronBridgeWindowState,
     MACOS_TRAFFIC_LIGHTS_POSITION,
@@ -499,7 +500,12 @@ export default class App {
         const width = Math.min(1280, workAreaSize.width || 1280);
         const height = Math.min(720, workAreaSize.height || 720);
 
-        const savedWindowBounds = store.get(WINDOW_BOUNDS);
+        // A position saved on a display that is gone would open the window
+        // off-screen; such a position is ignored and the window is centered.
+        const savedWindowBounds = usableSavedBounds(
+            store.get(WINDOW_BOUNDS),
+            screen.getAllDisplays().map((display) => display.workArea)
+        );
         const startupWindowMode = resolveStartupWindowMode({
             // One-shot: the switch describes the launch, not every window
             // this process ever opens. On macOS the process outlives its

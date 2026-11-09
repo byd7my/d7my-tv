@@ -247,7 +247,7 @@ export class EmbeddedMpvFrameCopyAdapter implements NativeEmbeddedMpvAddon {
             .filter(([key, value]) => key && value)
             .map(
                 ([key, value]) =>
-                    `${key}: ${String(value).replace(/,/g, '\\\,')}`
+                    `${key}: ${String(value).replace(/,/g, '\\,')}`
             )
             .join(',');
         this.send(

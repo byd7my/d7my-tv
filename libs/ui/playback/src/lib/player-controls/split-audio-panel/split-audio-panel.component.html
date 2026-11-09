@@ -25,6 +25,12 @@
         </button>
     </header>
 
+    @if (controls().error()) {
+        <p class="split-audio__error" role="alert" data-test-id="split-audio-error">
+            {{ 'CHANNELS.SPLIT_AUDIO.AUDIO_FAILED' | translate }}
+        </p>
+    }
+
     @if (searching()) {
         <input
             #searchInput
