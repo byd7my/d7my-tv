@@ -1518,6 +1518,10 @@ jobs:
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
 
+            # Some unit tests drive a real Chromium (IndexedDB across tabs).
+            - name: Install Chromium for browser tests
+              run: pnpm exec playwright install --with-deps chromium
+
             - name: Translations are complete
               run: node tools/i18n/check-drift.mjs
 
