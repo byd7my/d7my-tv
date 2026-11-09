@@ -11,6 +11,15 @@ this marker — see `.changes/README.md`.
 
 <!-- next-release -->
 
+# 0.26.5 (2026-11-09)
+
+<details>
+<summary>Internal changes</summary>
+
+- **playback** — Moved the player's cursor-hiding logic into its own helper so the control bar component stays within the size limit, without changing behavior. ([e6fa47a](https://github.com/4gray/iptvnator/commit/e6fa47a90070244538a9b7b93273e8a2f5f7263a))
+
+</details>
+
 # 0.26.4 (2026-11-09)
 
 ### Fixes
