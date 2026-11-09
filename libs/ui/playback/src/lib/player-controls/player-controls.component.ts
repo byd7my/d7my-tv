@@ -1,4 +1,3 @@
-/* eslint-disable max-lines -- The component only composes the control helpers (settings, split audio, timeline, shortcuts); each concern already lives in its own class. */
 import {
     ChangeDetectionStrategy,
     Component,
@@ -21,6 +20,7 @@ import { ControlsFullscreen } from './controls-fullscreen';
 import { ControlsLayout } from './controls-layout';
 import { ControlsMenuSelection } from './controls-menu-selection';
 import { type ControlsMenu, ControlsMenuState } from './controls-menu-state';
+import { bindCursorHiding } from './controls-cursor';
 import { ControlsSettings, ControlsSplitAudio } from './controls-settings';
 import { SplitAudioPanelComponent } from './split-audio-panel/split-audio-panel.component';
 import { ControlsShortcuts } from './controls-shortcuts';
@@ -293,19 +293,10 @@ export class PlayerControlsComponent implements OnDestroy {
             untracked(() => this.streamStats.start());
             onCleanup(() => this.streamStats.stop());
         });
-        effect((onCleanup) => {
-            const surface = this.playerSurface();
-            if (!surface || !this.hideCursor()) {
-                return;
-            }
-            const previousCursor = surface.style.cursor;
-            surface.style.cursor = 'none';
-            onCleanup(() => {
-                if (surface.style.cursor === 'none') {
-                    surface.style.cursor = previousCursor;
-                }
-            });
-        });
+        bindCursorHiding(
+            () => this.playerSurface(),
+            () => this.hideCursor()
+        );
         effect(() => {
             const state = this.state();
             const showControls = this.showControls();
