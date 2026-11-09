@@ -158,7 +158,9 @@ handleEmbeddedMpv(
     (
         sessionId: string,
         playback: ResolvedPortalPlayback | null,
-        delaySeconds = 0
+        // The annotation types the handler's contextual parameter list.
+        // eslint-disable-next-line @typescript-eslint/no-inferrable-types
+        delaySeconds: number = 0
     ) => getService().setExternalAudio(sessionId, playback, delaySeconds)
 );
 handleEmbeddedMpv(
