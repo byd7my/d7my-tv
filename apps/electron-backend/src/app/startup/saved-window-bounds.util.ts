@@ -5,7 +5,7 @@ export interface WindowRect {
     height: number;
 }
 
-/** A visible part of the window must be at least this big to be reachable. */
+/** A window needs at least this many pixels on a display to be reachable. */
 const MIN_VISIBLE_PX = 120;
 
 /**
