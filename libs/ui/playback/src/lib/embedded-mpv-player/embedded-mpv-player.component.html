@@ -385,60 +385,6 @@
                         </button>
                     }
 
-                    @if (splitAudio.available()) {
-                        <button
-                            mat-icon-button
-                            type="button"
-                            class="embedded-mpv-player__control-button"
-                            data-test-id="embedded-mpv-split-audio"
-                            (click)="splitAudio.open()"
-                            [attr.aria-label]="
-                                'CHANNELS.SPLIT_AUDIO.TITLE' | translate
-                            "
-                            [matTooltip]="
-                                'CHANNELS.SPLIT_AUDIO.TITLE' | translate
-                            "
-                            matTooltipPosition="above"
-                        >
-                            <mat-icon>surround_sound</mat-icon>
-                        </button>
-                        @if (splitAudio.activeAudio(); as activeAudio) {
-                            <span class="embedded-mpv-player__audio-source">{{
-                                activeAudio.title
-                            }}</span>
-                            <button
-                                mat-icon-button
-                                type="button"
-                                class="embedded-mpv-player__control-button"
-                                data-test-id="embedded-mpv-audio-delay-back"
-                                (click)="splitAudio.adjustDelay(-0.1)"
-                                [attr.aria-label]="
-                                    'CHANNELS.SPLIT_AUDIO.DELAY_HINT'
-                                        | translate
-                                "
-                                [matTooltip]="'−0.1 s · ' + activeAudio.title"
-                                matTooltipPosition="above"
-                            >
-                                <mat-icon>fast_rewind</mat-icon>
-                            </button>
-                            <button
-                                mat-icon-button
-                                type="button"
-                                class="embedded-mpv-player__control-button"
-                                data-test-id="embedded-mpv-audio-delay-forward"
-                                (click)="splitAudio.adjustDelay(0.1)"
-                                [attr.aria-label]="
-                                    'CHANNELS.SPLIT_AUDIO.DELAY_HINT'
-                                        | translate
-                                "
-                                [matTooltip]="'+0.1 s · ' + activeAudio.title"
-                                matTooltipPosition="above"
-                            >
-                                <mat-icon>fast_forward</mat-icon>
-                            </button>
-                        }
-                    }
-
                     @if (capabilities().subtitles && hasSubtitleTracks()) {
                         <button
                             mat-icon-button

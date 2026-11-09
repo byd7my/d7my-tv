@@ -322,15 +322,6 @@
     position: relative;
 }
 
-.embedded-mpv-player__audio-source {
-    max-width: 132px;
-    overflow: hidden;
-    color: var(--embedded-mpv-text-muted);
-    font-size: 0.72rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
 /* A dock panel morphs the whole controls row into a single full-width
    cell; the strip keeps its fixed height so MPV bounds stay untouched. */
 .embedded-mpv-player__controls--panel {

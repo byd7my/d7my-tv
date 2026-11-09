@@ -216,7 +216,7 @@ export class PlaylistEffects {
                 tap(([action, channels]) =>
                     this.splitAudio.setContext({
                         video: action.channel,
-                        channels,
+                        channels: () => channels,
                     })
                 )
             ),

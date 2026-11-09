@@ -1,0 +1,266 @@
+// Floating audio panel. Fixed dark glass with a red accent (the contrast pair
+// is independent of the app theme, like every overlay painted over video).
+:host {
+    --sa-accent: #e5392f;
+    --sa-accent-soft: rgba(229, 57, 47, 0.34);
+    --sa-text: #fff;
+    --sa-text-dim: rgba(255, 255, 255, 0.66);
+    --sa-chip: rgba(255, 255, 255, 0.1);
+
+    display: block;
+    color: var(--sa-text);
+}
+
+.split-audio {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(340px, calc(100cqw - 24px), calc(100vw - 24px));
+    max-height: min(calc(100cqh - 150px), 78vh);
+    padding: 14px 14px 12px;
+    overflow-y: auto;
+    background: rgba(24, 24, 26, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 22px;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(22px) saturate(1.4);
+    font-size: 0.9rem;
+}
+
+.split-audio button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+.split-audio button:focus-visible,
+.split-audio__search:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+.split-audio__header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.split-audio__header-icon {
+    color: var(--sa-accent);
+}
+
+.split-audio__title {
+    flex: 1;
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.split-audio__icon-button {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: var(--sa-text-dim);
+}
+
+.split-audio__icon-button:hover,
+.split-audio__icon-button--on {
+    background: var(--sa-chip);
+    color: var(--sa-text);
+}
+
+.split-audio__search {
+    width: 100%;
+    height: 38px;
+    padding: 0 14px;
+    color: var(--sa-text);
+    background: var(--sa-chip);
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font: inherit;
+    box-sizing: border-box;
+}
+
+.split-audio__search::placeholder {
+    color: var(--sa-text-dim);
+}
+
+.split-audio__list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    max-height: 210px;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.split-audio__row {
+    display: flex;
+    align-items: center;
+    border-radius: 14px;
+}
+
+.split-audio__row--active {
+    background: var(--sa-accent-soft);
+}
+
+.split-audio__pick {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    min-height: 42px;
+    padding: 0 12px;
+    background: transparent;
+    border: 0;
+    border-radius: 14px;
+    text-align: start;
+}
+
+.split-audio__row:not(.split-audio__row--active) .split-audio__pick:hover {
+    background: var(--sa-chip);
+}
+
+.split-audio__row--active .split-audio__pick {
+    font-weight: 700;
+}
+
+.split-audio__wave {
+    flex: 0 0 auto;
+    color: var(--sa-accent);
+}
+
+.split-audio__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.split-audio__star {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: var(--sa-text-dim);
+}
+
+.split-audio__star--on {
+    color: #ffc13d;
+}
+
+.split-audio__empty {
+    padding: 14px 8px;
+    color: var(--sa-text-dim);
+    font-size: 0.82rem;
+    text-align: center;
+}
+
+.split-audio__divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.split-audio__stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 5px;
+    border: 2px solid var(--sa-accent);
+    border-radius: 18px;
+}
+
+.split-audio__step-button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 40px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 12px;
+}
+
+.split-audio__step-button:hover {
+    background: var(--sa-chip);
+}
+
+.split-audio__delay {
+    flex: 1;
+    padding: 9px 0;
+    background: var(--sa-accent-soft);
+    border-radius: 12px;
+    font-size: 1.15rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    text-align: center;
+    unicode-bidi: plaintext;
+}
+
+.split-audio__chips {
+    display: flex;
+    gap: 8px;
+}
+
+.split-audio__chip {
+    flex: 1;
+    height: 38px;
+    padding: 0;
+    background: var(--sa-chip);
+    border: 0;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.split-audio__chip--on {
+    background: var(--sa-accent);
+    color: #fff;
+}
+
+.split-audio__hints {
+    display: flex;
+    justify-content: space-between;
+    margin-top: -4px;
+    color: var(--sa-text-dim);
+    font-size: 0.76rem;
+}
+
+.split-audio__save {
+    height: 46px;
+    background: var(--sa-accent);
+    border: 0;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.split-audio__save:disabled {
+    background: var(--sa-accent-soft);
+    color: var(--sa-text-dim);
+    cursor: default;
+}
+
+.split-audio__original {
+    align-self: center;
+    padding: 2px 8px;
+    background: transparent;
+    border: 0;
+    color: var(--sa-text);
+    font-size: 0.86rem;
+    text-decoration: underline;
+}

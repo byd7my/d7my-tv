@@ -316,13 +316,49 @@
     min-width: 0;
 }
 
-.player-controls__split-audio-name {
-    max-width: 132px;
-    overflow: hidden;
-    color: var(--pc-text-secondary);
-    font-size: 0.72rem;
-    text-overflow: ellipsis;
+.player-controls__audio-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 14px;
+    color: var(--pc-text);
+    background: rgba(255, 255, 255, 0.12);
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 600;
     white-space: nowrap;
+}
+
+.player-controls__audio-pill:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.player-controls__audio-pill--active {
+    color: #fff;
+    background: #e5392f;
+}
+
+.player-controls__audio-pill mat-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+}
+
+.player-controls__audio-pill-delay {
+    font-variant-numeric: tabular-nums;
+    unicode-bidi: plaintext;
+}
+
+// Over the video, above the dock, at the end side like the other popovers.
+.player-controls__split-audio-panel {
+    position: absolute;
+    inset-inline-end: 20px;
+    bottom: 104px;
+    z-index: 4;
 }
 
 .player-controls__transport {

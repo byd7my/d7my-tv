@@ -1020,7 +1020,17 @@
             "ADVANCE": "Audio ahead by 0.1 seconds",
             "NEEDS_MPV": "Plays in a separate MPV window (MPV must be installed), whichever player is selected in Settings.",
             "PLAY": "Play",
-            "USE_ORIGINAL": "Use original channel audio"
+            "USE_ORIGINAL": "Use original channel audio",
+            "PANEL_TITLE": "Audio",
+            "SEARCH_PLACEHOLDER": "Type a channel name",
+            "NO_FAVORITES": "No favorites yet. Tap the search icon, find a channel and tap its star.",
+            "NO_MATCHES": "No matching channels",
+            "SAVE_DELAY": "Save delay",
+            "DELAY_SAVED": "Delay saved",
+            "BACK_TO_ORIGINAL": "Back to original audio",
+            "COMMENTARY_LATER": "+ delay commentary",
+            "PICTURE_LATER": "− delay picture",
+            "SECONDS_SHORT": "s"
         },
         "FAVORITES_UPDATED": "Favorites were updated!",
         "SELECT_CHANNEL_PLAYBACK": "Please select a channel to start playback",

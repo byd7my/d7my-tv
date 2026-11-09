@@ -780,7 +780,9 @@ export class LiveStreamLayoutComponent
             }) as Channel;
         this.splitAudio.setContext({
             video: toChannel(item),
-            channels: this.channelNavigation.audioChannels().map(toChannel),
+            // Built only when the audio picker opens.
+            channels: () =>
+                this.channelNavigation.audioChannels().map(toChannel),
         });
     }
 

@@ -25,12 +25,18 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
 import { provideEffects } from '@ngrx/effects';
 import { provideRouterStore, routerReducer } from '@ngrx/router-store';
-import { provideStore } from '@ngrx/store';
+import { Store, provideStore } from '@ngrx/store';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
-import { PlaylistEffects, playlistReducer } from '@iptvnator/m3u-state';
+import {
+    PlaylistEffects,
+    playlistReducer,
+    resolveExternalPlayerHttpHeaders,
+    selectActivePlaylist,
+} from '@iptvnator/m3u-state';
 import {
     SPLIT_AUDIO_DIALOG_OPENER,
+    SPLIT_AUDIO_OVERRIDE_BUILDER,
     type SplitAudioContext,
 } from '@iptvnator/services';
 import { NgxIndexedDBModule } from 'ngx-indexed-db';
@@ -45,7 +51,11 @@ import {
     provideParentalLockPlaylistCleanup,
     DataService,
 } from '@iptvnator/services';
-import { dbConfig } from '@iptvnator/shared/interfaces';
+import {
+    dbConfig,
+    type Channel,
+    type ExternalAudioOverride,
+} from '@iptvnator/shared/interfaces';
 import { getInitialLanguage } from './app-language-preference';
 import { storeDevtoolsProviders } from '../environments/store-devtools.providers';
 import { routes } from './app.routes';
@@ -107,19 +117,38 @@ export const appConfig: ApplicationConfig = {
                 // component library is large.
                 return (
                     context: SplitAudioContext,
-                    onSelect?: (
-                        audio:
-                            | import('@iptvnator/shared/interfaces').ExternalAudioOverride
-                            | null
-                    ) => void
+                    onSelect?: (audio: ExternalAudioOverride | null) => void
                 ) =>
                     void import('./services/split-audio-dialog.lazy').then(
                         ({ SplitAudioDialogComponent }) =>
                             SplitAudioDialogComponent.open(dialog, {
-                                ...context,
+                                video: context.video,
+                                channels: context.channels(),
                                 onSelect,
                             })
                     );
+            },
+        },
+        {
+            provide: SPLIT_AUDIO_OVERRIDE_BUILDER,
+            useFactory: () => {
+                const playlist = inject(Store).selectSignal(
+                    selectActivePlaylist
+                );
+                return (channel: Channel, delaySeconds: number) => {
+                    const headers = resolveExternalPlayerHttpHeaders(
+                        channel,
+                        playlist()
+                    );
+                    return {
+                        streamUrl: channel.url,
+                        title: channel.name,
+                        delaySeconds,
+                        userAgent: headers['user-agent'],
+                        referer: headers.referer,
+                        origin: headers.origin,
+                    };
+                };
             },
         },
         provideRouter(routes, withComponentInputBinding()),

@@ -438,52 +438,34 @@
 
                 @if (splitAudio.available()) {
                     <button
-                        mat-icon-button
                         type="button"
-                        class="player-controls__button"
-                        data-test-id="player-controls-split-audio-button"
-                        (click)="splitAudio.open()"
-                        [attr.aria-label]="
-                            'CHANNELS.SPLIT_AUDIO.TITLE' | translate
+                        class="player-controls__audio-pill"
+                        [class.player-controls__audio-pill--active]="
+                            splitAudio.activeAudio() !== null
                         "
-                        [matTooltip]="'CHANNELS.SPLIT_AUDIO.TITLE' | translate"
-                        matTooltipPosition="above"
+                        data-test-id="player-controls-split-audio-button"
+                        [attr.aria-expanded]="splitAudio.panelOpen()"
+                        [attr.aria-label]="
+                            'CHANNELS.SPLIT_AUDIO.PANEL_TITLE' | translate
+                        "
+                        (click)="splitAudio.open()"
                     >
-                        <mat-icon>surround_sound</mat-icon>
-                    </button>
-                    @if (splitAudio.activeAudio(); as activeAudio) {
-                        <span class="player-controls__split-audio-name">{{
-                            activeAudio.title
+                        <mat-icon aria-hidden="true">surround_sound</mat-icon>
+                        <span>{{
+                            'CHANNELS.SPLIT_AUDIO.PANEL_TITLE' | translate
                         }}</span>
-                        <button
-                            mat-icon-button
-                            type="button"
-                            class="player-controls__button"
-                            data-test-id="player-controls-audio-delay-back"
-                            (click)="splitAudio.adjustDelay(-0.1)"
-                            [attr.aria-label]="
-                                'CHANNELS.SPLIT_AUDIO.DELAY_HINT' | translate
-                            "
-                            [matTooltip]="'−0.1 s · ' + activeAudio.title"
-                            matTooltipPosition="above"
-                        >
-                            <mat-icon>fast_rewind</mat-icon>
-                        </button>
-                        <button
-                            mat-icon-button
-                            type="button"
-                            class="player-controls__button"
-                            data-test-id="player-controls-audio-delay-forward"
-                            (click)="splitAudio.adjustDelay(0.1)"
-                            [attr.aria-label]="
-                                'CHANNELS.SPLIT_AUDIO.DELAY_HINT' | translate
-                            "
-                            [matTooltip]="'+0.1 s · ' + activeAudio.title"
-                            matTooltipPosition="above"
-                        >
-                            <mat-icon>fast_forward</mat-icon>
-                        </button>
-                    }
+                        @if (splitAudio.activeAudio(); as activeAudio) {
+                            @if (activeAudio.delaySeconds) {
+                                <span class="player-controls__audio-pill-delay">{{
+                                    activeAudio.delaySeconds > 0 ? '+' : ''
+                                }}{{ activeAudio.delaySeconds
+                                }}{{
+                                    'CHANNELS.SPLIT_AUDIO.SECONDS_SHORT'
+                                        | translate
+                                }}</span>
+                            }
+                        }
+                    </button>
                 }
 
                 @if (settings.available()) {
@@ -670,4 +652,12 @@
             (focusout)="chrome.onFocusOut($event)"
         />
     }
+}
+
+@if (splitAudio.available() && splitAudio.usesPanel() && splitAudio.panelOpen()) {
+    <app-split-audio-panel
+        class="player-controls__split-audio-panel"
+        [controls]="splitAudio"
+        (closed)="splitAudio.closePanel()"
+    />
 }

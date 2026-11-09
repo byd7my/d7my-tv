@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- The component only composes the control helpers (settings, split audio, timeline, shortcuts); each concern already lives in its own class. */
 import {
     ChangeDetectionStrategy,
     Component,
@@ -21,6 +22,7 @@ import { ControlsLayout } from './controls-layout';
 import { ControlsMenuSelection } from './controls-menu-selection';
 import { type ControlsMenu, ControlsMenuState } from './controls-menu-state';
 import { ControlsSettings, ControlsSplitAudio } from './controls-settings';
+import { SplitAudioPanelComponent } from './split-audio-panel/split-audio-panel.component';
 import { ControlsShortcuts } from './controls-shortcuts';
 import { ControlsStreamStats } from './controls-stream-stats';
 import { ControlsSurface } from './controls-surface';
@@ -53,6 +55,7 @@ import { PlayerUpNextCardComponent } from './player-up-next-card.component';
         MatTooltipModule,
         TranslatePipe,
         PlayerSettingsPanelComponent,
+        SplitAudioPanelComponent,
         PlayerTimelineComponent,
         PlayerUpNextCardComponent,
     ],
@@ -147,7 +150,8 @@ export class PlayerControlsComponent implements OnDestroy {
     readonly state = computed(() => this.controller().state());
     readonly splitAudio = new ControlsSplitAudio(
         this.state,
-        () => this.controller().commands
+        () => this.controller().commands,
+        () => this.reveal({ scheduleHide: false })
     );
     readonly capabilities = computed(() => this.controller().capabilities());
     readonly settings = new ControlsSettings({

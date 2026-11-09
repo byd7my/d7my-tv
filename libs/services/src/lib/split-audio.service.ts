@@ -37,11 +37,23 @@ export const SPLIT_AUDIO_DIALOG_OPENER = new InjectionToken<
 
 export type SplitAudioFavoriteRole = 'video' | 'audio';
 
-/** The live channel being watched and the channels its audio can come from. */
+/**
+ * The live channel being watched and the channels its audio can come from.
+ * The channel list is built on demand: a playlist can hold thousands of
+ * channels and most channel changes never open the audio picker.
+ */
 export interface SplitAudioContext {
     readonly video: Channel;
-    readonly channels: readonly Channel[];
+    readonly channels: () => readonly Channel[];
 }
+
+/**
+ * Turns a channel into the audio source for the player, with the request
+ * headers (user agent, referer, origin) that channel and its playlist need.
+ */
+export const SPLIT_AUDIO_OVERRIDE_BUILDER = new InjectionToken<
+    (channel: Channel, delaySeconds: number) => ExternalAudioOverride
+>('SPLIT_AUDIO_OVERRIDE_BUILDER');
 
 @Injectable({ providedIn: 'root' })
 export class SplitAudioService {
