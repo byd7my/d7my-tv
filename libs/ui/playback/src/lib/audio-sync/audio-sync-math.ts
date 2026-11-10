@@ -6,7 +6,8 @@
  * picture, so its sound arrives early and has to be delayed.
  *
  * The audio in use is already shifted by `delay` seconds (mpv's audio-delay,
- * positive = later), so what is still out of step is `offset − delay`.
+ * positive = later), so what is still out of step is `offset − delay`. The
+ * offset does not depend on the delay, so it stays put while the user adjusts.
  */
 
 /** Differences at or below this many seconds count as in sync. */
