@@ -11,6 +11,12 @@ this marker — see `.changes/README.md`.
 
 <!-- next-release -->
 
+# 0.26.10 (2026-11-10)
+
+### Fixes
+
+- **playback** — The audio-sync window could not read the match clock in the installed app ("clock reader could not start"). The reading engine is now loaded in a way that works in the packaged build. ([2575ea3](https://github.com/4gray/iptvnator/commit/2575ea30f96937429b35ca3b9af29bf303f80fe9))
+
 # 0.26.9 (2026-11-10)
 
 ### Fixes
