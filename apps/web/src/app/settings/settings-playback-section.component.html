@@ -9,6 +9,7 @@
             <h3>{{ 'SETTINGS.CARD_PLAYER' | translate }}</h3>
         </div>
         <div class="settings-card">
+            @if (players().length > 1) {
             <div class="setting-item" data-setting-id="video-player">
                 <div class="setting-item__meta">
                     <h4 id="video-player-label">
@@ -53,6 +54,7 @@
                     </mat-form-field>
                 </div>
             </div>
+            }
 
             @if (
                 supportsExternalPlayerPathSettings() &&

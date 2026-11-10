@@ -140,16 +140,17 @@ export function buildSettingsPlayerOptions({
     supportsEmbeddedMpv,
     supportsManagedExternalPlayers,
 }: SettingsPlayerAvailability): SettingsPlayerOption[] {
+    // Desktop builds play with Embedded MPV only: no choice to make.
+    if (supportsEmbeddedMpv) {
+        return [
+            {
+                id: VideoPlayer.EmbeddedMpv,
+                labelKey: 'SETTINGS.PLAYER_EMBEDDED_MPV',
+            },
+        ];
+    }
     return [
         ...SETTINGS_EMBEDDED_PLAYER_OPTIONS,
-        ...(supportsEmbeddedMpv
-            ? [
-                  {
-                      id: VideoPlayer.EmbeddedMpv,
-                      labelKey: 'SETTINGS.PLAYER_EMBEDDED_MPV',
-                  },
-              ]
-            : []),
         ...(supportsManagedExternalPlayers ? SETTINGS_OS_PLAYER_OPTIONS : []),
     ];
 }

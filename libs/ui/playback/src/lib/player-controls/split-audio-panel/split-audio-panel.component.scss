@@ -9,6 +9,9 @@
 
     display: block;
     color: var(--sa-text);
+    // The control layer is transparent to the mouse; this panel opts back in,
+    // otherwise every click goes through to the video (and pauses it).
+    pointer-events: auto;
 }
 
 .split-audio {

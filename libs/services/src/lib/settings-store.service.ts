@@ -362,16 +362,27 @@ export const SettingsStore = signalStore(
                 );
             },
 
+            /**
+             * The desktop app plays with Embedded MPV only. Whatever player an
+             * older version saved is replaced, and a failed support probe never
+             * puts another player back: the player shows why it cannot start.
+             * The web build has no embedded MPV and keeps its own players.
+             */
             async sanitizeEmbeddedMpvSelection() {
-                const isSaved = () =>
-                    store.player() === VideoPlayer.EmbeddedMpv;
-                if (isSaved()) {
-                    await verifySavedEmbeddedMpvPlayer(isSaved, () =>
-                        this.updateSettings({
-                            player: DEFAULT_SETTINGS.player,
-                        })
-                    );
+                const electron =
+                    typeof window === 'undefined' ? undefined : window.electron;
+                if (!electron?.getEmbeddedMpvSupport) {
+                    return;
                 }
+                if (store.player() !== VideoPlayer.EmbeddedMpv) {
+                    await this.updateSettings({
+                        player: VideoPlayer.EmbeddedMpv,
+                    });
+                }
+                await verifySavedEmbeddedMpvPlayer(
+                    () => store.player() === VideoPlayer.EmbeddedMpv,
+                    async () => undefined
+                );
             },
         };
     }),

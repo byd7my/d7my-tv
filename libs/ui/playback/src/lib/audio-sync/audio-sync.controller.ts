@@ -4,10 +4,7 @@ import type {
     EmbeddedMpvFrameRegion,
 } from '@iptvnator/shared/interfaces';
 import {
-    formatMatchClock,
-    MatchClockTracker,
     parseManualClock,
-    parseMatchClock,
 } from '../match-clock/match-clock.util';
 import { OffsetSmoother, residualSeconds, suggestCorrection } from './audio-sync-math';
 import {
@@ -31,10 +28,7 @@ import {
     PICK_CAPTURE_WIDTH,
     PreviewStatus,
     safeLocalStorage,
-    sameReadout,
-    SourceProblem,
     SourceReadout,
-    STALE_AFTER_MS,
     SyncMode,
     SyncSourceKey,
     TICK_MS,

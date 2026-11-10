@@ -87,16 +87,13 @@ describe('SettingsStore saved Embedded MPV selection', () => {
         expect(storage.set).not.toHaveBeenCalled();
     });
 
-    it('falls back to the default player on a final unsupported answer', async () => {
+    it('keeps Embedded MPV on a final unsupported answer', async () => {
         getEmbeddedMpvSupport.mockResolvedValue(MPV_MISSING);
 
         const store = await start();
 
-        expect(store.player()).toBe(VideoPlayer.VideoJs);
-        expect(storage.set).toHaveBeenCalledWith(
-            STORE_KEY.Settings,
-            expect.objectContaining({ player: VideoPlayer.VideoJs })
-        );
+        expect(store.player()).toBe(VideoPlayer.EmbeddedMpv);
+        expect(persistedPlayers()).not.toContain(VideoPlayer.VideoJs);
     });
 
     it('keeps the saved player when Embedded MPV is supported', async () => {
@@ -112,7 +109,7 @@ describe('SettingsStore saved Embedded MPV selection', () => {
         expect(getEmbeddedMpvSupport).toHaveBeenCalledTimes(1);
     });
 
-    it('follows an inconclusive answer and falls back once mpv is finally missing', async () => {
+    it('keeps Embedded MPV once mpv is finally reported missing', async () => {
         getEmbeddedMpvSupport
             .mockResolvedValueOnce(INCONCLUSIVE)
             .mockResolvedValue(MPV_MISSING);
@@ -123,8 +120,8 @@ describe('SettingsStore saved Embedded MPV selection', () => {
         // The login shell answered: mpv really is not installed.
         await jest.advanceTimersByTimeAsync(EMBEDDED_MPV_SUPPORT_RECHECK_MS);
 
-        expect(store.player()).toBe(VideoPlayer.VideoJs);
-        expect(persistedPlayers()).toEqual([VideoPlayer.VideoJs]);
+        expect(store.player()).toBe(VideoPlayer.EmbeddedMpv);
+        expect(persistedPlayers()).not.toContain(VideoPlayer.VideoJs);
     });
 
     it('follows an inconclusive answer and keeps the player once mpv is found', async () => {
@@ -176,15 +173,15 @@ describe('SettingsStore saved Embedded MPV selection', () => {
         expect(persistedPlayers()).toEqual([VideoPlayer.VLC]);
     });
 
-    it('falls back to the default player when the support check fails', async () => {
+    it('keeps Embedded MPV when the support check fails', async () => {
         const warn = jest.spyOn(console, 'warn').mockImplementation();
         getEmbeddedMpvSupport.mockRejectedValue(new Error('bridge failed'));
 
         try {
             const store = await start();
 
-            expect(store.player()).toBe(VideoPlayer.VideoJs);
-            expect(persistedPlayers()).toEqual([VideoPlayer.VideoJs]);
+            expect(store.player()).toBe(VideoPlayer.EmbeddedMpv);
+            expect(persistedPlayers()).not.toContain(VideoPlayer.VideoJs);
         } finally {
             warn.mockRestore();
         }
