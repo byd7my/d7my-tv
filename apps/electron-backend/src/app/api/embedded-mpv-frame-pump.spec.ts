@@ -5,7 +5,14 @@ jest.mock('electron', () => ({
     },
 }));
 
-import { copyStableLatestFrame, extractRegion } from './embedded-mpv-frame-pump';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import {
+    copyStableLatestFrame,
+    extractRegion,
+    readerPathForRole,
+} from './embedded-mpv-frame-pump';
 
 describe('embedded MPV frame pump', () => {
     const frame = new ArrayBuffer(16);
@@ -75,5 +82,22 @@ describe('extractRegion', () => {
         const result = extractRegion(frame, 4, 2, undefined, 2, 0, 1);
 
         expect(result).toMatchObject({ width: 2, height: 1 });
+    });
+});
+
+describe('readerPathForRole', () => {
+    const original = join(mkdtempSync(join(tmpdir(), 'reader-spec-')), 'r.node');
+    writeFileSync(original, 'addon');
+
+    it('lets the main picture use the shipped file itself', () => {
+        expect(readerPathForRole('main', original)).toBe(original);
+    });
+
+    it('gives the preview its own copy so the two never share a frame ring', () => {
+        const copy = readerPathForRole('preview', original);
+        expect(copy).not.toBe(original);
+        expect(readFileSync(copy, 'utf8')).toBe('addon');
+        // Asking again reuses the copy (a loaded library cannot be rewritten).
+        expect(readerPathForRole('preview', original)).toBe(copy);
     });
 });

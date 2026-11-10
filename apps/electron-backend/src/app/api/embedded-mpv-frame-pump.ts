@@ -10,6 +10,9 @@
  * contextBridge — the bridge only exposes attach/detach lifecycle calls.
  */
 import { ipcRenderer } from 'electron';
+import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { basename, join } from 'node:path';
 import {
     EMBEDDED_MPV_FRAME_SOURCE_CHANGED,
     EMBEDDED_MPV_GET_FRAME_SOURCE,
@@ -118,6 +121,27 @@ export function copyStableLatestFrame(
     // previous sequence so the next animation tick retries instead of
     // uploading partially copied pixels or marking the frame consumed.
     return result && !result.torn ? result : null;
+}
+
+/**
+ * The addon keeps one open frame ring in static state, and Node loads one
+ * copy of a .node file per path. Two pumps sharing it would swap rings under
+ * each other: the preview opening its own ring made the main picture read the
+ * wrong ring, throw "buffer smaller than one frame" on every tick and freeze.
+ * Each extra role therefore loads its own copy of the file, which the system
+ * loads as a separate library with separate state.
+ */
+export function readerPathForRole(
+    role: FramePumpRole,
+    readerPath: string
+): string {
+    if (role === 'main') return readerPath;
+    const folder = join(tmpdir(), 'iptvnator-frame-reader');
+    mkdirSync(folder, { recursive: true });
+    const copy = join(folder, `${process.pid}-${role}-${basename(readerPath)}`);
+    // A loaded library cannot be overwritten on Windows: copy it once.
+    if (!existsSync(copy)) copyFileSync(readerPath, copy);
+    return copy;
 }
 
 function delay(ms: number): Promise<void> {
@@ -290,7 +314,9 @@ export async function attachEmbeddedMpvFrameView(
 
     let reader: FrameReaderAddon;
     try {
-        reader = nodeRequire(source.readerPath) as FrameReaderAddon;
+        reader = nodeRequire(
+            readerPathForRole(role, source.readerPath)
+        ) as FrameReaderAddon;
     } catch (error) {
         console.error('[embedded-mpv-pump] failed to load reader:', error);
         return false;
