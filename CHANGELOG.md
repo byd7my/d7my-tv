@@ -11,6 +11,12 @@ this marker — see `.changes/README.md`.
 
 <!-- next-release -->
 
+# 0.26.6 (2026-11-10)
+
+### Features
+
+- **playback** — Embedded MPV (Windows, experimental) can sync a separate audio channel by the match clock: a small draggable window shows both scoreboard clocks, their difference, the current audio delay and a suggested correction you can apply or fine-tune. The main video is never paused or resized. ([27c09ed](https://github.com/4gray/iptvnator/commit/27c09ed9defce9672ba36436506b030bb278ed32))
+
 # 0.26.5 (2026-11-09)
 
 <details>
