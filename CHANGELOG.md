@@ -11,6 +11,12 @@ this marker — see `.changes/README.md`.
 
 <!-- next-release -->
 
+# 0.26.7 (2026-11-10)
+
+### Fixes
+
+- **playback** — Choosing a split audio channel now opens the sync window and measures the match clock of both channels by itself, then suggests the delay. It uses only two connections (the sound pauses briefly while measuring), with a live preview as an option. The audio button no longer disappears. ([8afa6a3](https://github.com/4gray/iptvnator/commit/8afa6a3e5939c1a8735209158216b609a14603ca))
+
 # 0.26.6 (2026-11-10)
 
 ### Features
