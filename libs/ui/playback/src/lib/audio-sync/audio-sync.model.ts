@@ -8,6 +8,8 @@ import type { MatchClockOcrService } from '../match-clock/match-clock-ocr.servic
 
 export type SyncSourceKey = 'main' | 'audio';
 export type SyncMode = 'live' | 'pick';
+/** `measure` reads the clocks once with a temporary picture; `live` keeps it. */
+export type ViewMode = 'measure' | 'live';
 export type PreviewStatus = 'idle' | 'starting' | 'live' | 'failed';
 
 /** Why a source shows no clock. Maps to a translated message. */
@@ -16,7 +18,11 @@ export type SourceProblem =
     | 'noFrame'
     | 'stale'
     | 'noClock'
-    | 'failed';
+    | 'failed'
+    /** Measure view: no picture is open, press "measure". */
+    | 'idle'
+    /** Measure view: the picture was closed after a successful measure. */
+    | 'measured';
 
 export interface SourceReadout {
     /** Clock as read from the picture, e.g. "87:43"; null when none. */
@@ -53,6 +59,10 @@ export interface AudioSyncOptions {
     audio: Signal<ExternalAudioOverride | null>;
     videoUrl: Signal<string>;
     setDelay: (seconds: number) => void;
+    /** Drops the audio channel's sound (frees its connection), keeps the choice. */
+    suspendAudio: () => void;
+    /** Plays the chosen audio channel again with its current delay. */
+    resumeAudio: () => void;
     clampDelay: (seconds: number) => number;
     toPlayback: (audio: ExternalAudioOverride) => ResolvedPortalPlayback;
     ocr: Pick<MatchClockOcrService, 'recognize' | 'dispose'>;
@@ -66,6 +76,8 @@ export const OCR_EVERY = 4;
 /** A picture older than this is not a live picture. */
 export const STALE_AFTER_MS = 3000;
 /** Wait this long for the first frame before calling the preview failed. */
+/** Pause before the first automatic measure, so the new sound can start. */
+export const AUTO_MEASURE_DELAY_MS = 1500;
 export const FIRST_FRAME_TIMEOUT_MS = 20000;
 export const PREVIEW_WIDTH = 480;
 export const PICK_CAPTURE_WIDTH = 640;
@@ -91,5 +103,29 @@ export function safeLocalStorage(): Storage | null {
         return typeof localStorage === 'undefined' ? null : localStorage;
     } catch {
         return null;
+    }
+}
+
+const VIEW_KEY = 'iptvnator.audioSync.view.v1';
+
+/** Measuring is the default: it never needs a third connection. */
+export function loadViewMode(
+    storage: Pick<Storage, 'getItem'> | null
+): ViewMode {
+    try {
+        return storage?.getItem(VIEW_KEY) === 'live' ? 'live' : 'measure';
+    } catch {
+        return 'measure';
+    }
+}
+
+export function saveViewMode(
+    storage: Pick<Storage, 'setItem'> | null,
+    mode: ViewMode
+): void {
+    try {
+        storage?.setItem(VIEW_KEY, mode);
+    } catch {
+        // not remembered
     }
 }

@@ -115,9 +115,12 @@ describe('ControlsSplitAudio', () => {
         expect(controls.activeAudio()).toBeNull();
     });
 
-    it('is only offered for live playback with a published context', () => {
+    it('stays offered for live playback even without a published context', () => {
         expect(controls.available()).toBe(true);
         service.setContext(null);
+        expect(controls.available()).toBe(true);
+        expect(controls.hasChannelList()).toBe(false);
+        state.set({ isLive: false } as PlayerControlsState);
         expect(controls.available()).toBe(false);
     });
 

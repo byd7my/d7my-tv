@@ -70,11 +70,20 @@ export class ControlsSplitAudio {
     /** Seconds the saved delay was last written for; drives the "saved" hint. */
     readonly savedDelay = signal<number | null>(null);
 
-    readonly available = computed(
-        () =>
-            (this.openDialog !== null || this.usesPanel()) &&
-            this.splitAudio.context() !== null &&
-            this.state().isLive
+    /**
+     * The embedded player always offers the button for live playback (or as
+     * soon as a channel list exists), so it never vanishes while the player
+     * is still working out what it plays. Other players need the channel list.
+     */
+    readonly available = computed(() => {
+        const hasContext = this.splitAudio.context() !== null;
+        if (this.usesPanel()) return this.state().isLive || hasContext;
+        return this.openDialog !== null && hasContext && this.state().isLive;
+    });
+
+    /** False when the page that started the channel published no list. */
+    readonly hasChannelList = computed(
+        () => this.splitAudio.context() !== null
     );
 
     /** The channels audio can come from. Built only while the panel is open. */
@@ -95,6 +104,8 @@ export class ControlsSplitAudio {
         audio: this.activeAudio,
         videoUrl: this.videoUrl,
         setDelay: (seconds) => this.setDelay(seconds),
+        suspendAudio: () => this.commands?.().setExternalAudio?.(null, 0),
+        resumeAudio: () => this.replayAudio(),
         clampDelay: (seconds) => this.splitAudio.clampDelay(seconds),
         toPlayback: (audio) => this.toPlayback(audio),
         ocr: this.ocr,
@@ -161,6 +172,8 @@ export class ControlsSplitAudio {
         this.splitAudio.setActiveAudio(audio);
         this.savedDelay.set(delay);
         setExternalAudio(this.toPlayback(audio), delay);
+        // Show the match clocks and what differs, without another click.
+        if (this.syncAvailable()) this.sync.open();
     }
 
     /** Moves the delay by a step; applied to the running audio at once. */
@@ -210,6 +223,14 @@ export class ControlsSplitAudio {
         this.splitAudio.setActiveAudio(null);
         this.savedDelay.set(null);
         setExternalAudio(null, 0);
+    }
+
+    /** Plays the chosen audio channel again after a measure; keeps its delay. */
+    private replayAudio(): void {
+        const audio = this.activeAudio();
+        const setExternalAudio = this.commands?.().setExternalAudio;
+        if (!audio || !setExternalAudio) return;
+        setExternalAudio(this.toPlayback(audio), audio.delaySeconds ?? 0);
     }
 
     private roundDelay(value: number): number {

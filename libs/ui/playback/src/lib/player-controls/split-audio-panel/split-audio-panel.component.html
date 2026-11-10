@@ -44,6 +44,12 @@
         />
     }
 
+    @if (!controls().hasChannelList()) {
+        <p class="split-audio__error" role="status" data-test-id="split-audio-no-list">
+            {{ 'CHANNELS.SPLIT_AUDIO.NO_CHANNEL_LIST' | translate }}
+        </p>
+    }
+
     <ul class="split-audio__list" role="listbox" data-test-id="split-audio-list">
         @for (channel of rows(); track channel.url) {
             <li

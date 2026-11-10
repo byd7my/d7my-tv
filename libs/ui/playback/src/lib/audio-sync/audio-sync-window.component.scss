@@ -383,6 +383,15 @@
     border-color: var(--sa-accent);
 }
 
+.sync__notice {
+    margin: 0;
+    padding: 6px 10px;
+    background: rgba(240, 180, 41, 0.16);
+    border-radius: 10px;
+    color: #ffd98a;
+    font-size: 0.8rem;
+}
+
 .sync__error {
     margin: 0;
     padding: 6px 10px;

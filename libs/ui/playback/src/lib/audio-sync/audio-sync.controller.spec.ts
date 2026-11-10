@@ -9,8 +9,9 @@ function frame(ageMs = 0) {
     return { width: 4, height: 2, data: new Uint8ClampedArray(32), ageMs, seq: 1 };
 }
 
-function memoryStorage() {
+function memoryStorage(view: 'live' | 'measure' = 'live') {
     const data = new Map<string, string>();
+    data.set('iptvnator.audioSync.view.v1', view);
     return {
         getItem: (key: string) => data.get(key) ?? null,
         setItem: (key: string, value: string) => void data.set(key, value),
@@ -26,12 +27,16 @@ describe('AudioSyncController', () => {
         delaySeconds: 0,
     } as ExternalAudioOverride);
     const setDelay = jest.fn();
+    const suspendAudio = jest.fn();
+    const resumeAudio = jest.fn();
+    const order: string[] = [];
 
     function createApi() {
         return {
-            createEmbeddedMpvPreviewSession: jest
-                .fn()
-                .mockResolvedValue({ id: 'preview-1' }),
+            createEmbeddedMpvPreviewSession: jest.fn(async () => {
+                order.push('create');
+                return { id: 'preview-1' };
+            }),
             attachEmbeddedMpvFrameView: jest.fn().mockResolvedValue(true),
             detachEmbeddedMpvFrameView: jest.fn(),
             loadEmbeddedMpvPlayback: jest.fn().mockResolvedValue(undefined),
@@ -52,6 +57,14 @@ describe('AudioSyncController', () => {
                 audio,
                 videoUrl: signal('http://video/1'),
                 setDelay,
+                suspendAudio: () => {
+                    order.push('suspend');
+                    suspendAudio();
+                },
+                resumeAudio: () => {
+                    order.push('resume');
+                    resumeAudio();
+                },
                 clampDelay: (value) => Math.max(-10, Math.min(10, value)),
                 toPlayback: (a) => ({
                     streamUrl: a.streamUrl,
@@ -92,6 +105,9 @@ describe('AudioSyncController', () => {
         texts = { main: '10:00', audio: '10:04' };
         api = createApi();
         setDelay.mockReset();
+        suspendAudio.mockReset();
+        resumeAudio.mockReset();
+        order.length = 0;
         audio.set({ streamUrl: 'http://audio/1', delaySeconds: 0 } as ExternalAudioOverride);
     });
 
@@ -245,5 +261,163 @@ describe('AudioSyncController', () => {
 
         expect(controller.setManualClock('main', '23:10')).toBe(true);
         expect(controller.setManualClock('main', 'abc')).toBe(false);
+    });
+
+    describe('measure view (two connections)', () => {
+        async function savedRegions(storage: ReturnType<typeof memoryStorage>) {
+            const seed = build(storage);
+            seed.open();
+            await flush();
+            seed.confirmRegion(REGION);
+            seed.confirmRegion(REGION);
+            seed.close();
+            await flush(12);
+            order.length = 0;
+            suspendAudio.mockReset();
+            resumeAudio.mockReset();
+            api.createEmbeddedMpvPreviewSession.mockClear();
+            api.disposeEmbeddedMpvSession.mockClear();
+        }
+
+        function clockOcr(controller: AudioSyncController, audioAhead: number) {
+            const ocr = (
+                controller as unknown as {
+                    options: { ocr: { recognize: jest.Mock } };
+                }
+            ).options.ocr.recognize;
+            const fmt = (value: number) =>
+                `${Math.floor(value / 60)}:${String(value % 60).padStart(2, '0')}`;
+            ocr.mockImplementation(async () => {
+                const main = 600 + Math.floor(clockMs / 1000);
+                return ocr.mock.calls.length % 2 === 1
+                    ? { text: fmt(main), confidence: 92 }
+                    : { text: fmt(main + audioAhead), confidence: 92 };
+            });
+        }
+
+        async function flush(times = 6) {
+            for (let i = 0; i < times; i++) await Promise.resolve();
+        }
+
+        it('opens without any second picture and says to press measure', async () => {
+            const storage = memoryStorage('measure');
+            await savedRegions(storage);
+            const controller = build(storage);
+
+            controller.open();
+            await flush();
+
+            expect(controller.viewMode()).toBe('measure');
+            expect(api.createEmbeddedMpvPreviewSession).not.toHaveBeenCalled();
+            expect(suspendAudio).not.toHaveBeenCalled();
+            expect(controller.audioReadout().problem).toBe('idle');
+            controller.close();
+        });
+
+        it('frees the audio connection, reads the clocks, closes the picture and restores the sound', async () => {
+            const storage = memoryStorage('measure');
+            await savedRegions(storage);
+            const controller = build(storage);
+            controller.open();
+            await flush();
+            clockOcr(controller, 4);
+
+            const measured = controller.measureNow();
+            await advanceSeconds(20);
+            await measured;
+
+            // Sound is dropped before the picture opens, and only restored after
+            // it is closed: never three connections at once.
+            expect(order.indexOf('suspend')).toBeLessThan(order.indexOf('create'));
+            expect(api.disposeEmbeddedMpvSession).toHaveBeenCalledWith('preview-1');
+            expect(resumeAudio).toHaveBeenCalledTimes(1);
+            expect(controller.measure.last()?.offset).toBeCloseTo(4, 0);
+            expect(controller.shownOffset()).toBeCloseTo(4, 0);
+            expect(controller.suggestion()?.direction).toBe('delayAudio');
+            expect(controller.audioReadout().problem).toBe('measured');
+            expect(controller.measure.running()).toBe(false);
+
+            controller.applySuggestion();
+            expect(setDelay).toHaveBeenCalledWith(4);
+            controller.close();
+        });
+
+        it('restores the sound when the picture cannot be opened', async () => {
+            const storage = memoryStorage('measure');
+            await savedRegions(storage);
+            api.createEmbeddedMpvPreviewSession.mockRejectedValue(new Error('refused'));
+            jest.spyOn(console, 'error').mockImplementation(() => undefined);
+            const controller = build(storage);
+            controller.open();
+            await flush();
+
+            const measured = controller.measureNow();
+            await advanceSeconds(2);
+            await measured;
+
+            expect(controller.measure.error()).toBe('failed');
+            expect(resumeAudio).toHaveBeenCalledTimes(1);
+            expect(controller.measure.last()).toBeNull();
+            controller.close();
+        });
+
+        it('measures by itself shortly after the window opens', async () => {
+            const storage = memoryStorage('measure');
+            await savedRegions(storage);
+            const controller = build(storage);
+            controller.open();
+            await flush();
+            expect(api.createEmbeddedMpvPreviewSession).not.toHaveBeenCalled();
+
+            await advanceSeconds(2);
+            await flush();
+
+            expect(api.createEmbeddedMpvPreviewSession).toHaveBeenCalledTimes(1);
+            controller.close();
+        });
+
+        it('restores the sound when the window is closed mid-measure', async () => {
+            const storage = memoryStorage('measure');
+            await savedRegions(storage);
+            const controller = build(storage);
+            controller.open();
+            await flush();
+            clockOcr(controller, 4);
+
+            void controller.measureNow();
+            await advanceSeconds(1);
+            controller.close();
+            await advanceSeconds(1);
+            await flush();
+
+            expect(suspendAudio).toHaveBeenCalledTimes(1);
+            expect(resumeAudio).toHaveBeenCalledTimes(1);
+        });
+
+        it('falls back to measuring when the live picture is refused', async () => {
+            const storage = memoryStorage('live');
+            await savedRegions(storage);
+            api.createEmbeddedMpvPreviewSession.mockRejectedValueOnce(new Error('refused'));
+            jest.spyOn(console, 'error').mockImplementation(() => undefined);
+            const controller = build(storage);
+
+            controller.open();
+            await flush(12);
+
+            expect(controller.viewMode()).toBe('measure');
+            expect(controller.fallbackNotice()).toBe(true);
+            // The measure after the fallback gets the second attempt.
+            expect(suspendAudio).toHaveBeenCalled();
+            controller.close();
+        });
+
+        it('keeps a chosen view mode', () => {
+            const storage = memoryStorage('measure');
+            const first = build(storage);
+            first.setViewMode('live');
+
+            expect(storage.getItem('iptvnator.audioSync.view.v1')).toBe('live');
+            expect(build(storage).viewMode()).toBe('live');
+        });
     });
 });

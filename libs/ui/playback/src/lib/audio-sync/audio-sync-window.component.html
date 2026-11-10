@@ -44,6 +44,38 @@
         </button>
     </header>
 
+    @if (!isPicking()) {
+        <div class="sync__tabs" role="radiogroup">
+            <button
+                type="button"
+                role="radio"
+                class="sync__tab"
+                data-test-id="audio-sync-view-measure"
+                [class.sync__tab--on]="isMeasureView()"
+                [attr.aria-checked]="isMeasureView()"
+                (click)="sync().setViewMode('measure')"
+            >
+                {{ 'CHANNELS.SPLIT_AUDIO.SYNC.VIEW_MEASURE' | translate }}
+            </button>
+            <button
+                type="button"
+                role="radio"
+                class="sync__tab"
+                data-test-id="audio-sync-view-live"
+                [class.sync__tab--on]="!isMeasureView()"
+                [attr.aria-checked]="!isMeasureView()"
+                (click)="sync().setViewMode('live')"
+            >
+                {{ 'CHANNELS.SPLIT_AUDIO.SYNC.VIEW_LIVE' | translate }}
+            </button>
+        </div>
+        @if (sync().fallbackNotice()) {
+            <p class="sync__notice" role="status" data-test-id="audio-sync-fallback">
+                {{ 'CHANNELS.SPLIT_AUDIO.SYNC.FALLBACK_NOTICE' | translate }}
+            </p>
+        }
+    }
+
     @if (isPicking()) {
         <div class="sync__tabs" role="tablist">
             <button
@@ -176,6 +208,31 @@
             }
         </div>
     } @else {
+        @if (isMeasureView()) {
+            <button
+                type="button"
+                class="sync__primary"
+                data-test-id="audio-sync-measure"
+                [disabled]="measuring()"
+                (click)="sync().measureNow()"
+            >
+                {{
+                    (measuring()
+                        ? 'CHANNELS.SPLIT_AUDIO.SYNC.MEASURING'
+                        : 'CHANNELS.SPLIT_AUDIO.SYNC.MEASURE_NOW'
+                    ) | translate
+                }}
+            </button>
+            @if (measureErrorKey(); as errorKey) {
+                <p class="sync__error" role="alert" data-test-id="audio-sync-measure-error">
+                    {{ errorKey | translate }}
+                </p>
+            } @else if (!measuring()) {
+                <p class="sync__hint">
+                    {{ 'CHANNELS.SPLIT_AUDIO.SYNC.MEASURE_HINT' | translate }}
+                </p>
+            }
+        }
         @if (sync().ocrFailed()) {
             <p class="sync__error" role="alert">
                 {{ 'CHANNELS.SPLIT_AUDIO.SYNC.OCR_FAILED' | translate }}
@@ -233,7 +290,7 @@
                         </button>
                     }
                 }
-            } @else {
+            } @else if (!isMeasureView() || measuring()) {
                 <p class="sync__hint" data-test-id="audio-sync-reading">
                     {{ 'CHANNELS.SPLIT_AUDIO.SYNC.READING' | translate }}
                 </p>

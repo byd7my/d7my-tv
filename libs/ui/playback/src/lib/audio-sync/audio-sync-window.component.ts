@@ -106,7 +106,7 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
     protected readonly delay = computed(() => this.sync().delay());
     protected readonly delayLabel = computed(() => this.signed(this.delay()));
     protected readonly offsetLabel = computed(() => {
-        const offset = this.sync().offset();
+        const offset = this.sync().shownOffset();
         return offset === null ? null : this.signed(offset);
     });
     protected readonly residualLabel = computed(() => {
@@ -155,8 +155,30 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
         sync.pickFrameListener = null;
     }
 
+    protected readonly isMeasureView = computed(
+        () => this.sync().viewMode() === 'measure'
+    );
+    protected readonly measuring = computed(() => this.sync().measure.running());
+
+    protected measureErrorKey(): string | null {
+        switch (this.sync().measure.error()) {
+            case 'noRegion':
+                return 'CHANNELS.SPLIT_AUDIO.SYNC.MEASURE_NO_REGION';
+            case 'noClock':
+                return 'CHANNELS.SPLIT_AUDIO.SYNC.MEASURE_NO_CLOCK';
+            case 'failed':
+                return 'CHANNELS.SPLIT_AUDIO.SYNC.MEASURE_FAILED';
+            default:
+                return null;
+        }
+    }
+
     protected problemKey(problem: SourceProblem | null): string {
         switch (problem) {
+            case 'idle':
+                return 'CHANNELS.SPLIT_AUDIO.SYNC.PROBLEM_IDLE';
+            case 'measured':
+                return 'CHANNELS.SPLIT_AUDIO.SYNC.PROBLEM_MEASURED';
             case 'unavailable':
                 return 'CHANNELS.SPLIT_AUDIO.SYNC.PROBLEM_UNAVAILABLE';
             case 'stale':

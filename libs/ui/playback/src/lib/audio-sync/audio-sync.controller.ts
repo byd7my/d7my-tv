@@ -1,4 +1,4 @@
-import { computed, effect, signal, untracked } from '@angular/core';
+import { computed, effect, signal, untracked, WritableSignal } from '@angular/core';
 import type {
     EmbeddedMpvFrameCapture,
     EmbeddedMpvFrameRegion,
@@ -15,10 +15,15 @@ import {
     loadRegions,
     saveRegion,
 } from './audio-sync-regions';
+import { AudioSyncReadings } from './audio-sync-readings';
+import { AudioSyncMeasure } from './audio-sync-measure';
 import { AudioSyncPreview } from './audio-sync-preview';
 import {
     AudioSyncOptions,
+    loadViewMode,
+    saveViewMode,
     EMPTY_READOUT,
+    AUTO_MEASURE_DELAY_MS,
     FIRST_FRAME_TIMEOUT_MS,
     MAIN_CAPTURE_WIDTH,
     NO_STORAGE,
@@ -33,6 +38,7 @@ import {
     SyncMode,
     SyncSourceKey,
     TICK_MS,
+    ViewMode,
 } from './audio-sync.model';
 
 export type {
@@ -42,6 +48,7 @@ export type {
     SourceReadout,
     SyncMode,
     SyncSourceKey,
+    ViewMode,
 } from './audio-sync.model';
 
 /**
@@ -51,30 +58,47 @@ export type {
  * suggestion for the audio delay. Nothing here touches the main session.
  */
 export class AudioSyncController {
+    private readonly readings: AudioSyncReadings = new AudioSyncReadings({
+        now: () => this.now(),
+        recognize: (frame) => this.options.ocr.recognize(frame),
+        epoch: () => this.epoch,
+        previewFailed: () => this.previewStatus() === 'failed',
+        audioSideIdle: (): boolean =>
+            this.viewMode() === 'measure' && !this.measure.running(),
+    });
     readonly isOpen = signal(false);
     readonly mode = signal<SyncMode>('live');
     /** Which picture the region picker is on. */
     readonly pickSource = signal<SyncSourceKey>('audio');
     readonly previewStatus = signal<PreviewStatus>('idle');
-    readonly ocrFailed = signal(false);
+    readonly ocrFailed = this.readings.ocrFailed;
+    /** Measure once (two connections) or keep a live picture (three). */
+    readonly viewMode = signal<ViewMode>('measure');
+    /** The live picture failed, so the window switched to measuring. */
+    readonly fallbackNotice = signal(false);
 
     readonly mainRegion = signal<EmbeddedMpvFrameRegion | null>(null);
     readonly audioRegion = signal<EmbeddedMpvFrameRegion | null>(null);
 
-    readonly main = signal<SourceReadout>(EMPTY_READOUT, { equal: sameReadout });
-    readonly audioReadout = signal<SourceReadout>(EMPTY_READOUT, {
-        equal: sameReadout,
-    });
+    readonly main: WritableSignal<SourceReadout> = this.readings.main;
+    readonly audioReadout: WritableSignal<SourceReadout> =
+        this.readings.audioReadout;
 
     /** Audio channel clock minus main clock, smoothed; null until stable. */
-    readonly offset = signal<number | null>(null);
+    readonly offset = this.readings.offset;
     readonly delay = computed(() => this.options.audio()?.delaySeconds ?? 0);
+    /** The offset on show: live readings, or the last measure. */
+    readonly shownOffset = computed(() =>
+        this.viewMode() === 'measure'
+            ? (this.measure.last()?.offset ?? null)
+            : this.offset()
+    );
     readonly residual = computed(() => {
-        const offset = this.offset();
+        const offset = this.shownOffset();
         return offset === null ? null : residualSeconds(offset, this.delay());
     });
     readonly suggestion = computed(() => {
-        const offset = this.offset();
+        const offset = this.shownOffset();
         return offset === null
             ? null
             : suggestCorrection(offset, this.delay(), this.options.clampDelay);
@@ -89,21 +113,36 @@ export class AudioSyncController {
 
     private timer: ReturnType<typeof setInterval> | null = null;
     private ticks = 0;
-    private ocrBusy = false;
     /** Bumped by open/close/restart; stale async work checks it. */
     private epoch = 0;
     private previewStartedAt = 0;
-    private readonly trackers: Record<SyncSourceKey, MatchClockTracker> = {
-        main: new MatchClockTracker(),
-        audio: new MatchClockTracker(),
-    };
-    private readonly smoother = new OffsetSmoother();
+    private readonly trackers = this.readings.trackers;
+    private readonly smoother: OffsetSmoother = this.readings.smoother;
     private readonly preview = new AudioSyncPreview({
         api: () => this.options.api(),
         audio: () => this.options.audio(),
         toPlayback: (audio) => this.options.toPlayback(audio),
         onPlaying: () => this.previewStatus.set('live'),
         onFailed: () => this.failPreview(),
+    });
+    private audioSuspended = false;
+    private autoMeasureTimer: ReturnType<typeof setTimeout> | null = null;
+    private autoFallbackUsed = false;
+    private measuredSinceBegin = false;
+    readonly measure: AudioSyncMeasure = new AudioSyncMeasure({
+        now: () => this.now(),
+        sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+        hasRegions: () => this.hasRegions(),
+        startPreview: () => this.startPreview(this.audioRegion()),
+        stopPreview: () => this.stopPreview(),
+        previewFailed: () => this.previewStatus() === 'failed',
+        sampleCount: () => this.smoother.size,
+        median: () => this.smoother.median,
+        sawAudioFrames: () => this.previewStatus() === 'live',
+        texts: (): { main: string | null; audio: string | null } => ({
+            main: this.main().text,
+            audio: this.audioReadout().text,
+        }),
     });
     private readonly now: () => number;
     private readonly storage: Pick<Storage, 'getItem' | 'setItem'> | null;
@@ -114,6 +153,7 @@ export class AudioSyncController {
             options.storage === undefined
                 ? safeLocalStorage()
                 : options.storage;
+        this.viewMode.set(loadViewMode(this.storage));
 
         // A different audio channel needs its own picture and region.
         let lastUrl: string | null = null;
@@ -154,6 +194,7 @@ export class AudioSyncController {
     open(): void {
         if (this.isOpen()) return;
         this.isOpen.set(true);
+        this.measuredSinceBegin = false;
         void this.begin();
     }
 
@@ -162,9 +203,12 @@ export class AudioSyncController {
         this.isOpen.set(false);
         this.epoch++;
         this.preview.cancel();
+        this.measure.cancel();
+        if (this.autoMeasureTimer !== null) clearTimeout(this.autoMeasureTimer);
+        this.autoMeasureTimer = null;
         this.stopTimer();
         void this.stopPreview();
-        this.resetReadings();
+        this.readings.reset();
         this.previewStatus.set('idle');
         void this.options.ocr.dispose();
     }
@@ -179,7 +223,7 @@ export class AudioSyncController {
         if (!this.isOpen()) return;
         this.mode.set('pick');
         this.pickSource.set(source);
-        this.resetReadings();
+        this.readings.reset();
         void this.startPreview(null);
         this.startTimer();
     }
@@ -205,7 +249,45 @@ export class AudioSyncController {
             return;
         }
         this.mode.set('live');
-        void this.startPreview(this.audioRegion());
+        // Measure view keeps no picture open: give the sound its slot back,
+        // then measure with the region just picked.
+        if (this.viewMode() === 'measure') {
+            void this.stopPreview().then(() => this.measureNow());
+        } else {
+            void this.startPreview(this.audioRegion());
+        }
+    }
+
+    /** Switches between measuring once and keeping a live picture. */
+    setViewMode(mode: ViewMode): void {
+        if (this.viewMode() === mode) return;
+        this.viewMode.set(mode);
+        saveViewMode(this.storage, mode);
+        this.fallbackNotice.set(false);
+        if (!this.isOpen() || this.mode() === 'pick') return;
+        this.readings.reset();
+        if (mode === 'live' && this.hasRegions()) {
+            void this.startPreview(this.audioRegion());
+        } else {
+            this.measure.cancel();
+            void this.stopPreview();
+            this.showMeasureIdle();
+        }
+    }
+
+    /** Reads both clocks once with a temporary picture of the audio channel. */
+    async measureNow(): Promise<void> {
+        this.measuredSinceBegin = true;
+        if (this.autoMeasureTimer) {
+            clearTimeout(this.autoMeasureTimer);
+            this.autoMeasureTimer = null;
+        }
+        if (this.viewMode() !== 'measure') this.setViewMode('measure');
+        this.readings.resetKeepMain();
+        this.audioReadout.set({ ...EMPTY_READOUT, problem: 'noFrame' });
+        await this.measure.run();
+        this.readings.resetKeepMain();
+        this.showMeasureIdle();
     }
 
     forgetRegions(): void {
@@ -223,7 +305,7 @@ export class AudioSyncController {
         if (seconds === null) return false;
         this.trackers[source].setManual(seconds, this.now());
         this.smoother.clear();
-        this.refreshReadouts();
+        this.readings.refresh();
         return true;
     }
 
@@ -237,7 +319,7 @@ export class AudioSyncController {
 
     private async begin(): Promise<void> {
         const epoch = ++this.epoch;
-        this.resetReadings();
+        this.readings.reset();
         const audio = this.options.audio();
         if (!audio) return;
 
@@ -255,9 +337,23 @@ export class AudioSyncController {
             this.mode.set('pick');
             this.pickSource.set(this.audioRegion() ? 'main' : 'audio');
             await this.startPreview(null);
-        } else {
+        } else if (this.viewMode() === 'live') {
             this.mode.set('live');
             await this.startPreview(this.audioRegion());
+        } else {
+            this.mode.set('live');
+            this.showMeasureIdle();
+            // Read the clocks right away; the sound that was just chosen gets
+            // a moment to start first.
+            this.autoMeasureTimer = setTimeout(() => {
+                if (
+                    epoch === this.epoch &&
+                    this.isOpen() &&
+                    !this.measuredSinceBegin
+                ) {
+                    void this.measureNow();
+                }
+            }, AUTO_MEASURE_DELAY_MS);
         }
         if (epoch === this.epoch) this.startTimer();
     }
@@ -268,11 +364,20 @@ export class AudioSyncController {
         this.previewStatus.set('starting');
         this.previewStartedAt = this.now();
         this.audioReadout.set({ ...EMPTY_READOUT, problem: 'noFrame' });
+        // In measure view the picture takes the sound's connection slot.
+        if (this.viewMode() === 'measure' && !this.audioSuspended) {
+            this.audioSuspended = true;
+            this.options.suspendAudio();
+        }
         await this.preview.start(region);
     }
 
-    private stopPreview(): Promise<void> {
-        return this.preview.stop();
+    private async stopPreview(): Promise<void> {
+        await this.preview.stop();
+        if (this.audioSuspended) {
+            this.audioSuspended = false;
+            this.options.resumeAudio();
+        }
     }
 
     private failPreview(): void {
@@ -281,6 +386,29 @@ export class AudioSyncController {
         this.trackers.audio.reset();
         this.smoother.clear();
         this.offset.set(null);
+        // A refused third connection: measure instead (two connections).
+        if (
+            this.viewMode() === 'live' &&
+            this.isOpen() &&
+            this.mode() === 'live' &&
+            !this.autoFallbackUsed
+        ) {
+            this.autoFallbackUsed = true;
+            this.fallbackNotice.set(true);
+            this.viewMode.set('measure');
+            saveViewMode(this.storage, 'measure');
+            void this.stopPreview().then(() => this.measureNow());
+        }
+    }
+
+    private showMeasureIdle(): void {
+        const last = this.measure.last();
+        this.audioReadout.set(
+            last
+                ? { ...EMPTY_READOUT, text: last.audioText, problem: 'measured' }
+                : { ...EMPTY_READOUT, problem: 'idle' }
+        );
+        this.previewStatus.set('idle');
     }
 
     // ----------------------------------------------------------------- tick
@@ -314,17 +442,13 @@ export class AudioSyncController {
             ? api.captureEmbeddedMpvFrame('main', mainRegion, MAIN_CAPTURE_WIDTH)
             : null;
         const audioFrame = api.captureEmbeddedMpvFrame('preview');
-        this.mainFrameListener?.(mainFrame && this.isFresh(mainFrame) ? mainFrame : null);
+        this.mainFrameListener?.(mainFrame && this.readings.isFresh(mainFrame) ? mainFrame : null);
 
-        if (++this.ticks % OCR_EVERY === 0 && !this.ocrBusy) {
-            void this.readClocks(mainFrame, audioFrame);
+        if (++this.ticks % OCR_EVERY === 0 && !this.readings.busy) {
+            void this.readings.readClocks(mainFrame, audioFrame);
         }
-        this.refreshReadouts(mainFrame, audioFrame);
+        this.readings.refresh(mainFrame, audioFrame);
         this.checkFirstFrameTimeout(audioFrame);
-    }
-
-    private isFresh(frame: EmbeddedMpvFrameCapture | null): boolean {
-        return frame !== null && frame.ageMs <= STALE_AFTER_MS;
     }
 
     private checkFirstFrameTimeout(audioFrame: EmbeddedMpvFrameCapture | null): void {
@@ -337,109 +461,6 @@ export class AudioSyncController {
         } else if (audioFrame && this.previewStatus() === 'starting') {
             this.previewStatus.set('live');
         }
-    }
-
-    private async readClocks(
-        mainFrame: EmbeddedMpvFrameCapture | null,
-        audioFrame: EmbeddedMpvFrameCapture | null
-    ): Promise<void> {
-        this.ocrBusy = true;
-        const epoch = this.epoch;
-        try {
-            const frames: Array<[SyncSourceKey, EmbeddedMpvFrameCapture | null]> = [
-                ['main', mainFrame],
-                ['audio', audioFrame],
-            ];
-            for (const [source, frame] of frames) {
-                if (!this.isFresh(frame)) {
-                    this.trackers[source].reset();
-                    continue;
-                }
-                const reading = await this.options.ocr.recognize(frame as EmbeddedMpvFrameCapture);
-                if (epoch !== this.epoch) return;
-                this.trackers[source].ingest(
-                    parseMatchClock(reading.text),
-                    reading.confidence,
-                    this.now()
-                );
-            }
-            this.ocrFailed.set(false);
-            this.updateOffset();
-        } catch (error) {
-            console.error('[audio-sync] OCR failed:', error);
-            this.ocrFailed.set(true);
-        } finally {
-            this.ocrBusy = false;
-        }
-    }
-
-    private updateOffset(): void {
-        const now = this.now();
-        const main = this.trackers.main.currentSeconds(now);
-        const audio = this.trackers.audio.currentSeconds(now);
-        if (main === null || audio === null) {
-            this.smoother.clear();
-            this.offset.set(null);
-            return;
-        }
-        this.smoother.push(audio - main);
-        this.offset.set(this.smoother.median);
-    }
-
-    private refreshReadouts(
-        mainFrame?: EmbeddedMpvFrameCapture | null,
-        audioFrame?: EmbeddedMpvFrameCapture | null
-    ): void {
-        const now = this.now();
-        const sources: Array<
-            [SyncSourceKey, EmbeddedMpvFrameCapture | null | undefined]
-        > = [
-            ['main', mainFrame],
-            ['audio', audioFrame],
-        ];
-        for (const [source, frame] of sources) {
-            const target = source === 'main' ? this.main : this.audioReadout;
-            if (source === 'audio' && this.previewStatus() === 'failed') {
-                continue;
-            }
-            const snapshot = this.trackers[source].snapshot(now);
-            let problem: SourceProblem | null = null;
-            if (frame === undefined) {
-                // Called from setManualClock: keep the liveness we know.
-                problem = target().problem;
-            } else if (frame === null) {
-                problem = 'noFrame';
-            } else if (!this.isFresh(frame)) {
-                problem = 'stale';
-            } else if (!snapshot) {
-                problem = 'noClock';
-            }
-            target.set({
-                text:
-                    problem === null || problem === 'noClock'
-                        ? snapshot
-                            ? formatMatchClock(snapshot.seconds)
-                            : null
-                        : null,
-                confidence: snapshot?.confidence ?? 0,
-                live: problem === null,
-                problem,
-                manual: snapshot?.manual ?? false,
-            });
-        }
-        if (!this.main().live || !this.audioReadout().live) {
-            this.offset.set(null);
-        }
-    }
-
-    private resetReadings(): void {
-        this.trackers.main.reset();
-        this.trackers.audio.reset();
-        this.smoother.clear();
-        this.offset.set(null);
-        this.main.set(EMPTY_READOUT);
-        this.audioReadout.set(EMPTY_READOUT);
-        this.ocrFailed.set(false);
     }
 
     private keyFor(source: SyncSourceKey): string {

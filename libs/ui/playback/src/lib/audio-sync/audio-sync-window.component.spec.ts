@@ -38,6 +38,7 @@ describe('AudioSyncWindowComponent', () => {
                 storage: null,
             });
         });
+        sync.viewMode.set('live');
         const controls = {
             sync,
             activeAudio: audio,
@@ -99,6 +100,18 @@ describe('AudioSyncWindowComponent', () => {
 
         expect(byId('audio-sync-apply')).toBeNull();
         expect(text('audio-sync-verdict')).toContain('CHANNELS.SPLIT_AUDIO.SYNC.IN_SYNC');
+    });
+
+    it('measures on demand in the measure view and shows the result', () => {
+        mount();
+        sync.viewMode.set('measure');
+        sync.main.set({ text: '10:00', confidence: 90, live: true, problem: null, manual: false });
+        fixture.detectChanges();
+
+        expect(byId('audio-sync-measure')).not.toBeNull();
+        expect(byId('audio-sync-view-measure')).not.toBeNull();
+        expect(byId('audio-sync-view-live')).not.toBeNull();
+        expect(byId('audio-sync-apply')).toBeNull();
     });
 
     it('explains a frozen source instead of showing an old picture as live', () => {

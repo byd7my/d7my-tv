@@ -1063,8 +1063,20 @@
                 "PROBLEM_STALE": "The picture is frozen, so it is not shown as live.",
                 "PROBLEM_NO_CLOCK": "Cannot read the clock. Check the selected area.",
                 "PROBLEM_FAILED": "Could not open the audio channel's picture (your subscription may limit connections).",
-                "OCR_FAILED": "The clock reader could not start."
-            }
+                "OCR_FAILED": "The clock reader could not start.",
+                "VIEW_MEASURE": "Measure once",
+                "VIEW_LIVE": "Live preview",
+                "MEASURE_NOW": "Measure now",
+                "MEASURING": "Measuring… the audio channel's sound pauses for a few seconds",
+                "MEASURE_HINT": "Uses two connections only: the sound pauses briefly during each measure.",
+                "MEASURE_FAILED": "Could not open the audio channel's picture. Your subscription may limit connections.",
+                "MEASURE_NO_CLOCK": "Could not read the clock. Check the selected area.",
+                "MEASURE_NO_REGION": "Pick the clock area first.",
+                "FALLBACK_NOTICE": "The live picture was refused, so it switched to measuring once.",
+                "PROBLEM_IDLE": "Press “Measure now” to read the audio channel's clock.",
+                "PROBLEM_MEASURED": "Measured. The picture is closed to save a connection."
+            },
+            "NO_CHANNEL_LIST": "Open a live channel from the channel list to choose its audio."
         },
         "FAVORITES_UPDATED": "Список «Вподобань» оновлено!",
         "SELECT_CHANNEL_PLAYBACK": "Будь ласка, оберіть канал, щоб розпочати відтворення",
