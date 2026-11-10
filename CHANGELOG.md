@@ -11,6 +11,12 @@ this marker — see `.changes/README.md`.
 
 <!-- next-release -->
 
+# 0.26.8 (2026-11-10)
+
+### Fixes
+
+- **playback** — The desktop app now plays with Embedded MPV only; the player choice is gone from Settings. The audio-channel panel and sync window can be clicked again instead of passing the click through to the video. ([8cc74de](https://github.com/4gray/iptvnator/commit/8cc74de7e886b9ebd8b98d706bad89bbef8104b7))
+
 # 0.26.7 (2026-11-10)
 
 ### Fixes
