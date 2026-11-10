@@ -38,6 +38,24 @@ export function effectiveConfidence(text: string, reported: number): number {
     return CLOCK_SHAPE.test(text.replace(/\s+/g, '')) ? SHAPE_CONFIDENCE : 0;
 }
 
+type TesseractApi = typeof import('tesseract.js');
+
+/**
+ * tesseract.js is a CommonJS package. Depending on the bundler, its exports
+ * arrive on the module itself or only under `default`; the installed app got
+ * the second shape and "createWorker is not a function" stopped every clock
+ * reading.
+ */
+export function tesseractApi(module: unknown): TesseractApi {
+    const direct = module as Partial<TesseractApi>;
+    if (typeof direct.createWorker === 'function') return direct as TesseractApi;
+    const nested = (module as { default?: Partial<TesseractApi> }).default;
+    if (nested && typeof nested.createWorker === 'function') {
+        return nested as TesseractApi;
+    }
+    throw new Error('tesseract.js did not expose createWorker');
+}
+
 const ASSET_FOLDER = 'assets/ocr/';
 const PADDING = 12;
 
@@ -82,7 +100,7 @@ export class MatchClockOcrService {
     }
 
     private async createWorker(): Promise<OcrWorker> {
-        const tesseract = await import('tesseract.js');
+        const tesseract = tesseractApi(await import('tesseract.js'));
         const base = new URL(ASSET_FOLDER, document.baseURI).href;
         const worker = await tesseract.createWorker('eng', 1, {
             workerPath: `${base}worker.min.js`,
