@@ -11,6 +11,12 @@ this marker — see `.changes/README.md`.
 
 <!-- next-release -->
 
+# 0.26.9 (2026-11-10)
+
+### Fixes
+
+- **playback** — Choosing an audio channel and syncing it no longer freezes the main picture. The sync preview and the main video each use their own frame reader, so they cannot take each other's frames. ([3f43da5](https://github.com/4gray/iptvnator/commit/3f43da5489872c00a8257379c085f705067bbd78))
+
 # 0.26.8 (2026-11-10)
 
 ### Fixes
