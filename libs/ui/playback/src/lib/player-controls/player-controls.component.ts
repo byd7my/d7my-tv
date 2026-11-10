@@ -22,6 +22,7 @@ import { ControlsMenuSelection } from './controls-menu-selection';
 import { type ControlsMenu, ControlsMenuState } from './controls-menu-state';
 import { bindCursorHiding } from './controls-cursor';
 import { ControlsSettings, ControlsSplitAudio } from './controls-settings';
+import { AudioSyncWindowComponent } from '../audio-sync/audio-sync-window.component';
 import { SplitAudioPanelComponent } from './split-audio-panel/split-audio-panel.component';
 import { ControlsShortcuts } from './controls-shortcuts';
 import { ControlsStreamStats } from './controls-stream-stats';
@@ -56,6 +57,7 @@ import { PlayerUpNextCardComponent } from './player-up-next-card.component';
         TranslatePipe,
         PlayerSettingsPanelComponent,
         SplitAudioPanelComponent,
+        AudioSyncWindowComponent,
         PlayerTimelineComponent,
         PlayerUpNextCardComponent,
     ],

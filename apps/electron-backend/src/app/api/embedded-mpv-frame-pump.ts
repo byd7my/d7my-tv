@@ -46,7 +46,17 @@ const nodeRequire: NodeRequire =
         ? __non_webpack_require__
         : require;
 
-const CANVAS_SELECTOR = 'canvas[data-embedded-mpv-frame]';
+/**
+ * A pump paints one helper session onto one canvas. `main` is the player
+ * picture; `preview` is the small audio-sync window (a second, independent
+ * session that only shows the scoreboard of the audio channel).
+ */
+export type FramePumpRole = 'main' | 'preview';
+
+const CANVAS_SELECTORS: Record<FramePumpRole, string> = {
+    main: 'canvas[data-embedded-mpv-frame]',
+    preview: 'canvas[data-embedded-mpv-preview]',
+};
 const ATTACH_TIMEOUT_MS = 5000;
 const ATTACH_POLL_MS = 100;
 
@@ -82,17 +92,19 @@ interface PumpState {
     width: number;
     height: number;
     lastSeq: number;
+    /** performance.now() of the last frame that reached the canvas. */
+    lastFrameAt: number;
     rafHandle: number;
 }
 
-let pump: PumpState | null = null;
+const pumps = new Map<FramePumpRole, PumpState>();
 let sourceListenerRegistered = false;
 /**
- * Monotonic attach epoch: bumped by every attach/detach. Async attach waits
- * re-check it after each await so a stale attach (for a session that was
- * replaced meanwhile) can never install itself over the active pump.
+ * Monotonic attach epoch per role: bumped by every attach/detach. Async
+ * attach waits re-check it after each await so a stale attach (for a session
+ * that was replaced meanwhile) can never install itself over the active pump.
  */
-let attachEpoch = 0;
+const attachEpochs: Record<FramePumpRole, number> = { main: 0, preview: 0 };
 
 export function copyStableLatestFrame(
     reader: Pick<FrameReaderAddon, 'latestSeq' | 'copyLatest'>,
@@ -112,11 +124,13 @@ function delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function waitForCanvas(): Promise<HTMLCanvasElement | null> {
+async function waitForCanvas(
+    role: FramePumpRole
+): Promise<HTMLCanvasElement | null> {
     const deadline = Date.now() + ATTACH_TIMEOUT_MS;
     while (Date.now() < deadline) {
         const canvas = document.querySelector<HTMLCanvasElement>(
-            CANVAS_SELECTOR
+            CANVAS_SELECTORS[role]
         );
         if (canvas) return canvas;
         await delay(ATTACH_POLL_MS);
@@ -209,9 +223,10 @@ function applySource(state: PumpState, source: EmbeddedMpvFrameSource): boolean 
     }
 }
 
-function pumpTick(): void {
+function pumpTick(role: FramePumpRole): void {
+    const pump = pumps.get(role);
     if (!pump) return;
-    pump.rafHandle = requestAnimationFrame(pumpTick);
+    pump.rafHandle = requestAnimationFrame(() => pumpTick(role));
 
     const { gl, reader, frame } = pump;
     const result = copyStableLatestFrame(
@@ -220,6 +235,7 @@ function pumpTick(): void {
         pump.lastSeq
     );
     if (result) {
+        pump.lastFrameAt = performance.now();
         gl.texSubImage2D(
             gl.TEXTURE_2D,
             0,
@@ -242,27 +258,31 @@ function ensureSourceListener(): void {
     ipcRenderer.on(
         EMBEDDED_MPV_FRAME_SOURCE_CHANGED,
         (_event, payload: { sessionId: string; source: EmbeddedMpvFrameSource }) => {
-            if (!pump || payload.sessionId !== pump.sessionId) return;
-            applySource(pump, payload.source);
+            for (const pump of pumps.values()) {
+                if (payload.sessionId === pump.sessionId) {
+                    applySource(pump, payload.source);
+                }
+            }
         }
     );
 }
 
 export async function attachEmbeddedMpvFrameView(
-    sessionId: string
+    sessionId: string,
+    role: FramePumpRole = 'main'
 ): Promise<boolean> {
-    detachEmbeddedMpvFrameView();
-    const epoch = ++attachEpoch;
+    detachEmbeddedMpvFrameView(role);
+    const epoch = ++attachEpochs[role];
     ensureSourceListener();
 
-    const canvas = await waitForCanvas();
-    if (epoch !== attachEpoch) return false;
+    const canvas = await waitForCanvas(role);
+    if (epoch !== attachEpochs[role]) return false;
     if (!canvas) {
         console.error('[embedded-mpv-pump] frame canvas not found in DOM');
         return false;
     }
     const source = await waitForFrameSource(sessionId);
-    if (epoch !== attachEpoch) return false;
+    if (epoch !== attachEpochs[role]) return false;
     if (!source) {
         console.error('[embedded-mpv-pump] no frame source for', sessionId);
         return false;
@@ -292,6 +312,7 @@ export async function attachEmbeddedMpvFrameView(
         width: 0,
         height: 0,
         lastSeq: 0,
+        lastFrameAt: 0,
         rafHandle: 0,
     };
     if (!applySource(state, source)) {
@@ -299,13 +320,16 @@ export async function attachEmbeddedMpvFrameView(
         return false;
     }
 
-    pump = state;
-    pump.rafHandle = requestAnimationFrame(pumpTick);
+    pumps.set(role, state);
+    state.rafHandle = requestAnimationFrame(() => pumpTick(role));
     return true;
 }
 
-export function detachEmbeddedMpvFrameView(): void {
-    attachEpoch++; // aborts any attach still waiting on canvas/frame source
+export function detachEmbeddedMpvFrameView(
+    role: FramePumpRole = 'main'
+): void {
+    attachEpochs[role]++; // aborts any attach still waiting on canvas/frame source
+    const pump = pumps.get(role);
     if (!pump) return;
     cancelAnimationFrame(pump.rafHandle);
     try {
@@ -313,5 +337,95 @@ export function detachEmbeddedMpvFrameView(): void {
     } catch {
         // reader may already be gone with the helper; nothing to release
     }
-    pump = null;
+    pumps.delete(role);
+}
+
+/** Normalised (0..1) rectangle of a frame. */
+export interface FrameRegion {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+export interface CapturedFrame {
+    width: number;
+    height: number;
+    /** RGBA, ready for ImageData. */
+    data: Uint8ClampedArray;
+    /** Milliseconds since this frame reached the canvas. */
+    ageMs: number;
+    seq: number;
+}
+
+/**
+ * Copies a region of the newest frame the pump holds (the pixel buffer lives
+ * in this isolated world, so the renderer asks for it instead of reading the
+ * WebGL canvas, whose back buffer is cleared after every present). Returns
+ * null when no frame has arrived yet. `maxWidth` decimates large frames so a
+ * full-frame grab for the region picker stays small.
+ */
+export function captureEmbeddedMpvFrame(
+    role: FramePumpRole,
+    region?: FrameRegion,
+    maxWidth?: number
+): CapturedFrame | null {
+    const pump = pumps.get(role);
+    if (!pump || pump.lastSeq === 0 || pump.width === 0) return null;
+    return extractRegion(
+        pump.frame,
+        pump.width,
+        pump.height,
+        region,
+        maxWidth,
+        performance.now() - pump.lastFrameAt,
+        pump.lastSeq
+    );
+}
+
+export function extractRegion(
+    bgra: Uint8Array,
+    width: number,
+    height: number,
+    region: FrameRegion | undefined,
+    maxWidth: number | undefined,
+    ageMs: number,
+    seq: number
+): CapturedFrame | null {
+    const clamp = (value: number) => Math.min(1, Math.max(0, value));
+    const rx = clamp(region?.x ?? 0);
+    const ry = clamp(region?.y ?? 0);
+    const left = Math.floor(rx * width);
+    const top = Math.floor(ry * height);
+    const right = Math.min(
+        width,
+        Math.max(left + 1, Math.ceil(clamp(rx + (region?.width ?? 1)) * width))
+    );
+    const bottom = Math.min(
+        height,
+        Math.max(top + 1, Math.ceil(clamp(ry + (region?.height ?? 1)) * height))
+    );
+    const sourceWidth = right - left;
+    const sourceHeight = bottom - top;
+    if (sourceWidth < 1 || sourceHeight < 1) return null;
+
+    const step =
+        maxWidth && sourceWidth > maxWidth
+            ? Math.ceil(sourceWidth / maxWidth)
+            : 1;
+    const outWidth = Math.ceil(sourceWidth / step);
+    const outHeight = Math.ceil(sourceHeight / step);
+    const data = new Uint8ClampedArray(outWidth * outHeight * 4);
+    let out = 0;
+    for (let y = 0; y < outHeight; y++) {
+        const rowStart = ((top + y * step) * width + left) * 4;
+        for (let x = 0; x < outWidth; x++) {
+            const index = rowStart + x * step * 4;
+            data[out++] = bgra[index + 2];
+            data[out++] = bgra[index + 1];
+            data[out++] = bgra[index];
+            data[out++] = 255;
+        }
+    }
+    return { width: outWidth, height: outHeight, data, ageMs, seq };
 }

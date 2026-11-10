@@ -273,3 +273,20 @@
     color: #ffb4ae;
     font-size: 0.82rem;
 }
+
+.split-audio__sync {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 42px;
+    background: var(--sa-chip);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+.split-audio__sync--on {
+    background: var(--sa-accent-soft);
+    border-color: var(--sa-accent);
+}

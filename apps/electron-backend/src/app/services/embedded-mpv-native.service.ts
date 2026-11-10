@@ -25,6 +25,7 @@ import {
     EmbeddedMpvSubtitleTrack,
     EmbeddedMpvEngine,
     EmbeddedMpvFrameSource,
+    EmbeddedMpvPreviewRequest,
     EmbeddedMpvSupport,
     EMBEDDED_MPV_FRAME_SOURCE_CHANGED,
     EMBEDDED_MPV_SESSION_UPDATE,
@@ -34,6 +35,7 @@ import {
 } from '@iptvnator/shared/interfaces';
 import { isExternalPlayerTraceEnabled, trace } from './debug-trace';
 import { toNativeViewBounds } from './embedded-mpv-bounds.util';
+import { buildEmbeddedMpvPreviewPlan } from './embedded-mpv-preview-session';
 import { embeddedMpvRecordingTracker } from './embedded-mpv-recording-tracker';
 import {
     createEmbeddedMpvReconnectState,
@@ -167,6 +169,13 @@ interface EmbeddedMpvRuntimeSession {
     externalSubtitlePath: string | null;
     /** The automatic reload dropped the external subtitle; re-add it once the reload plays. */
     restoreSubtitleAfterReconnect: boolean;
+    /**
+     * Audio taken from another channel, as last requested. Like the external
+     * subtitle it dies with the file it was added to, so an automatic reload
+     * of the video puts it back; a user-driven load drops it.
+     */
+    externalAudio: { playback: ResolvedPortalPlayback; delaySeconds: number } | null;
+    restoreExternalAudioAfterReconnect: boolean;
 }
 
 const EMBEDDED_MPV_FRAME_COPY_ENV = 'IPTVNATOR_ENABLE_EMBEDDED_MPV_FRAME_COPY';
@@ -213,6 +222,9 @@ export class EmbeddedMpvNativeService {
                 // Consumed: a failed attempt's next reload must not re-arm
                 // the tracker's flush window and postpone the verdict.
                 session.recordingRunningAtLoss = false;
+            }
+            if (session?.externalAudio) {
+                session.restoreExternalAudioAfterReconnect = true;
             }
             if (session?.externalSubtitlePath) {
                 // The engines drop external subtitle tracks with the file
@@ -675,6 +687,8 @@ export class EmbeddedMpvNativeService {
             rejectedOptionsReported: false,
             externalSubtitlePath: null,
             restoreSubtitleAfterReconnect: false,
+            externalAudio: null,
+            restoreExternalAudioAfterReconnect: false,
         });
 
         this.ensurePolling();
@@ -701,6 +715,33 @@ export class EmbeddedMpvNativeService {
         );
     }
 
+    /**
+     * Starts the silent preview session of the audio-sync window: an
+     * independent session on the audio channel's own picture, cropped to its
+     * scoreboard. It never touches the main session; the renderer loads the
+     * channel with `loadPlayback` and disposes it when the window closes.
+     */
+    createPreviewSession(
+        request: EmbeddedMpvPreviewRequest | undefined,
+        baseOptions?: EmbeddedMpvSessionOptions
+    ): EmbeddedMpvSession {
+        // Only the frame-copy engine paints into the page. The native-view
+        // engines would open a second native window over the player.
+        if (
+            this.frameCopyAdapter === null ||
+            this.getAddon() !== this.frameCopyAdapter
+        ) {
+            throw new Error(
+                'The clock preview needs the frame-copy embedded MPV engine.'
+            );
+        }
+        const plan = buildEmbeddedMpvPreviewPlan(request);
+        return this.createSession(plan.bounds, '', 0, {
+            extraOptions: [...(baseOptions?.extraOptions ?? []), ...plan.options],
+            autoReconnect: baseOptions?.autoReconnect ?? true,
+        });
+    }
+
     loadPlayback(sessionId: string, playback: ResolvedPortalPlayback): void {
         this.assertEmbeddedMpvEnabled();
         const addon = this.getAddon();
@@ -717,6 +758,8 @@ export class EmbeddedMpvNativeService {
         // External subtitles are source-scoped: a user-driven load drops them.
         session.externalSubtitlePath = null;
         session.restoreSubtitleAfterReconnect = false;
+        session.externalAudio = null;
+        session.restoreExternalAudioAfterReconnect = false;
         addon.loadPlayback(sessionId, playback);
         this.refreshSession(sessionId);
     }
@@ -816,6 +859,13 @@ export class EmbeddedMpvNativeService {
             );
         }
         addon.setExternalAudio(sessionId, playback, delaySeconds);
+        const session = this.sessions.get(sessionId);
+        if (session) {
+            session.externalAudio = playback
+                ? { playback, delaySeconds }
+                : null;
+            session.restoreExternalAudioAfterReconnect = false;
+        }
         return this.refreshSession(sessionId);
     }
 
@@ -830,10 +880,12 @@ export class EmbeddedMpvNativeService {
                 'External audio delay is not supported by this MPV runtime.'
             );
         }
-        addon.setExternalAudioDelay(
-            sessionId,
-            Math.max(-60, Math.min(60, delaySeconds))
-        );
+        const delay = Math.max(-60, Math.min(60, delaySeconds));
+        addon.setExternalAudioDelay(sessionId, delay);
+        const session = this.sessions.get(sessionId);
+        if (session?.externalAudio) {
+            session.externalAudio.delaySeconds = delay;
+        }
         return this.refreshSession(sessionId);
     }
 
@@ -1105,6 +1157,8 @@ export class EmbeddedMpvNativeService {
         session.restartRecordingAfterReconnect = false;
         session.externalSubtitlePath = null;
         session.restoreSubtitleAfterReconnect = false;
+        session.externalAudio = null;
+        session.restoreExternalAudioAfterReconnect = false;
         removeSessionOptionsFile(session.optionsFile);
         session.optionsFile = null;
 
@@ -1241,6 +1295,26 @@ export class EmbeddedMpvNativeService {
 
         clearInterval(this.pollingTimer);
         this.pollingTimer = null;
+    }
+
+    /** Re-opens the audio channel an automatic reload of the video dropped. */
+    private restoreExternalAudioAfterReconnect(sessionId: string): void {
+        const external = this.sessions.get(sessionId)?.externalAudio;
+        if (!external) {
+            return;
+        }
+        try {
+            this.getAddon().setExternalAudio?.(
+                sessionId,
+                external.playback,
+                external.delaySeconds
+            );
+        } catch (error) {
+            console.warn(
+                `[Embedded MPV][reconnect] session ${sessionId}: could not restore the external audio after the reload:`,
+                error
+            );
+        }
     }
 
     /**
@@ -1425,6 +1499,14 @@ export class EmbeddedMpvNativeService {
             if (restart) {
                 setTimeout(
                     () => this.restartRecordingAfterReconnect(sessionId),
+                    0
+                );
+            }
+            const restoreAudio = session.restoreExternalAudioAfterReconnect;
+            session.restoreExternalAudioAfterReconnect = false;
+            if (restoreAudio) {
+                setTimeout(
+                    () => this.restoreExternalAudioAfterReconnect(sessionId),
                     0
                 );
             }

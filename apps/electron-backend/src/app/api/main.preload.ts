@@ -30,7 +30,11 @@ import {
 } from '@iptvnator/shared/interfaces/ipc-commands';
 import {
     attachEmbeddedMpvFrameView,
+    captureEmbeddedMpvFrame,
     detachEmbeddedMpvFrameView,
+    type CapturedFrame,
+    type FramePumpRole,
+    type FrameRegion,
 } from './embedded-mpv-frame-pump';
 import {
     createPreloadPerformanceCapture,
@@ -49,6 +53,7 @@ import type {
     ContentMetadataPatch,
     DownloadMetadataSnapshot,
     EmbeddedMpvBounds,
+    EmbeddedMpvPreviewRequest,
     EmbeddedMpvRecordingStartOptions,
     EmbeddedMpvSubtitleStyle,
     EmbeddedMpvSession,
@@ -740,9 +745,22 @@ const electronApi: ElectronBridgeApi = {
         sessionId: string
     ): Promise<EmbeddedMpvSession | null> =>
         ipcRenderer.invoke('EMBEDDED_MPV_DISPOSE_SESSION', sessionId),
-    attachEmbeddedMpvFrameView: (sessionId: string): Promise<boolean> =>
-        attachEmbeddedMpvFrameView(sessionId),
-    detachEmbeddedMpvFrameView: (): void => detachEmbeddedMpvFrameView(),
+    attachEmbeddedMpvFrameView: (
+        sessionId: string,
+        role?: FramePumpRole
+    ): Promise<boolean> => attachEmbeddedMpvFrameView(sessionId, role),
+    detachEmbeddedMpvFrameView: (role?: FramePumpRole): void =>
+        detachEmbeddedMpvFrameView(role),
+    createEmbeddedMpvPreviewSession: (
+        request: EmbeddedMpvPreviewRequest
+    ): Promise<EmbeddedMpvSession> =>
+        ipcRenderer.invoke('EMBEDDED_MPV_CREATE_PREVIEW_SESSION', request),
+    captureEmbeddedMpvFrame: (
+        role: FramePumpRole,
+        region?: FrameRegion,
+        maxWidth?: number
+    ): CapturedFrame | null =>
+        captureEmbeddedMpvFrame(role, region, maxWidth),
     autoUpdatePlaylists: (
         playlists: Playlist[],
         options?: ElectronBridgeTrustOptions

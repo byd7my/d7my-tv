@@ -139,6 +139,8 @@ describe('EmbeddedMpvNativeService reconnect', () => {
         stopRecording: jest.Mock;
         setSubtitleTrack: jest.Mock;
         addSubtitle: jest.Mock;
+        setExternalAudio: jest.Mock;
+        setExternalAudioDelay: jest.Mock;
     };
     let status: EmbeddedMpvSessionStatus;
     let positionSeconds: number;
@@ -212,6 +214,8 @@ describe('EmbeddedMpvNativeService reconnect', () => {
             stopRecording: jest.fn(),
             setSubtitleTrack: jest.fn(),
             addSubtitle: jest.fn(),
+            setExternalAudio: jest.fn(),
+            setExternalAudioDelay: jest.fn(),
         };
         (service as unknown as { addon: typeof addon }).addon = addon;
     });
@@ -480,6 +484,60 @@ describe('EmbeddedMpvNativeService reconnect', () => {
             dropAndReload();
 
             expect(addon.addSubtitle).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('external audio', () => {
+        const AUDIO: ResolvedPortalPlayback = {
+            streamUrl: 'https://audio.example/commentary.ts',
+            title: 'Commentary',
+            isLive: true,
+        };
+
+        function dropAndReload(): void {
+            poll('error');
+            status = 'loading';
+            jest.advanceTimersByTime(2_000);
+            poll('playing');
+            jest.advanceTimersByTime(1);
+        }
+
+        it('opens the audio channel again once the automatic reload of the video plays', () => {
+            startPlayingLive();
+            service.setExternalAudio('session-1', AUDIO, 0.5);
+            service.setExternalAudioDelay('session-1', 1.5);
+            poll('playing');
+
+            dropAndReload();
+
+            expect(addon.setExternalAudio).toHaveBeenCalledTimes(2);
+            expect(addon.setExternalAudio).toHaveBeenLastCalledWith(
+                'session-1',
+                AUDIO,
+                1.5
+            );
+        });
+
+        it('does not bring back audio the user switched off', () => {
+            startPlayingLive();
+            service.setExternalAudio('session-1', AUDIO, 0);
+            service.setExternalAudio('session-1', null, 0);
+            poll('playing');
+
+            dropAndReload();
+
+            expect(addon.setExternalAudio).toHaveBeenCalledTimes(2);
+        });
+
+        it('forgets the audio channel after a user-driven load', () => {
+            startPlayingLive();
+            service.setExternalAudio('session-1', AUDIO, 0);
+            service.loadPlayback('session-1', LIVE);
+            poll('playing');
+
+            dropAndReload();
+
+            expect(addon.setExternalAudio).toHaveBeenCalledTimes(1);
         });
     });
 

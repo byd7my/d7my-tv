@@ -11,6 +11,36 @@ export interface EmbeddedMpvBounds {
     height: number;
 }
 
+/** A rectangle of a video frame, each value 0..1 of the frame's size. */
+export interface EmbeddedMpvFrameRegion {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+/**
+ * A second, silent, independent frame-copy session that shows only a region
+ * of another channel's picture (the audio-sync window). Without a region it
+ * shows the whole frame, which the region picker needs.
+ */
+export interface EmbeddedMpvPreviewRequest {
+    region?: EmbeddedMpvFrameRegion;
+    /** Output width in CSS pixels; the height follows the region's shape. */
+    outputWidth?: number;
+}
+
+/** Pixels copied out of a running frame-copy session. */
+export interface EmbeddedMpvFrameCapture {
+    width: number;
+    height: number;
+    /** RGBA, ready for `new ImageData(data, width, height)`. */
+    data: Uint8ClampedArray;
+    /** Milliseconds since this frame was painted; large means "not live". */
+    ageMs: number;
+    seq: number;
+}
+
 export interface EmbeddedMpvCapabilities {
     subtitles: boolean;
     playbackSpeed: boolean;

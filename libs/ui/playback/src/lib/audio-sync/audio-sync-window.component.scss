@@ -1,0 +1,393 @@
+// Floating audio-sync window. Fixed dark glass with the red accent shared with
+// the audio panel; painted over video, so independent of the app theme.
+:host {
+    --sa-accent: #e5392f;
+    --sa-accent-soft: rgba(229, 57, 47, 0.34);
+    --sa-ok: #3ccf7a;
+    --sa-warn: #f0b429;
+    --sa-text: #fff;
+    --sa-text-dim: rgba(255, 255, 255, 0.66);
+    --sa-chip: rgba(255, 255, 255, 0.1);
+
+    position: absolute;
+    left: 16px;
+    top: 72px;
+    z-index: 5;
+    display: block;
+    color: var(--sa-text);
+    // Dragging must not select text or scroll the page on touch screens.
+    touch-action: none;
+}
+
+.sync {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: min(330px, calc(100cqw - 24px), calc(100vw - 24px));
+    max-height: min(calc(100cqh - 24px), 88vh);
+    padding: 10px 12px 12px;
+    overflow-y: auto;
+    background: rgba(24, 24, 26, 0.86);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+    box-shadow: 0 14px 38px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(20px) saturate(1.4);
+    font-size: 0.86rem;
+    direction: inherit;
+}
+
+.sync button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+.sync button:focus-visible,
+.sync__manual-input:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+.sync__header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    // The whole header is the grab handle.
+    cursor: grab;
+    user-select: none;
+}
+
+.sync__header:active {
+    cursor: grabbing;
+}
+
+.sync__header-icon {
+    color: var(--sa-accent);
+}
+
+.sync__title {
+    flex: 1;
+    margin: 0;
+    font-size: 0.98rem;
+    font-weight: 700;
+}
+
+.sync__icon-button {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: var(--sa-text-dim);
+}
+
+.sync__icon-button:hover {
+    background: var(--sa-chip);
+    color: var(--sa-text);
+}
+
+.sync__icon-button--small {
+    width: 26px;
+    height: 26px;
+}
+
+.sync__icon-button--small mat-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+}
+
+.sync__tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.sync__tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 32px;
+    background: var(--sa-chip);
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+.sync__tab--on {
+    background: var(--sa-accent-soft);
+    border-color: var(--sa-accent);
+}
+
+.sync__tab-done {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+    color: var(--sa-ok);
+}
+
+.sync__hint {
+    margin: 0;
+    color: var(--sa-text-dim);
+    font-size: 0.8rem;
+}
+
+.sync__source {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sync__source[hidden] {
+    display: none;
+}
+
+.sync__label {
+    color: var(--sa-text-dim);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.sync__label-name {
+    font-weight: 400;
+}
+
+.sync__shot {
+    position: relative;
+    overflow: hidden;
+    background: #000;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    line-height: 0;
+    // The clock strip is wide and short; leave room for a message over it.
+    min-height: 44px;
+}
+
+.sync__shot--picking {
+    cursor: crosshair;
+    touch-action: none;
+}
+
+.sync__canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 220px;
+    object-fit: contain;
+    // Dragging a region must not start a native image drag.
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.sync__selection {
+    position: absolute;
+    border: 2px solid var(--sa-accent);
+    background: rgba(229, 57, 47, 0.18);
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+}
+
+.sync__shot-problem {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.78);
+    color: #ffd9d6;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    text-align: center;
+}
+
+.sync__readout {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sync__clock {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+}
+
+.sync__clock--off {
+    color: var(--sa-text-dim);
+}
+
+.sync__badge {
+    padding: 2px 8px;
+    background: var(--sa-chip);
+    border-radius: 999px;
+    color: var(--sa-text-dim);
+    font-size: 0.72rem;
+}
+
+.sync__badge--high {
+    color: var(--sa-ok);
+}
+
+.sync__badge--medium {
+    color: var(--sa-warn);
+}
+
+.sync__badge--low {
+    color: #ff8a80;
+}
+
+.sync__manual {
+    display: flex;
+    gap: 6px;
+}
+
+.sync__manual-input {
+    flex: 1;
+    min-width: 0;
+    height: 32px;
+    padding: 0 10px;
+    background: var(--sa-chip);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    color: inherit;
+    font: inherit;
+    direction: ltr;
+}
+
+.sync__manual-input--invalid {
+    border-color: var(--sa-accent);
+}
+
+.sync__result {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+}
+
+.sync__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    font-variant-numeric: tabular-nums;
+}
+
+.sync__row strong {
+    font-size: 1.15rem;
+}
+
+.sync__row--dim {
+    color: var(--sa-text-dim);
+    font-size: 0.8rem;
+}
+
+.sync__verdict {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+}
+
+.sync__verdict mat-icon {
+    color: var(--sa-warn);
+}
+
+.sync__verdict--ok mat-icon {
+    color: var(--sa-ok);
+}
+
+.sync__primary,
+.sync__save {
+    height: 40px;
+    padding: 0 14px;
+    background: var(--sa-accent);
+    border: 0;
+    border-radius: 999px;
+    color: #fff;
+    font-weight: 700;
+}
+
+.sync__primary:disabled,
+.sync__save:disabled {
+    background: var(--sa-accent-soft);
+    color: var(--sa-text-dim);
+    cursor: default;
+}
+
+.sync__link {
+    align-self: center;
+    padding: 2px 8px;
+    background: transparent;
+    border: 0;
+    text-decoration: underline;
+}
+
+.sync__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sync__stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.sync__step-button {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    background: var(--sa-chip);
+    border: 0;
+    border-radius: 50%;
+}
+
+.sync__delay {
+    flex: 1;
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+.sync__chips {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+}
+
+.sync__chip {
+    min-width: 44px;
+    height: 30px;
+    padding: 0 10px;
+    background: var(--sa-chip);
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: 0.8rem;
+}
+
+.sync__chip--on {
+    background: var(--sa-accent-soft);
+    border-color: var(--sa-accent);
+}
+
+.sync__error {
+    margin: 0;
+    padding: 6px 10px;
+    background: rgba(229, 57, 47, 0.18);
+    border-radius: 10px;
+    color: #ffb4ae;
+    font-size: 0.8rem;
+}

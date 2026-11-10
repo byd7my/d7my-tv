@@ -164,6 +164,13 @@ struct HelperState {
     /* The video stream's request options, kept while the external audio's
      * own headers are applied so they can be put back (see
      * restoreVideoRequestOptions). */
+    /* The last external audio request, kept to re-open a stalled stream. */
+    bool hasLastExternalAudio = false;
+    frame_helper::Command lastExternalAudio;
+    int externalAudioRetries = 0;
+    uint64_t audioWatchCheckNs = 0;
+    uint64_t audioAdvanceNs = 0;
+    double lastAudioPts = -1;
     bool requestOptionsSwapped = false;
     std::string savedUserAgent;
     std::string savedReferrer;
@@ -619,10 +626,78 @@ void handlePropertyChange(const mpv_event_property& property) {
 }
 
 void restoreVideoRequestOptions();
+void handleExternalAudioCommand(const frame_helper::Command& command,
+                                bool isRetry);
+
+/* An external audio stream that stops delivering (network drop on that
+ * stream only) leaves the video playing in silence: mpv does not reconnect
+ * a second demuxer. The watchdog checks `audio-pts` every few seconds while
+ * the external audio is meant to play; when it stays put it opens the same
+ * stream again, a few times, and then gives the channel's own audio back
+ * with an error for the UI. The video is never touched. */
+constexpr uint64_t kAudioWatchIntervalNs = 2000000000ULL;
+constexpr uint64_t kAudioStallNs = 10000000000ULL;
+constexpr int kAudioMaxRetries = 3;
+
+void externalAudioWatchdog() {
+    const uint64_t now = frame_helper::nowNs();
+    frame_helper::Command retry;
+    bool giveUp = false;
+    bool doRetry = false;
+    {
+        std::lock_guard<std::mutex> lock(g_state.mutex);
+        if (!g_state.externalAudioActive || !g_state.hasLastExternalAudio ||
+            g_state.snapshot.status != "playing" || g_state.paused ||
+            now - g_state.audioWatchCheckNs < kAudioWatchIntervalNs) {
+            return;
+        }
+        g_state.audioWatchCheckNs = now;
+    }
+    double pts = -1;
+    const int status =
+        mpv_get_property(g_state.mpv, "audio-pts", MPV_FORMAT_DOUBLE, &pts);
+    int pausedForCache = 0;
+    mpv_get_property(g_state.mpv, "paused-for-cache", MPV_FORMAT_FLAG,
+                     &pausedForCache);
+    {
+        std::lock_guard<std::mutex> lock(g_state.mutex);
+        /* Buffering the video stalls the audio clock too: not an audio fault. */
+        if (pausedForCache != 0) {
+            g_state.audioAdvanceNs = now;
+            return;
+        }
+        if (status >= 0 && pts > g_state.lastAudioPts + 0.2) {
+            g_state.lastAudioPts = pts;
+            g_state.audioAdvanceNs = now;
+            g_state.externalAudioRetries = 0;
+            return;
+        }
+        if (now - g_state.audioAdvanceNs < kAudioStallNs) return;
+        g_state.audioAdvanceNs = now;
+        if (g_state.externalAudioRetries >= kAudioMaxRetries) {
+            giveUp = true;
+        } else {
+            g_state.externalAudioRetries += 1;
+            retry = g_state.lastExternalAudio;
+            doRetry = true;
+        }
+    }
+    if (doRetry) {
+        handleExternalAudioCommand(retry, true);
+    } else if (giveUp) {
+        handleExternalAudioCommand(
+            frame_helper::parseCommandLine("external-audio\tclear=1"), false);
+        std::lock_guard<std::mutex> lock(g_state.mutex);
+        g_state.snapshot.externalAudioError =
+            "The audio channel stopped responding.";
+        g_state.dirty = true;
+    }
+}
 
 void runMpvEventLoop() {
     while (g_state.running.load()) {
         mpv_event* event = mpv_wait_event(g_state.mpv, 0.1);
+        externalAudioWatchdog();
         if (!event) continue;
         if (event->event_id == MPV_EVENT_NONE) {
             maybeEmitSnapshot();
@@ -760,6 +835,7 @@ void handleLoadCommand(const Command& command) {
         }
         g_state.snapshot.streamUrl = url;
         g_state.externalAudioActive = false;
+        g_state.hasLastExternalAudio = false;
         g_state.originalAudioTrackId = -1;
         g_state.snapshot.externalAudioError.clear();
         g_state.snapshot.error.clear();
@@ -855,7 +931,7 @@ std::string readStringProperty(const char* name) {
     return result;
 }
 
-void handleExternalAudioCommand(const Command& command) {
+void handleExternalAudioCommand(const Command& command, bool isRetry) {
     const bool clear = command.get("clear") == "1";
     bool wasActive = false;
     int64_t originalAudioTrackId = -1;
@@ -870,6 +946,16 @@ void handleExternalAudioCommand(const Command& command) {
         g_state.externalAudioActive = !clear;
         g_state.snapshot.externalAudioError.clear();
         g_state.dirty = true;
+        if (clear) {
+            g_state.hasLastExternalAudio = false;
+        } else {
+            g_state.hasLastExternalAudio = true;
+            g_state.lastExternalAudio = command;
+            if (!isRetry) g_state.externalAudioRetries = 0;
+            g_state.lastAudioPts = -1;
+            g_state.audioAdvanceNs = frame_helper::nowNs();
+            g_state.audioWatchCheckNs = g_state.audioAdvanceNs;
+        }
     }
     if (wasActive) {
         const char* removeArgs[] = {"audio-remove", nullptr};
@@ -945,7 +1031,7 @@ void handleCommand(const Command& command) {
         setPropertyString(command.name.c_str(),
                           value == "-1" ? "no" : value);
     } else if (command.name == "external-audio") {
-        handleExternalAudioCommand(command);
+        handleExternalAudioCommand(command, false);
     } else if (command.name == "audio-delay") {
         double delay = std::clamp(command.getDouble("value", 0), -60.0, 60.0);
         mpv_set_property(g_state.mpv, "audio-delay", MPV_FORMAT_DOUBLE, &delay);

@@ -15,6 +15,9 @@ import type {
 } from './catchup-download.interface';
 import {
     EmbeddedMpvBounds,
+    EmbeddedMpvFrameCapture,
+    EmbeddedMpvFrameRegion,
+    EmbeddedMpvPreviewRequest,
     EmbeddedMpvRecordingStartOptions,
     EmbeddedMpvSession,
     EmbeddedMpvSubtitleStyle,
@@ -1484,8 +1487,24 @@ export interface ElectronBridgeApi {
      * `<canvas data-embedded-mpv-frame>` element. Optional because older
      * preload builds do not ship the pump.
      */
-    attachEmbeddedMpvFrameView?: (sessionId: string) => Promise<boolean>;
-    detachEmbeddedMpvFrameView?: () => void;
+    attachEmbeddedMpvFrameView?: (
+        sessionId: string,
+        role?: 'main' | 'preview'
+    ) => Promise<boolean>;
+    detachEmbeddedMpvFrameView?: (role?: 'main' | 'preview') => void;
+    /**
+     * Frame-copy engine only: starts the silent preview session of the
+     * audio-sync window (see `EmbeddedMpvPreviewRequest`).
+     */
+    createEmbeddedMpvPreviewSession?: (
+        request: EmbeddedMpvPreviewRequest
+    ) => Promise<EmbeddedMpvSession>;
+    /** Pixels of a region of the newest frame of a pump; null before any. */
+    captureEmbeddedMpvFrame?: (
+        role: 'main' | 'preview',
+        region?: EmbeddedMpvFrameRegion,
+        maxWidth?: number
+    ) => EmbeddedMpvFrameCapture | null;
     downloadsStart: (
         data: ElectronBridgeDownloadStartPayload
     ) => Promise<ElectronBridgeDownloadStartResult>;

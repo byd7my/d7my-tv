@@ -1,0 +1,349 @@
+<div
+    class="sync"
+    role="dialog"
+    data-test-id="audio-sync-window"
+    [attr.aria-label]="'CHANNELS.SPLIT_AUDIO.SYNC.TITLE' | translate"
+>
+    <header
+        class="sync__header"
+        [title]="'CHANNELS.SPLIT_AUDIO.SYNC.MOVE' | translate"
+        (pointerdown)="onDragStart($event)"
+        (pointermove)="onDragMove($event)"
+        (pointerup)="onDragEnd($event)"
+        (pointercancel)="onDragEnd($event)"
+    >
+        <mat-icon class="sync__header-icon" aria-hidden="true">schedule</mat-icon>
+        <h2 class="sync__title">
+            {{
+                (isPicking()
+                    ? 'CHANNELS.SPLIT_AUDIO.SYNC.PICK_TITLE'
+                    : 'CHANNELS.SPLIT_AUDIO.SYNC.TITLE'
+                ) | translate
+            }}
+        </h2>
+        @if (!isPicking()) {
+            <button
+                type="button"
+                class="sync__icon-button"
+                data-test-id="audio-sync-reselect"
+                [attr.aria-label]="'CHANNELS.SPLIT_AUDIO.SYNC.RESELECT' | translate"
+                [title]="'CHANNELS.SPLIT_AUDIO.SYNC.RESELECT' | translate"
+                (click)="sync().startPicking('audio')"
+            >
+                <mat-icon>crop_free</mat-icon>
+            </button>
+        }
+        <button
+            type="button"
+            class="sync__icon-button"
+            data-test-id="audio-sync-close"
+            [attr.aria-label]="'CLOSE' | translate"
+            (click)="close()"
+        >
+            <mat-icon>close</mat-icon>
+        </button>
+    </header>
+
+    @if (isPicking()) {
+        <div class="sync__tabs" role="tablist">
+            <button
+                type="button"
+                role="tab"
+                class="sync__tab"
+                [class.sync__tab--on]="pickSource() === 'audio'"
+                [attr.aria-selected]="pickSource() === 'audio'"
+                (click)="selectPickSource('audio')"
+            >
+                {{ 'CHANNELS.SPLIT_AUDIO.SYNC.AUDIO_CHANNEL' | translate }}
+                @if (sync().audioRegion()) {
+                    <mat-icon class="sync__tab-done">check</mat-icon>
+                }
+            </button>
+            <button
+                type="button"
+                role="tab"
+                class="sync__tab"
+                [class.sync__tab--on]="pickSource() === 'main'"
+                [attr.aria-selected]="pickSource() === 'main'"
+                (click)="selectPickSource('main')"
+            >
+                {{ 'CHANNELS.SPLIT_AUDIO.SYNC.MAIN_VIDEO' | translate }}
+                @if (sync().mainRegion()) {
+                    <mat-icon class="sync__tab-done">check</mat-icon>
+                }
+            </button>
+        </div>
+        <p class="sync__hint">
+            {{
+                (pickSource() === 'main'
+                    ? 'CHANNELS.SPLIT_AUDIO.SYNC.PICK_MAIN_HINT'
+                    : 'CHANNELS.SPLIT_AUDIO.SYNC.PICK_AUDIO_HINT'
+                ) | translate
+            }}
+        </p>
+    }
+
+    <!-- Main video: the cropped clock (live) or the whole frame (picker). -->
+    <section class="sync__source" [hidden]="!showMain()">
+        @if (!isPicking()) {
+            <div class="sync__label">
+                {{ 'CHANNELS.SPLIT_AUDIO.SYNC.MAIN_VIDEO' | translate }}
+            </div>
+        }
+        <div
+            class="sync__shot"
+            [class.sync__shot--picking]="isPicking()"
+            (pointerdown)="onStagePointerDown($event)"
+            (pointermove)="onStagePointerMove($event)"
+            (pointerup)="onStagePointerUp($event)"
+            (pointercancel)="onStagePointerUp($event)"
+        >
+            <canvas #mainCanvas class="sync__canvas" data-test-id="audio-sync-main-shot"></canvas>
+            @if (isPicking() && pickSource() === 'main' && selectionBox(); as box) {
+                <div class="sync__selection" [style]="box"></div>
+            }
+            @if (!isPicking() && !sync().main().live) {
+                <div class="sync__shot-problem" data-test-id="audio-sync-main-problem">
+                    {{ problemKey(sync().main().problem) | translate }}
+                </div>
+            }
+        </div>
+        @if (!isPicking()) {
+            <ng-container
+                *ngTemplateOutlet="readout; context: { source: 'main', data: sync().main() }"
+            />
+        }
+    </section>
+
+    <!-- Audio channel: its own silent session, painted onto this canvas. -->
+    <section class="sync__source" [hidden]="!showAudio()">
+        @if (!isPicking()) {
+            <div class="sync__label">
+                {{ 'CHANNELS.SPLIT_AUDIO.SYNC.AUDIO_CHANNEL' | translate }}
+                @if (audioName()) {
+                    <span class="sync__label-name">· {{ audioName() }}</span>
+                }
+            </div>
+        }
+        <div
+            class="sync__shot"
+            [class.sync__shot--picking]="isPicking()"
+            (pointerdown)="onStagePointerDown($event)"
+            (pointermove)="onStagePointerMove($event)"
+            (pointerup)="onStagePointerUp($event)"
+            (pointercancel)="onStagePointerUp($event)"
+        >
+            <canvas
+                class="sync__canvas"
+                data-embedded-mpv-preview
+                data-test-id="audio-sync-audio-shot"
+            ></canvas>
+            @if (isPicking() && pickSource() === 'audio' && selectionBox(); as box) {
+                <div class="sync__selection" [style]="box"></div>
+            }
+            @if (starting()) {
+                <div class="sync__shot-problem">
+                    {{ 'CHANNELS.SPLIT_AUDIO.SYNC.STARTING' | translate }}
+                </div>
+            } @else if (!isPicking() && !sync().audioReadout().live) {
+                <div class="sync__shot-problem" data-test-id="audio-sync-audio-problem">
+                    {{ problemKey(sync().audioReadout().problem) | translate }}
+                </div>
+            }
+        </div>
+        @if (!isPicking()) {
+            <ng-container
+                *ngTemplateOutlet="readout; context: { source: 'audio', data: sync().audioReadout() }"
+            />
+        }
+    </section>
+
+    @if (isPicking()) {
+        <div class="sync__actions">
+            <button
+                type="button"
+                class="sync__primary"
+                data-test-id="audio-sync-confirm-region"
+                [disabled]="!selection()"
+                (click)="confirmSelection()"
+            >
+                {{ 'CHANNELS.SPLIT_AUDIO.SYNC.CONFIRM_REGION' | translate }}
+            </button>
+            @if (sync().hasRegions()) {
+                <button type="button" class="sync__link" (click)="backToLive()">
+                    {{ 'CHANNELS.SPLIT_AUDIO.SYNC.BACK' | translate }}
+                </button>
+            }
+        </div>
+    } @else {
+        @if (sync().ocrFailed()) {
+            <p class="sync__error" role="alert">
+                {{ 'CHANNELS.SPLIT_AUDIO.SYNC.OCR_FAILED' | translate }}
+            </p>
+        }
+
+        <div class="sync__result" aria-live="polite">
+            @if (offsetLabel(); as offset) {
+                <div class="sync__row">
+                    <span>{{ 'CHANNELS.SPLIT_AUDIO.SYNC.DIFFERENCE' | translate }}</span>
+                    <strong data-test-id="audio-sync-offset">
+                        {{ offset }}{{ 'CHANNELS.SPLIT_AUDIO.SECONDS_SHORT' | translate }}
+                    </strong>
+                </div>
+                <div class="sync__row sync__row--dim">
+                    <span>{{ 'CHANNELS.SPLIT_AUDIO.SYNC.CURRENT_DELAY' | translate }}</span>
+                    <span data-test-id="audio-sync-delay">
+                        {{ delayLabel() }}{{ 'CHANNELS.SPLIT_AUDIO.SECONDS_SHORT' | translate }}
+                    </span>
+                </div>
+                <div class="sync__row sync__row--dim">
+                    <span>{{ 'CHANNELS.SPLIT_AUDIO.SYNC.REMAINING' | translate }}</span>
+                    <span data-test-id="audio-sync-residual">
+                        {{ residualLabel() }}{{ 'CHANNELS.SPLIT_AUDIO.SECONDS_SHORT' | translate }}
+                    </span>
+                </div>
+                @if (suggestion(); as s) {
+                    @if (s.direction === 'inSync') {
+                        <div class="sync__verdict sync__verdict--ok" data-test-id="audio-sync-verdict">
+                            <mat-icon aria-hidden="true">check_circle</mat-icon>
+                            {{ 'CHANNELS.SPLIT_AUDIO.SYNC.IN_SYNC' | translate }}
+                        </div>
+                    } @else {
+                        <div class="sync__verdict" data-test-id="audio-sync-verdict">
+                            <mat-icon aria-hidden="true">
+                                {{ s.direction === 'delayAudio' ? 'fast_forward' : 'fast_rewind' }}
+                            </mat-icon>
+                            {{
+                                (s.direction === 'delayAudio'
+                                    ? 'CHANNELS.SPLIT_AUDIO.SYNC.SUGGEST_DELAY'
+                                    : 'CHANNELS.SPLIT_AUDIO.SYNC.SUGGEST_ADVANCE'
+                                ) | translate: { seconds: suggestionSeconds() }
+                            }}
+                        </div>
+                        <button
+                            type="button"
+                            class="sync__primary"
+                            data-test-id="audio-sync-apply"
+                            (click)="sync().applySuggestion()"
+                        >
+                            {{
+                                'CHANNELS.SPLIT_AUDIO.SYNC.APPLY_SUGGESTION'
+                                    | translate: { value: targetLabel() }
+                            }}
+                        </button>
+                    }
+                }
+            } @else {
+                <p class="sync__hint" data-test-id="audio-sync-reading">
+                    {{ 'CHANNELS.SPLIT_AUDIO.SYNC.READING' | translate }}
+                </p>
+            }
+        </div>
+
+        <div class="sync__stepper">
+            <button
+                type="button"
+                class="sync__step-button"
+                data-test-id="audio-sync-delay-minus"
+                [attr.aria-label]="'CHANNELS.SPLIT_AUDIO.PICTURE_LATER' | translate"
+                (click)="controls().adjustDelay(-step())"
+            >
+                <mat-icon>remove</mat-icon>
+            </button>
+            <span class="sync__delay">
+                {{ delayLabel() }}{{ 'CHANNELS.SPLIT_AUDIO.SECONDS_SHORT' | translate }}
+            </span>
+            <button
+                type="button"
+                class="sync__step-button"
+                data-test-id="audio-sync-delay-plus"
+                [attr.aria-label]="'CHANNELS.SPLIT_AUDIO.COMMENTARY_LATER' | translate"
+                (click)="controls().adjustDelay(step())"
+            >
+                <mat-icon>add</mat-icon>
+            </button>
+        </div>
+        <div class="sync__chips" role="radiogroup">
+            @for (value of steps; track value) {
+                <button
+                    type="button"
+                    role="radio"
+                    class="sync__chip"
+                    [class.sync__chip--on]="step() === value"
+                    [attr.aria-checked]="step() === value"
+                    (click)="step.set(value)"
+                >
+                    {{ value }}{{ 'CHANNELS.SPLIT_AUDIO.SECONDS_SHORT' | translate }}
+                </button>
+            }
+        </div>
+        <button
+            type="button"
+            class="sync__save"
+            data-test-id="audio-sync-save"
+            [disabled]="controls().isDelaySaved()"
+            (click)="controls().saveDelay()"
+        >
+            {{
+                (controls().isDelaySaved()
+                    ? 'CHANNELS.SPLIT_AUDIO.DELAY_SAVED'
+                    : 'CHANNELS.SPLIT_AUDIO.SAVE_DELAY'
+                ) | translate
+            }}
+        </button>
+    }
+</div>
+
+<ng-template #readout let-source="source" let-data="data">
+    <div class="sync__readout">
+        <span
+            class="sync__clock"
+            [attr.data-test-id]="'audio-sync-' + source + '-clock'"
+            [class.sync__clock--off]="!data.text"
+        >
+            {{ data.text ?? '--:--' }}
+        </span>
+        @if (data.text && data.live) {
+            @if (data.manual) {
+                <span class="sync__badge">{{ 'CHANNELS.SPLIT_AUDIO.SYNC.MANUAL' | translate }}</span>
+            } @else {
+                <span
+                    class="sync__badge sync__badge--{{ confidenceClass(data.confidence) }}"
+                >
+                    {{
+                        'CHANNELS.SPLIT_AUDIO.SYNC.CONFIDENCE'
+                            | translate: { value: data.confidence }
+                    }}
+                </span>
+            }
+        }
+        <button
+            type="button"
+            class="sync__icon-button sync__icon-button--small"
+            [attr.aria-label]="'CHANNELS.SPLIT_AUDIO.SYNC.EDIT_CLOCK' | translate"
+            [title]="'CHANNELS.SPLIT_AUDIO.SYNC.EDIT_CLOCK' | translate"
+            (click)="startEdit(source)"
+        >
+            <mat-icon>edit</mat-icon>
+        </button>
+    </div>
+    @if (editing() === source) {
+        <form
+            class="sync__manual"
+            (submit)="$event.preventDefault(); submitManual(source, clockInput)"
+        >
+            <input
+                #clockInput
+                class="sync__manual-input"
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                [class.sync__manual-input--invalid]="manualInvalid()"
+                [placeholder]="'CHANNELS.SPLIT_AUDIO.SYNC.CLOCK_PLACEHOLDER' | translate"
+            />
+            <button type="submit" class="sync__chip sync__chip--on">
+                {{ 'CHANNELS.SPLIT_AUDIO.SYNC.APPLY' | translate }}
+            </button>
+        </form>
+    }
+</ng-template>

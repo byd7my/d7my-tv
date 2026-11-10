@@ -654,6 +654,13 @@
     }
 }
 
+@if (splitAudio.available() && splitAudio.syncAvailable() && splitAudio.sync.isOpen()) {
+    <app-audio-sync-window
+        class="player-controls__audio-sync"
+        [controls]="splitAudio"
+    />
+}
+
 @if (splitAudio.available() && splitAudio.usesPanel() && splitAudio.panelOpen()) {
     <app-split-audio-panel
         class="player-controls__split-audio-panel"

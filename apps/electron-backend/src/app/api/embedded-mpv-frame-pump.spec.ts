@@ -5,7 +5,7 @@ jest.mock('electron', () => ({
     },
 }));
 
-import { copyStableLatestFrame } from './embedded-mpv-frame-pump';
+import { copyStableLatestFrame, extractRegion } from './embedded-mpv-frame-pump';
 
 describe('embedded MPV frame pump', () => {
     const frame = new ArrayBuffer(16);
@@ -36,5 +36,44 @@ describe('embedded MPV frame pump', () => {
 
         expect(copyStableLatestFrame(reader, frame, 6)).toBeNull();
         expect(reader.copyLatest).not.toHaveBeenCalled();
+    });
+});
+
+describe('extractRegion', () => {
+    // 4x2 frame, BGRA: pixel n has B=n, G=n+100, R=n+200.
+    const frame = new Uint8Array(4 * 2 * 4);
+    for (let n = 0; n < 8; n++) {
+        frame.set([n, n + 100, n + 200, 255], n * 4);
+    }
+
+    it('returns the whole frame as RGBA when no region is given', () => {
+        const result = extractRegion(frame, 4, 2, undefined, undefined, 5, 9);
+
+        expect(result).toMatchObject({ width: 4, height: 2, ageMs: 5, seq: 9 });
+        expect(Array.from(result!.data.slice(0, 4))).toEqual([200, 100, 0, 255]);
+    });
+
+    it('crops a normalised region', () => {
+        // Right half, bottom row → pixels 6 and 7.
+        const result = extractRegion(
+            frame,
+            4,
+            2,
+            { x: 0.5, y: 0.5, width: 0.5, height: 0.5 },
+            undefined,
+            0,
+            1
+        );
+
+        expect(result).toMatchObject({ width: 2, height: 1 });
+        expect(Array.from(result!.data)).toEqual([
+            206, 106, 6, 255, 207, 107, 7, 255,
+        ]);
+    });
+
+    it('decimates a frame wider than maxWidth', () => {
+        const result = extractRegion(frame, 4, 2, undefined, 2, 0, 1);
+
+        expect(result).toMatchObject({ width: 2, height: 1 });
     });
 });

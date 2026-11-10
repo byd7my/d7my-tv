@@ -1,5 +1,6 @@
 import {
     computed,
+    DestroyRef,
     effect,
     inject,
     signal,
@@ -16,6 +17,8 @@ import type {
     ExternalAudioOverride,
     ResolvedPortalPlayback,
 } from '@iptvnator/shared/interfaces';
+import { AudioSyncController } from '../audio-sync/audio-sync.controller';
+import { MatchClockOcrService } from '../match-clock/match-clock-ocr.service';
 import type {
     PlayerControlsCommands,
     PlayerControlsState,
@@ -40,12 +43,15 @@ export class ControlsSplitAudio {
         optional: true,
     });
     private readonly splitAudio = inject(SplitAudioService);
+    private readonly ocr = inject(MatchClockOcrService);
 
     constructor(
         private readonly state: Signal<PlayerControlsState>,
         private readonly commands?: () => PlayerControlsCommands,
         private readonly onPanelOpened?: () => void
     ) {
+        // The silent preview session must never outlive the player.
+        inject(DestroyRef).onDestroy(() => this.sync.close());
         // The audio channel failed to open: it is not playing, so it must not
         // stay marked as the selected one. The picture keeps playing.
         effect(() => {
@@ -79,6 +85,29 @@ export class ControlsSplitAudio {
     readonly videoUrl = computed(
         () => this.splitAudio.context()?.video.url ?? ''
     );
+
+    /**
+     * The "sync by match clock" window: reads the scoreboard clock of the
+     * picture and of the audio channel and suggests the delay.
+     */
+    readonly sync = new AudioSyncController({
+        api: () => (typeof window === 'undefined' ? undefined : window.electron),
+        audio: this.activeAudio,
+        videoUrl: this.videoUrl,
+        setDelay: (seconds) => this.setDelay(seconds),
+        clampDelay: (seconds) => this.splitAudio.clampDelay(seconds),
+        toPlayback: (audio) => this.toPlayback(audio),
+        ocr: this.ocr,
+    });
+
+    /** Needs the frame-copy engine and a chosen audio channel. */
+    syncAvailable(): boolean {
+        return (
+            this.usesPanel() &&
+            this.activeAudio() !== null &&
+            this.sync.available()
+        );
+    }
 
     usesPanel(): boolean {
         return (
@@ -137,13 +166,22 @@ export class ControlsSplitAudio {
     /** Moves the delay by a step; applied to the running audio at once. */
     adjustDelay(deltaSeconds: number): void {
         const audio = this.activeAudio();
+        if (!audio) return;
+        this.setDelay((audio.delaySeconds ?? 0) + deltaSeconds);
+    }
+
+    /** Sets the delay to an exact value; applied to the running audio at once. */
+    setDelay(seconds: number): void {
+        const audio = this.activeAudio();
         const setDelay = this.commands?.().setExternalAudioDelay;
         if (!audio || !setDelay) return;
-        const delay = this.roundDelay(
-            this.splitAudio.clampDelay((audio.delaySeconds ?? 0) + deltaSeconds)
-        );
+        const delay = this.roundDelay(this.splitAudio.clampDelay(seconds));
         this.splitAudio.setActiveAudio({ ...audio, delaySeconds: delay });
         setDelay(delay);
+    }
+
+    toggleSync(): void {
+        this.sync.toggle();
     }
 
     /** Remembers the current delay for this video + audio pair. */

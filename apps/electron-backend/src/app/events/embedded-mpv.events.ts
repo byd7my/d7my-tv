@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron';
 import {
     EMBEDDED_MPV_ADD_SUBTITLE,
+    EMBEDDED_MPV_CREATE_PREVIEW_SESSION,
     EMBEDDED_MPV_CREATE_SESSION,
     EMBEDDED_MPV_DISPOSE_SESSION,
     EMBEDDED_MPV_GET_FRAME_SOURCE,
@@ -27,6 +28,7 @@ import {
     EMBEDDED_MPV_STOP_RECORDING,
     EMBEDDED_MPV_SUPPORT,
     EmbeddedMpvBounds,
+    EmbeddedMpvPreviewRequest,
     EmbeddedMpvRecordingStartOptions,
     ResolvedPortalPlayback,
 } from '@iptvnator/shared/interfaces';
@@ -109,6 +111,15 @@ handleEmbeddedMpv(
             bounds,
             title,
             initialVolume,
+            readEmbeddedMpvSessionOptions()
+        )
+);
+
+handleEmbeddedMpv(
+    EMBEDDED_MPV_CREATE_PREVIEW_SESSION,
+    (request?: EmbeddedMpvPreviewRequest) =>
+        getService().createPreviewSession(
+            request,
             readEmbeddedMpvSessionOptions()
         )
 );

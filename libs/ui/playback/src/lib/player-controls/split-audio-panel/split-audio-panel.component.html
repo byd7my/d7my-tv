@@ -89,6 +89,20 @@
     @if (active(); as audio) {
         <div class="split-audio__divider"></div>
 
+        @if (controls().syncAvailable()) {
+            <button
+                type="button"
+                class="split-audio__sync"
+                data-test-id="split-audio-sync"
+                [class.split-audio__sync--on]="controls().sync.isOpen()"
+                [attr.aria-pressed]="controls().sync.isOpen()"
+                (click)="controls().toggleSync()"
+            >
+                <mat-icon aria-hidden="true">schedule</mat-icon>
+                <span>{{ 'CHANNELS.SPLIT_AUDIO.SYNC.OPEN' | translate }}</span>
+            </button>
+        }
+
         <div class="split-audio__stepper">
             <button
                 type="button"
