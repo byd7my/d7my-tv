@@ -488,6 +488,40 @@ bit prevents the unprivileged uploader from replacing the root-owned inputs.
 The original verified snapshot stays sealed; upload filenames are enumerated
 only from that snapshot, never from the writable scratch directory.
 
+## Windows code-only update
+
+Windows Smart App Control judges every new executable by its own hash and can
+refuse a full installer on a PC where the previous one ran. Each build makes
+new executables (`IPTVnator.exe`, the native addons, the helper) and an
+unsigned one cannot be made to pass, so the Windows release also carries the
+application code on its own, and the app swaps it in instead of running an
+installer. Nothing executable changes, so there is nothing new to judge.
+
+| Asset | Role |
+| --- | --- |
+| `iptvnator-<version>-windows-x64-app.asar.br` | `app.asar`, brotli-packed (about 45 MB); what the app downloads |
+| `asar-update.json` | version, Electron version, native interface, asset name, SHA-256 and size of the unpacked asar; what the app checks first |
+| `iptvnator-<version>-windows-x64-app.asar.zip` | the same `app.asar` for a manual swap on an install that predates the in-app swap |
+
+- `tools/release/make-asar-update.mjs` builds the first two from
+  `dist/executables/win-unpacked/resources/app.asar`; the "Package code-only
+  update (Windows)" workflow step also makes the zip.
+- The app side is `apps/electron-backend/src/app/services/asar-update/`: an
+  `AsarUpdater` with electron-updater's event contract (so the update UI is
+  unchanged), a verified streaming download, and a swap script that the app's
+  own executable runs in plain-Node mode after it quits. The old file stays as
+  `app.asar.bak`; the log is `<userData>/asar-updates/swap.log`.
+- It only applies to a base whose executables match the code: the manifest
+  carries the Electron version and `ASAR_UPDATE_NATIVE_INTERFACE`. **Bump
+  `ASAR_UPDATE_NATIVE_INTERFACE` (and publish a full installer) whenever the
+  JavaScript starts to need a different embedded-MPV addon, helper or libmpv**,
+  or after an Electron upgrade; the updater then refuses the code-only update
+  and points to the full installer.
+- Requires the `EnableEmbeddedAsarIntegrityValidation` and
+  `OnlyLoadAppFromAsar` Electron fuses to stay off, and `RunAsNode` on.
+- First swap on an install that predates this: close the app, extract the zip,
+  replace `%LOCALAPPDATA%\Programs\iptvnator\resources\app.asar`, start the app.
+
 ## Validation
 
 ```bash

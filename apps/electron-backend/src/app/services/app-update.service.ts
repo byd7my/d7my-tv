@@ -52,7 +52,7 @@ interface AppUpdateProgressInfo {
     transferred?: number;
 }
 
-interface AppUpdaterAdapter extends AppUpdateFeedTarget {
+export interface AppUpdaterAdapter extends AppUpdateFeedTarget {
     autoDownload: boolean;
     autoInstallOnAppQuit?: boolean;
     checkForUpdates(): Promise<unknown>;

@@ -1018,6 +1018,24 @@ jobs:
                   IPTVNATOR_REQUIRE_EMBEDDED_MPV: ${{ (matrix.os == 'linux' || matrix.os == 'windows' || (matrix.os == 'macos' && (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'pull_request' || github.ref == 'refs/heads/master'))) && '1' || '0' }}
               run: pnpm run verify:package-layout -- "$PACKAGE_OS" "$PACKAGE_ARCH"
 
+            # Code-only update for the Windows app: the same app.asar that is
+            # inside the installer, packed on its own. Smart App Control
+            # judges each new executable by its hash and can refuse a full
+            # installer, but never a data file, so the app updates itself by
+            # swapping this file (apps/electron-backend/src/app/services/
+            # asar-update). The zip is for the one-time manual swap on an
+            # install that predates the in-app swap.
+            - name: Package code-only update (Windows)
+              if: matrix.os == 'windows'
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  node tools/release/make-asar-update.mjs --executables dist/executables
+                  VERSION="$(node -p "require('./dist/executables/asar-update.json').version")"
+                  ZIP="$(pwd)/dist/executables/iptvnator-${VERSION}-windows-x64-app.asar.zip"
+                  (cd dist/executables/win-unpacked/resources && 7z a -tzip -mx=5 "${ZIP}" app.asar)
+                  ls -la dist/executables
+
             - name: Make marker-only foreign-architecture DEB packages
               if: matrix.os == 'linux' && matrix.linux_profile == 'system'
               shell: bash
@@ -1453,6 +1471,9 @@ jobs:
                       dist/executables/**/latest.yml
                       dist/executables/**/nightly.yml
                       dist/executables/**/*.blockmap
+                      dist/executables/*-windows-x64-app.asar.br
+                      dist/executables/*-windows-x64-app.asar.zip
+                      dist/executables/asar-update.json
                   retention-days: 7
 
     build-linux:
@@ -1888,10 +1909,12 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            # Windows-only stable release for the in-app updater. Only the x64
-            # installer and the two small files electron-updater reads
-            # (latest.yml and the .blockmap) are attached; the release is
-            # published, not a draft, and is not a prerelease.
+            # Windows-only stable release for the in-app updater. The x64
+            # installer, the two small files electron-updater reads
+            # (latest.yml and the .blockmap) and the code-only update
+            # (app.asar packed, its manifest, and a zip for a manual swap)
+            # are attached; the release is published, not a draft, and is
+            # not a prerelease.
             - name: Publish Windows release
               if: (inputs.publish_release == true || (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'byd7my/d7my-tv')) && needs.build-windows-release.result == 'success'
               uses: softprops/action-gh-release@v3
@@ -1909,6 +1932,9 @@ jobs:
                       artifacts/*-windows-x64-setup.exe
                       artifacts/latest.yml
                       artifacts/*-windows-x64-setup.exe.blockmap
+                      artifacts/*-windows-x64-app.asar.br
+                      artifacts/*-windows-x64-app.asar.zip
+                      artifacts/asar-update.json
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

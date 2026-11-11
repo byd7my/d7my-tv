@@ -49,6 +49,7 @@ import {
     onAppUpdateChannelChange,
     readStoredAppUpdateChannel,
 } from '../services/app-update-channel';
+import { createWindowsAsarUpdater } from '../services/asar-update/windows-asar-updater';
 import { databaseWorkerClient } from '../services/database-worker-client';
 import type { bootstrapWindowCloseGuard } from '../services/window-close-guard.service';
 import { scheduleDeferredFixPath } from './login-shell-path';
@@ -74,7 +75,12 @@ export function bootstrapDeferredEvents(
         appVersion: context.appVersion,
         channel: readStoredAppUpdateChannel(),
         getMainWindow: () => App.mainWindow,
-        updater: () => autoUpdater,
+        // Windows swaps only the app code (see asar-update); the other
+        // platforms keep electron-updater's installers.
+        updater: () =>
+            process.platform === 'win32'
+                ? createWindowsAsarUpdater()
+                : autoUpdater,
         // quitAndInstall() closes the windows before 'before-quit' fires
         // (macOS), so without this an armed close guard would intercept
         // the install's window close and strand the update.
