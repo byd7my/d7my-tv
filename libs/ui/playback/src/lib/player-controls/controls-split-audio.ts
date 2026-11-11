@@ -171,9 +171,15 @@ export class ControlsSplitAudio {
         const audio = this.buildOverride(channel, delay);
         this.splitAudio.setActiveAudio(audio);
         this.savedDelay.set(delay);
-        setExternalAudio(this.toPlayback(audio), delay);
-        // Show the match clocks and what differs, without another click.
-        if (this.syncAvailable()) this.sync.open();
+        // The sync window takes the sound's connection slot for its picture,
+        // so connecting the sound first only to drop it again would open and
+        // close a provider connection for nothing (and stall the picture).
+        // The window hands the sound back when it closes.
+        if (this.syncAvailable()) {
+            this.sync.open();
+        } else {
+            setExternalAudio(this.toPlayback(audio), delay);
+        }
     }
 
     /** Moves the delay by a step; applied to the running audio at once. */

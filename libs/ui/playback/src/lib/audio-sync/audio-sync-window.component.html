@@ -45,30 +45,6 @@
     </header>
 
     @if (!isPicking()) {
-        <div class="sync__tabs" role="radiogroup">
-            <button
-                type="button"
-                role="radio"
-                class="sync__tab"
-                data-test-id="audio-sync-view-compare"
-                [class.sync__tab--on]="isCompare()"
-                [attr.aria-checked]="isCompare()"
-                (click)="sync().setViewMode('compare')"
-            >
-                {{ 'CHANNELS.SPLIT_AUDIO.SYNC.VIEW_COMPARE' | translate }}
-            </button>
-            <button
-                type="button"
-                role="radio"
-                class="sync__tab"
-                data-test-id="audio-sync-view-measure"
-                [class.sync__tab--on]="isMeasureView()"
-                [attr.aria-checked]="isMeasureView()"
-                (click)="sync().setViewMode('measure')"
-            >
-                {{ 'CHANNELS.SPLIT_AUDIO.SYNC.VIEW_MEASURE' | translate }}
-            </button>
-        </div>
         @if (sync().fallbackNotice()) {
             <p class="sync__notice" role="status" data-test-id="audio-sync-fallback">
                 {{ 'CHANNELS.SPLIT_AUDIO.SYNC.FALLBACK_NOTICE' | translate }}

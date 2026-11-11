@@ -11,7 +11,7 @@ function frame(ageMs = 0) {
 
 function memoryStorage(view: 'live' | 'measure' | 'compare' = 'live') {
     const data = new Map<string, string>();
-    data.set('iptvnator.audioSync.view.v2', view);
+    data.set('iptvnator.audioSync.view.v3', view);
     return {
         getItem: (key: string) => data.get(key) ?? null,
         setItem: (key: string, value: string) => void data.set(key, value),
@@ -81,6 +81,7 @@ describe('AudioSyncController', () => {
                 },
                 storage,
                 now: () => clockMs,
+                settleMs: 0,
             });
         });
         return controller;
@@ -290,6 +291,78 @@ describe('AudioSyncController', () => {
             controller.close();
         });
 
+        it('waits for the sound connection to close before opening the picture, and for the picture before the sound', async () => {
+            const storage = memoryStorage('compare');
+            let controller!: AudioSyncController;
+            TestBed.runInInjectionContext(() => {
+                controller = new AudioSyncController({
+                    api: () => api,
+                    audio,
+                    videoUrl: signal('http://video/1'),
+                    setDelay,
+                    suspendAudio: () => {
+                        order.push('suspend');
+                        suspendAudio();
+                    },
+                    resumeAudio: () => {
+                        order.push('resume');
+                        resumeAudio();
+                    },
+                    clampDelay: (value) => value,
+                    toPlayback: (a) => ({ streamUrl: a.streamUrl, title: '', isLive: true }),
+                    ocr: { recognize: jest.fn(), dispose: jest.fn().mockResolvedValue(undefined) },
+                    storage,
+                    now: () => clockMs,
+                    settleMs: 2500,
+                });
+            });
+
+            controller.open();
+            await flush();
+            expect(suspendAudio).toHaveBeenCalledTimes(1);
+            expect(api.createEmbeddedMpvPreviewSession).not.toHaveBeenCalled();
+
+            await jest.advanceTimersByTimeAsync(2499);
+            expect(api.createEmbeddedMpvPreviewSession).not.toHaveBeenCalled();
+            await jest.advanceTimersByTimeAsync(1);
+            await flush();
+            expect(api.createEmbeddedMpvPreviewSession).toHaveBeenCalledTimes(1);
+
+            controller.close();
+            await flush();
+            expect(resumeAudio).not.toHaveBeenCalled();
+            await jest.advanceTimersByTimeAsync(2500);
+            expect(resumeAudio).toHaveBeenCalledTimes(1);
+        });
+
+        it('does not open the picture when the window is closed while the sound connection is closing', async () => {
+            let controller!: AudioSyncController;
+            TestBed.runInInjectionContext(() => {
+                controller = new AudioSyncController({
+                    api: () => api,
+                    audio,
+                    videoUrl: signal('http://video/1'),
+                    setDelay,
+                    suspendAudio,
+                    resumeAudio,
+                    clampDelay: (value) => value,
+                    toPlayback: (a) => ({ streamUrl: a.streamUrl, title: '', isLive: true }),
+                    ocr: { recognize: jest.fn(), dispose: jest.fn().mockResolvedValue(undefined) },
+                    storage: memoryStorage('compare'),
+                    now: () => clockMs,
+                    settleMs: 2500,
+                });
+            });
+
+            controller.open();
+            await flush();
+            controller.close();
+            await jest.advanceTimersByTimeAsync(6000);
+
+            expect(api.createEmbeddedMpvPreviewSession).not.toHaveBeenCalled();
+            expect(resumeAudio).toHaveBeenCalledTimes(1);
+        });
+
         it('reads no clock by itself', async () => {
             const controller = build(memoryStorage('compare'));
             controller.open();
@@ -491,7 +564,7 @@ describe('AudioSyncController', () => {
             const first = build(storage);
             first.setViewMode('live');
 
-            expect(storage.getItem('iptvnator.audioSync.view.v2')).toBe('live');
+            expect(storage.getItem('iptvnator.audioSync.view.v3')).toBe('live');
             expect(build(storage).viewMode()).toBe('live');
         });
     });

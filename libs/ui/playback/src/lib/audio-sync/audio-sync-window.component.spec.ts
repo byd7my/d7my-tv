@@ -109,8 +109,9 @@ describe('AudioSyncWindowComponent', () => {
         fixture.detectChanges();
 
         expect(byId('audio-sync-measure')).not.toBeNull();
-        expect(byId('audio-sync-view-measure')).not.toBeNull();
-        expect(byId('audio-sync-view-compare')).not.toBeNull();
+        // measuring once is no longer offered as a tab: comparing is the way
+        expect(byId('audio-sync-view-measure')).toBeNull();
+        expect(byId('audio-sync-view-compare')).toBeNull();
         expect(byId('audio-sync-apply')).toBeNull();
     });
 

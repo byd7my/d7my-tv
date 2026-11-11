@@ -3,18 +3,14 @@ import type {
     EmbeddedMpvFrameCapture,
     EmbeddedMpvFrameRegion,
 } from '@iptvnator/shared/interfaces';
-import {
-    parseManualClock,
-} from '../match-clock/match-clock.util';
+import { parseManualClock } from '../match-clock/match-clock.util';
 import { OffsetSmoother, residualSeconds, suggestCorrection } from './audio-sync-math';
-import {
-    loadRegions,
-    saveRegion,
-} from './audio-sync-regions';
+import { loadRegions, saveRegion } from './audio-sync-regions';
 import { AudioSyncReadings } from './audio-sync-readings';
 import { AudioSyncCompare } from './audio-sync-compare';
 import { AudioSyncMeasure } from './audio-sync-measure';
 import { AudioSyncPreview } from './audio-sync-preview';
+import { AudioSyncSlot } from './audio-sync-slot';
 import {
     AudioSyncOptions,
     loadViewMode,
@@ -126,7 +122,11 @@ export class AudioSyncController {
         onPlaying: () => this.previewStatus.set('live'),
         onFailed: () => this.failPreview(),
     });
-    private audioSuspended = false;
+    private readonly slot = new AudioSyncSlot({
+        suspend: () => this.options.suspendAudio(),
+        resume: () => this.options.resumeAudio(),
+        settleMs: () => this.options.settleMs,
+    });
     private autoMeasureTimer: ReturnType<typeof setTimeout> | null = null;
     private autoFallbackUsed = false;
     private measuredSinceBegin = false;
@@ -378,25 +378,27 @@ export class AudioSyncController {
         this.previewStartedAt = this.now();
         this.audioReadout.set({ ...EMPTY_READOUT, problem: 'noFrame' });
         // Measuring and comparing: the picture takes the sound's connection slot.
-        if (this.viewMode() !== 'live' && !this.audioSuspended) {
-            this.audioSuspended = true;
-            this.options.suspendAudio();
+        if (this.viewMode() !== 'live') {
+            this.slot.take();
+            await this.slot.ready();
+            if (!this.isOpen()) return; // closed while the sound's connection closed
         }
         await this.preview.start(region);
     }
 
     private async stopPreview(): Promise<void> {
         await this.preview.stop();
-        if (this.audioSuspended) {
-            this.audioSuspended = false;
-            this.options.resumeAudio();
-        }
+        await this.slot.give();
     }
 
     private failPreview(): void {
         this.previewStatus.set('failed');
         this.audioReadout.set({ ...EMPTY_READOUT, problem: 'failed' });
         this.readings.resetKeepMain();
+        // Comparing paused the sound for the picture: do not leave it silent.
+        if (this.viewMode() !== 'live' && this.slot.isTaken) {
+            void this.stopPreview();
+        }
         // A refused third connection: measure instead (two connections).
         if (
             this.viewMode() === 'live' &&

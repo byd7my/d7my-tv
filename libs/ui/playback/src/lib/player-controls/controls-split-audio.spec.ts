@@ -93,6 +93,18 @@ describe('ControlsSplitAudio', () => {
         expect(controls.activeAudio()?.title).toBe('commentary');
     });
 
+    it('does not connect the sound first when the sync window opens (it takes the slot)', () => {
+        jest.spyOn(controls, 'syncAvailable').mockReturnValue(true);
+        const open = jest.spyOn(controls.sync, 'open').mockImplementation();
+
+        controls.select(commentary);
+
+        expect(open).toHaveBeenCalledTimes(1);
+        expect(setExternalAudio).not.toHaveBeenCalled();
+        // the choice is kept, so the window can hand the sound back on close
+        expect(controls.activeAudio()?.streamUrl).toBe(commentary.url);
+    });
+
     it('moves the delay in steps, applies it at once and saves only on request', () => {
         controls.select(commentary);
         controls.adjustDelay(1);

@@ -85,6 +85,8 @@ export interface AudioSyncOptions {
     ocr: Pick<MatchClockOcrService, 'recognize' | 'dispose'>;
     storage?: Pick<Storage, 'getItem' | 'setItem'> | null;
     now?: () => number;
+    /** Pause after a connection is released, before the next one opens. */
+    settleMs?: number;
 }
 
 /** Capture cadence; the clock is read every `OCR_EVERY` ticks (once a second). */
@@ -93,6 +95,11 @@ export const OCR_EVERY = 4;
 /** A picture older than this is not a live picture. */
 export const STALE_AFTER_MS = 3000;
 /** Wait this long for the first frame before calling the preview failed. */
+/**
+ * Providers count a connection until it is really closed. Opening the next
+ * one at once can exceed the account's limit and stall the main picture.
+ */
+export const CONNECTION_SETTLE_MS = 2500;
 /** Pause before the first automatic measure, so the new sound can start. */
 export const AUTO_MEASURE_DELAY_MS = 1500;
 export const FIRST_FRAME_TIMEOUT_MS = 20000;
@@ -123,9 +130,13 @@ export function safeLocalStorage(): Storage | null {
     }
 }
 
-const VIEW_KEY = 'iptvnator.audioSync.view.v2';
+const VIEW_KEY = 'iptvnator.audioSync.view.v3';
 
-/** Comparing by eye is the default: no reading engine, two connections. */
+/**
+ * Comparing by eye is the default: no reading engine, two connections.
+ * The key was bumped when the Measure tab went away, so a 'measure' chosen
+ * by hand in an older version does not keep the window on a view without a tab.
+ */
 export function loadViewMode(
     storage: Pick<Storage, 'getItem'> | null
 ): ViewMode {
