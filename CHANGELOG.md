@@ -11,6 +11,12 @@ this marker — see `.changes/README.md`.
 
 <!-- next-release -->
 
+# 0.26.11 (2026-11-11)
+
+### Features
+
+- **playback** — Syncing a split audio channel now opens a Compare view: the audio channel's scoreboard stays in the top-left corner, you type the two clocks you see and get the delay. No clock reading engine or area picking is needed. Measure once is still available. ([01cd7b8](https://github.com/4gray/iptvnator/commit/01cd7b860bf6992d883223dad467b71a5dd494d4))
+
 # 0.26.10 (2026-11-10)
 
 ### Fixes
