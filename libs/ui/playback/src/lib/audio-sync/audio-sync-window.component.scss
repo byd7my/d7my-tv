@@ -402,3 +402,18 @@
     color: #ffb4ae;
     font-size: 0.8rem;
 }
+
+// Compare view: the two clocks the user reads off the screen.
+.sync__compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.sync__compare-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.78rem;
+    color: var(--sa-text-dim);
+}

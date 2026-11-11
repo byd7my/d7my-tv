@@ -50,23 +50,23 @@
                 type="button"
                 role="radio"
                 class="sync__tab"
+                data-test-id="audio-sync-view-compare"
+                [class.sync__tab--on]="isCompare()"
+                [attr.aria-checked]="isCompare()"
+                (click)="sync().setViewMode('compare')"
+            >
+                {{ 'CHANNELS.SPLIT_AUDIO.SYNC.VIEW_COMPARE' | translate }}
+            </button>
+            <button
+                type="button"
+                role="radio"
+                class="sync__tab"
                 data-test-id="audio-sync-view-measure"
                 [class.sync__tab--on]="isMeasureView()"
                 [attr.aria-checked]="isMeasureView()"
                 (click)="sync().setViewMode('measure')"
             >
                 {{ 'CHANNELS.SPLIT_AUDIO.SYNC.VIEW_MEASURE' | translate }}
-            </button>
-            <button
-                type="button"
-                role="radio"
-                class="sync__tab"
-                data-test-id="audio-sync-view-live"
-                [class.sync__tab--on]="!isMeasureView()"
-                [attr.aria-checked]="!isMeasureView()"
-                (click)="sync().setViewMode('live')"
-            >
-                {{ 'CHANNELS.SPLIT_AUDIO.SYNC.VIEW_LIVE' | translate }}
             </button>
         </div>
         @if (sync().fallbackNotice()) {
@@ -76,7 +76,7 @@
         }
     }
 
-    @if (isPicking()) {
+    @if (isPicking() && !isCompare()) {
         <div class="sync__tabs" role="tablist">
             <button
                 type="button"
@@ -116,7 +116,7 @@
     }
 
     <!-- Main video: the cropped clock (live) or the whole frame (picker). -->
-    <section class="sync__source" [hidden]="!showMain()">
+    <section class="sync__source" [hidden]="!showMain() || isCompare()">
         @if (!isPicking()) {
             <div class="sync__label">
                 {{ 'CHANNELS.SPLIT_AUDIO.SYNC.MAIN_VIDEO' | translate }}
@@ -177,18 +177,58 @@
                 <div class="sync__shot-problem">
                     {{ 'CHANNELS.SPLIT_AUDIO.SYNC.STARTING' | translate }}
                 </div>
-            } @else if (!isPicking() && !sync().audioReadout().live) {
+            } @else if (isCompare() && sync().previewStatus() === 'failed') {
+                <div class="sync__shot-problem" data-test-id="audio-sync-audio-problem">
+                    {{ problemKey('failed') | translate }}
+                </div>
+            } @else if (!isPicking() && !isCompare() && !sync().audioReadout().live) {
                 <div class="sync__shot-problem" data-test-id="audio-sync-audio-problem">
                     {{ problemKey(sync().audioReadout().problem) | translate }}
                 </div>
             }
         </div>
-        @if (!isPicking()) {
+        @if (!isPicking() && !isCompare()) {
             <ng-container
                 *ngTemplateOutlet="readout; context: { source: 'audio', data: sync().audioReadout() }"
             />
         }
     </section>
+
+    @if (isCompare() && !isPicking()) {
+        <div class="sync__compare" data-test-id="audio-sync-compare">
+            <label class="sync__compare-field">
+                <span>{{ 'CHANNELS.SPLIT_AUDIO.SYNC.PICTURE_CLOCK' | translate }}</span>
+                <input
+                    class="sync__manual-input"
+                    type="text"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    data-test-id="audio-sync-picture-clock-input"
+                    [value]="sync().pictureClockText()"
+                    [placeholder]="'CHANNELS.SPLIT_AUDIO.SYNC.CLOCK_PLACEHOLDER' | translate"
+                    (input)="onClockInput('main', $event)"
+                />
+            </label>
+            <label class="sync__compare-field">
+                <span>{{ 'CHANNELS.SPLIT_AUDIO.SYNC.AUDIO_CLOCK' | translate }}</span>
+                <input
+                    class="sync__manual-input"
+                    type="text"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    data-test-id="audio-sync-audio-clock-input"
+                    [value]="sync().audioClockText()"
+                    [placeholder]="'CHANNELS.SPLIT_AUDIO.SYNC.CLOCK_PLACEHOLDER' | translate"
+                    (input)="onClockInput('audio', $event)"
+                />
+            </label>
+        </div>
+        @if (offsetLabel() === null) {
+            <p class="sync__hint" data-test-id="audio-sync-compare-hint">
+                {{ 'CHANNELS.SPLIT_AUDIO.SYNC.COMPARE_HINT' | translate }}
+            </p>
+        }
+    }
 
     @if (isPicking()) {
         <div class="sync__actions">
@@ -233,7 +273,7 @@
                 </p>
             }
         }
-        @if (sync().ocrFailed()) {
+        @if (sync().ocrFailed() && !isCompare()) {
             <p class="sync__error" role="alert">
                 {{ 'CHANNELS.SPLIT_AUDIO.SYNC.OCR_FAILED' | translate }}
             </p>
@@ -290,7 +330,7 @@
                         </button>
                     }
                 }
-            } @else if (!isMeasureView() || measuring()) {
+            } @else if ((!isMeasureView() && !isCompare()) || measuring()) {
                 <p class="sync__hint" data-test-id="audio-sync-reading">
                     {{ 'CHANNELS.SPLIT_AUDIO.SYNC.READING' | translate }}
                 </p>
@@ -348,6 +388,16 @@
                 ) | translate
             }}
         </button>
+        @if (isCompare()) {
+            <button
+                type="button"
+                class="sync__primary"
+                data-test-id="audio-sync-done"
+                (click)="close()"
+            >
+                {{ 'CHANNELS.SPLIT_AUDIO.SYNC.COMPARE_DONE' | translate }}
+            </button>
+        }
     }
 </div>
 

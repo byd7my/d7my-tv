@@ -158,6 +158,9 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
     protected readonly isMeasureView = computed(
         () => this.sync().viewMode() === 'measure'
     );
+    protected readonly isCompare = computed(
+        () => this.sync().viewMode() === 'compare'
+    );
     protected readonly measuring = computed(() => this.sync().measure.running());
 
     protected measureErrorKey(): string | null {
@@ -171,6 +174,14 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
             default:
                 return null;
         }
+    }
+
+    protected onClockInput(source: SyncSourceKey, event: Event): void {
+        const value = (event.target as HTMLInputElement).value;
+        (source === 'main'
+            ? this.sync().pictureClockText
+            : this.sync().audioClockText
+        ).set(value);
     }
 
     protected problemKey(problem: SourceProblem | null): string {

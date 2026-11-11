@@ -9,7 +9,24 @@ import type { MatchClockOcrService } from '../match-clock/match-clock-ocr.servic
 export type SyncSourceKey = 'main' | 'audio';
 export type SyncMode = 'live' | 'pick';
 /** `measure` reads the clocks once with a temporary picture; `live` keeps it. */
-export type ViewMode = 'measure' | 'live';
+/**
+ * compare: the audio channel's scoreboard stays on screen, the user reads both
+ * clocks and sets the difference. measure: reads both clocks once by OCR.
+ * live: OCR on a continuous picture (a third connection).
+ */
+export type ViewMode = 'compare' | 'measure' | 'live';
+
+/**
+ * Where the audio channel's picture is cut by default: the top-left corner,
+ * where nearly every broadcast puts the scoreboard. It is only a start; the
+ * region can be re-picked.
+ */
+export const DEFAULT_CLOCK_REGION = {
+    x: 0,
+    y: 0,
+    width: 0.45,
+    height: 0.16,
+} as const;
 export type PreviewStatus = 'idle' | 'starting' | 'live' | 'failed';
 
 /** Why a source shows no clock. Maps to a translated message. */
@@ -106,16 +123,17 @@ export function safeLocalStorage(): Storage | null {
     }
 }
 
-const VIEW_KEY = 'iptvnator.audioSync.view.v1';
+const VIEW_KEY = 'iptvnator.audioSync.view.v2';
 
-/** Measuring is the default: it never needs a third connection. */
+/** Comparing by eye is the default: no reading engine, two connections. */
 export function loadViewMode(
     storage: Pick<Storage, 'getItem'> | null
 ): ViewMode {
     try {
-        return storage?.getItem(VIEW_KEY) === 'live' ? 'live' : 'measure';
+        const saved = storage?.getItem(VIEW_KEY);
+        return saved === 'live' || saved === 'measure' ? saved : 'compare';
     } catch {
-        return 'measure';
+        return 'compare';
     }
 }
 

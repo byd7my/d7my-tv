@@ -110,8 +110,54 @@ describe('AudioSyncWindowComponent', () => {
 
         expect(byId('audio-sync-measure')).not.toBeNull();
         expect(byId('audio-sync-view-measure')).not.toBeNull();
-        expect(byId('audio-sync-view-live')).not.toBeNull();
+        expect(byId('audio-sync-view-compare')).not.toBeNull();
         expect(byId('audio-sync-apply')).toBeNull();
+    });
+
+    describe('compare view', () => {
+        function type(id: string, value: string): void {
+            const input = byId(id) as HTMLInputElement;
+            input.value = value;
+            input.dispatchEvent(new Event('input'));
+            fixture.detectChanges();
+        }
+
+        beforeEach(() => {
+            mount();
+            sync.viewMode.set('compare');
+            fixture.detectChanges();
+        });
+
+        it('keeps the audio channel picture and asks for both clocks, no reading engine', () => {
+            expect(byId('audio-sync-audio-shot')).not.toBeNull();
+            expect(byId('audio-sync-picture-clock-input')).not.toBeNull();
+            expect(byId('audio-sync-audio-clock-input')).not.toBeNull();
+            expect(byId('audio-sync-measure')).toBeNull();
+            expect(byId('audio-sync-compare-hint')).not.toBeNull();
+        });
+
+        it('turns the two typed clocks into the difference and a suggestion', () => {
+            type('audio-sync-picture-clock-input', '10:00');
+            type('audio-sync-audio-clock-input', '10:05');
+
+            expect(text('audio-sync-offset')).toContain('+5.0');
+            expect(byId('audio-sync-apply')).not.toBeNull();
+            expect(byId('audio-sync-compare-hint')).toBeNull();
+        });
+
+        it('shows nothing until both clocks are valid', () => {
+            type('audio-sync-picture-clock-input', '10:00');
+            type('audio-sync-audio-clock-input', 'abc');
+
+            expect(byId('audio-sync-offset')).toBeNull();
+        });
+
+        it('closes with the done button', () => {
+            const close = jest.spyOn(sync, 'close');
+            (byId('audio-sync-done') as HTMLButtonElement).click();
+
+            expect(close).toHaveBeenCalled();
+        });
     });
 
     it('explains a frozen source instead of showing an old picture as live', () => {

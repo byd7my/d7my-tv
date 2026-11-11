@@ -9,9 +9,9 @@ function frame(ageMs = 0) {
     return { width: 4, height: 2, data: new Uint8ClampedArray(32), ageMs, seq: 1 };
 }
 
-function memoryStorage(view: 'live' | 'measure' = 'live') {
+function memoryStorage(view: 'live' | 'measure' | 'compare' = 'live') {
     const data = new Map<string, string>();
-    data.set('iptvnator.audioSync.view.v1', view);
+    data.set('iptvnator.audioSync.view.v2', view);
     return {
         getItem: (key: string) => data.get(key) ?? null,
         setItem: (key: string, value: string) => void data.set(key, value),
@@ -263,6 +263,81 @@ describe('AudioSyncController', () => {
         expect(controller.setManualClock('main', 'abc')).toBe(false);
     });
 
+    describe('compare view (the user reads both clocks)', () => {
+        async function flush(times = 6) {
+            for (let i = 0; i < times; i++) await Promise.resolve();
+        }
+
+        it('is the default and keeps the audio picture open at the scoreboard corner, no picker', async () => {
+            const controller = build(memoryStorage('compare'));
+            expect(controller.viewMode()).toBe('compare');
+
+            controller.open();
+            await flush();
+
+            expect(controller.mode()).toBe('live');
+            expect(controller.audioRegion()).toEqual({
+                x: 0,
+                y: 0,
+                width: 0.45,
+                height: 0.16,
+            });
+            expect(api.createEmbeddedMpvPreviewSession).toHaveBeenCalledWith(
+                expect.objectContaining({ region: controller.audioRegion() })
+            );
+            // Two connections: the sound steps aside for the picture.
+            expect(order.indexOf('suspend')).toBeLessThan(order.indexOf('create'));
+            controller.close();
+        });
+
+        it('reads no clock by itself', async () => {
+            const controller = build(memoryStorage('compare'));
+            controller.open();
+            await flush();
+            await advanceSeconds(10);
+
+            expect(controller.main().text).toBeNull();
+            expect(controller.shownOffset()).toBeNull();
+            controller.close();
+        });
+
+        it('turns the two typed clocks into a difference and a suggestion', async () => {
+            const controller = build(memoryStorage('compare'));
+            controller.open();
+            await flush();
+
+            controller.pictureClockText.set('10:00');
+            controller.audioClockText.set('10:05');
+
+            expect(controller.shownOffset()).toBe(5);
+            expect(controller.suggestion()?.direction).toBe('delayAudio');
+            controller.applySuggestion();
+            expect(setDelay).toHaveBeenCalledWith(5);
+
+            controller.audioClockText.set('nonsense');
+            expect(controller.shownOffset()).toBeNull();
+            controller.close();
+        });
+
+        it('hands the sound back when the view changes or the window closes', async () => {
+            const controller = build(memoryStorage('compare'));
+            controller.open();
+            await flush();
+            expect(resumeAudio).not.toHaveBeenCalled();
+
+            controller.setViewMode('measure');
+            await flush();
+            expect(resumeAudio).toHaveBeenCalledTimes(1);
+
+            const second = build(memoryStorage('compare'));
+            second.open();
+            await flush();
+            second.close();
+            await flush();
+            expect(resumeAudio).toHaveBeenCalledTimes(2);
+        });
+    });
+
     describe('measure view (two connections)', () => {
         async function savedRegions(storage: ReturnType<typeof memoryStorage>) {
             const seed = build(storage);
@@ -416,7 +491,7 @@ describe('AudioSyncController', () => {
             const first = build(storage);
             first.setViewMode('live');
 
-            expect(storage.getItem('iptvnator.audioSync.view.v1')).toBe('live');
+            expect(storage.getItem('iptvnator.audioSync.view.v2')).toBe('live');
             expect(build(storage).viewMode()).toBe('live');
         });
     });

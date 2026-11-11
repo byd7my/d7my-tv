@@ -8,11 +8,11 @@ import {
 } from '../match-clock/match-clock.util';
 import { OffsetSmoother, residualSeconds, suggestCorrection } from './audio-sync-math';
 import {
-    forgetRegion,
     loadRegions,
     saveRegion,
 } from './audio-sync-regions';
 import { AudioSyncReadings } from './audio-sync-readings';
+import { AudioSyncCompare } from './audio-sync-compare';
 import { AudioSyncMeasure } from './audio-sync-measure';
 import { AudioSyncPreview } from './audio-sync-preview';
 import {
@@ -21,6 +21,7 @@ import {
     saveViewMode,
     EMPTY_READOUT,
     AUTO_MEASURE_DELAY_MS,
+    DEFAULT_CLOCK_REGION,
     FIRST_FRAME_TIMEOUT_MS,
     MAIN_CAPTURE_WIDTH,
     NO_STORAGE,
@@ -66,8 +67,12 @@ export class AudioSyncController {
     readonly pickSource = signal<SyncSourceKey>('audio');
     readonly previewStatus = signal<PreviewStatus>('idle');
     readonly ocrFailed = this.readings.ocrFailed;
-    /** Measure once (two connections) or keep a live picture (three). */
-    readonly viewMode = signal<ViewMode>('measure');
+    /** Compare by eye, measure once, or keep a live picture (three connections). */
+    readonly viewMode = signal<ViewMode>('compare');
+    /** Compare view: the clocks the user read off the two pictures. */
+    readonly compare = new AudioSyncCompare();
+    readonly pictureClockText = this.compare.pictureText;
+    readonly audioClockText = this.compare.audioText;
     /** The live picture failed, so the window switched to measuring. */
     readonly fallbackNotice = signal(false);
 
@@ -82,11 +87,13 @@ export class AudioSyncController {
     readonly offset = this.readings.offset;
     readonly delay = computed(() => this.options.audio()?.delaySeconds ?? 0);
     /** The offset on show: live readings, or the last measure. */
-    readonly shownOffset = computed(() =>
-        this.viewMode() === 'measure'
+    readonly shownOffset = computed<number | null>(() => {
+        const mode = this.viewMode();
+        if (mode === 'compare') return this.compare.offset();
+        return mode === 'measure'
             ? (this.measure.last()?.offset ?? null)
-            : this.offset()
-    );
+            : this.offset();
+    });
     readonly residual = computed(() => {
         const offset = this.shownOffset();
         return offset === null ? null : residualSeconds(offset, this.delay());
@@ -189,6 +196,7 @@ export class AudioSyncController {
         if (this.isOpen()) return;
         this.isOpen.set(true);
         this.measuredSinceBegin = false;
+        this.compare.clear();
         void this.begin();
     }
 
@@ -208,8 +216,7 @@ export class AudioSyncController {
     }
 
     toggle(): void {
-        if (this.isOpen()) this.close();
-        else this.open();
+        if (this.isOpen()) this.close(); else this.open();
     }
 
     /** Back to picking the scoreboard region(s). */
@@ -233,14 +240,17 @@ export class AudioSyncController {
         if (url) saveRegion(this.storage ?? NO_STORAGE, url, region);
         (source === 'main' ? this.mainRegion : this.audioRegion).set(region);
 
-        // The other picture still needs a region.
-        if (source === 'audio' && !this.mainRegion()) {
-            this.pickSource.set('main');
-            return;
-        }
-        if (source === 'main' && !this.audioRegion()) {
-            this.pickSource.set('audio');
-            return;
+        // The other picture still needs a region (comparing needs only the
+        // audio channel's: the picture's clock is read off the screen).
+        if (this.viewMode() !== 'compare') {
+            if (source === 'audio' && !this.mainRegion()) {
+                this.pickSource.set('main');
+                return;
+            }
+            if (source === 'main' && !this.audioRegion()) {
+                this.pickSource.set('audio');
+                return;
+            }
         }
         this.mode.set('live');
         // Measure view keeps no picture open: give the sound its slot back,
@@ -260,8 +270,16 @@ export class AudioSyncController {
         this.fallbackNotice.set(false);
         if (!this.isOpen() || this.mode() === 'pick') return;
         this.readings.reset();
-        if (mode === 'live' && this.hasRegions()) {
-            void this.startPreview(this.audioRegion());
+        if (mode === 'compare') {
+            this.measure.cancel();
+            this.mode.set('live');
+            void this.stopPreview().then(() => this.startComparePreview());
+        } else if (mode === 'live' && this.hasRegions()) {
+            // Hand the sound back first: only measuring and comparing keep it
+            // paused while the picture takes its connection.
+            void this.stopPreview().then(() =>
+                this.startPreview(this.audioRegion())
+            );
         } else {
             this.measure.cancel();
             void this.stopPreview();
@@ -282,15 +300,6 @@ export class AudioSyncController {
         await this.measure.run();
         this.readings.resetKeepMain();
         this.showMeasureIdle();
-    }
-
-    forgetRegions(): void {
-        for (const source of ['main', 'audio'] as const) {
-            const url = this.keyFor(source);
-            if (url) forgetRegion(this.storage ?? NO_STORAGE, url);
-            (source === 'main' ? this.mainRegion : this.audioRegion).set(null);
-        }
-        this.startPicking('audio');
     }
 
     /** The user types the real clock of a source; OCR re-confirms it later. */
@@ -327,7 +336,10 @@ export class AudioSyncController {
             return;
         }
 
-        if (!this.audioRegion() || !this.mainRegion()) {
+        if (this.viewMode() === 'compare') {
+            this.mode.set('live');
+            await this.startComparePreview();
+        } else if (!this.audioRegion() || !this.mainRegion()) {
             this.mode.set('pick');
             this.pickSource.set(this.audioRegion() ? 'main' : 'audio');
             await this.startPreview(null);
@@ -352,14 +364,21 @@ export class AudioSyncController {
         if (epoch === this.epoch) this.startTimer();
     }
 
+    /** The audio channel's scoreboard corner, kept on screen to compare. */
+    private async startComparePreview(): Promise<void> {
+        if (!this.isOpen()) return;
+        this.audioRegion.update((r) => r ?? { ...DEFAULT_CLOCK_REGION });
+        await this.startPreview(this.audioRegion());
+    }
+
     private async startPreview(
         region: EmbeddedMpvFrameRegion | null
     ): Promise<void> {
         this.previewStatus.set('starting');
         this.previewStartedAt = this.now();
         this.audioReadout.set({ ...EMPTY_READOUT, problem: 'noFrame' });
-        // In measure view the picture takes the sound's connection slot.
-        if (this.viewMode() === 'measure' && !this.audioSuspended) {
+        // Measuring and comparing: the picture takes the sound's connection slot.
+        if (this.viewMode() !== 'live' && !this.audioSuspended) {
             this.audioSuspended = true;
             this.options.suspendAudio();
         }
@@ -377,9 +396,7 @@ export class AudioSyncController {
     private failPreview(): void {
         this.previewStatus.set('failed');
         this.audioReadout.set({ ...EMPTY_READOUT, problem: 'failed' });
-        this.trackers.audio.reset();
-        this.smoother.clear();
-        this.offset.set(null);
+        this.readings.resetKeepMain();
         // A refused third connection: measure instead (two connections).
         if (
             this.viewMode() === 'live' &&
@@ -431,10 +448,14 @@ export class AudioSyncController {
             return;
         }
 
+        if (this.viewMode() === 'compare') {
+            // Nothing to read: the user compares the two clocks by eye.
+            this.checkFirstFrameTimeout(api.captureEmbeddedMpvFrame('preview'));
+            return;
+        }
+
         const mainRegion = this.mainRegion();
-        const mainFrame = mainRegion
-            ? api.captureEmbeddedMpvFrame('main', mainRegion, MAIN_CAPTURE_WIDTH)
-            : null;
+        const mainFrame = mainRegion && api.captureEmbeddedMpvFrame('main', mainRegion, MAIN_CAPTURE_WIDTH);
         const audioFrame = api.captureEmbeddedMpvFrame('preview');
         this.mainFrameListener?.(mainFrame && this.readings.isFresh(mainFrame) ? mainFrame : null);
 
@@ -446,14 +467,10 @@ export class AudioSyncController {
     }
 
     private checkFirstFrameTimeout(audioFrame: EmbeddedMpvFrameCapture | null): void {
-        if (
-            this.previewStatus() === 'starting' &&
-            audioFrame === null &&
-            this.now() - this.previewStartedAt > FIRST_FRAME_TIMEOUT_MS
-        ) {
+        if (this.previewStatus() !== 'starting') return;
+        if (audioFrame) this.previewStatus.set('live');
+        else if (this.now() - this.previewStartedAt > FIRST_FRAME_TIMEOUT_MS) {
             this.failPreview();
-        } else if (audioFrame && this.previewStatus() === 'starting') {
-            this.previewStatus.set('live');
         }
     }
 
