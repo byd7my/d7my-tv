@@ -11,6 +11,12 @@ this marker — see `.changes/README.md`.
 
 <!-- next-release -->
 
+# 0.26.12 (2026-11-11)
+
+### Fixes
+
+- **playback** — Choosing an audio channel no longer connects its sound just to drop it again when the sync window opens, and the window waits a moment between closing one connection and opening the next. This stops the main picture from stalling while the audio is set up. The "Measure once" tab is gone; comparing the two clocks is the way. ([96b49ae](https://github.com/4gray/iptvnator/commit/96b49ae3e9f8d9edf7a58833a5efa65dc34c1d73))
+
 # 0.26.11 (2026-11-11)
 
 ### Features
