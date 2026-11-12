@@ -275,6 +275,33 @@ describe('PortalStatusService', () => {
         ).resolves.toEqual({ status: 'active', expiresAtSeconds: null });
     });
 
+    it('returns how many connections the subscription allows from the same round-trip', async () => {
+        dataService.sendIpcEvent.mockResolvedValue({
+            payload: {
+                user_info: {
+                    auth: 1,
+                    status: 'Active',
+                    exp_date: '0',
+                    max_connections: '2',
+                    active_cons: '1',
+                },
+            },
+        });
+
+        await expect(
+            service.checkPortalStatusDetails(
+                'http://example.com',
+                'user',
+                'pass'
+            )
+        ).resolves.toEqual({
+            status: 'active',
+            expiresAtSeconds: null,
+            connections: { max: 2, active: 1 },
+        });
+        expect(dataService.sendIpcEvent).toHaveBeenCalledTimes(1);
+    });
+
     it('treats lowercase active status and exp_date 0 as active', async () => {
         dataService.sendIpcEvent.mockResolvedValue({
             payload: {

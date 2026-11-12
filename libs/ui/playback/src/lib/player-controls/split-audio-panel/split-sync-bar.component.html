@@ -282,3 +282,14 @@
         }
     }
 </div>
+
+@if (syncedNotice()) {
+    <div
+        class="sync-bar__toast"
+        role="status"
+        data-test-id="split-sync-bar-toast"
+    >
+        <mat-icon aria-hidden="true">check_circle</mat-icon>
+        {{ 'CHANNELS.SPLIT_AUDIO.SYNC_BAR.SET_FOR_YOU' | translate }}
+    </div>
+}

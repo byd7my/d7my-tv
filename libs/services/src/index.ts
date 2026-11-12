@@ -19,6 +19,7 @@ export * from './lib/portal-status.service';
 export * from './lib/runtime-capabilities.service';
 export * from './lib/settings-store.service';
 export * from './lib/split-audio.service';
+export * from './lib/split-audio-connections.service';
 export * from './lib/sort.service';
 export * from './lib/tmdb';
 export * from './lib/xtream-pending-restore.service';

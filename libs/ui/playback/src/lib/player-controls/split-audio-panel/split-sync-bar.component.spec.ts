@@ -195,6 +195,43 @@ describe('SplitSyncBarComponent', () => {
             expect(text('split-sync-bar-freeze')).toContain('SOUND_FROZEN');
         });
 
+        it('tells the user it synced the sound for them, then lets the notice go', () => {
+            jest.useFakeTimers();
+            try {
+                run({ phase: 'freezing', side: 'picture', freezeSeconds: 5 });
+                expect(
+                    root().querySelector(
+                        '[data-test-id="split-sync-bar-toast"]'
+                    )
+                ).toBeNull();
+
+                run(
+                    { phase: 'done', residualSeconds: 0.1 },
+                    { state: 'synced' }
+                );
+                expect(text('split-sync-bar-toast')).toContain(
+                    'SYNC_BAR.SET_FOR_YOU'
+                );
+
+                jest.advanceTimersByTime(4100);
+                fixture.detectChanges();
+                expect(
+                    root().querySelector(
+                        '[data-test-id="split-sync-bar-toast"]'
+                    )
+                ).toBeNull();
+            } finally {
+                jest.useRealTimers();
+            }
+        });
+
+        it('does not claim it synced when the run failed', () => {
+            run({ phase: 'failed', failure: 'timeout', residualSeconds: 2 });
+            expect(
+                root().querySelector('[data-test-id="split-sync-bar-toast"]')
+            ).toBeNull();
+        });
+
         it('shows "synced" with its margin once done, and offers Sync again', () => {
             run({ phase: 'done', residualSeconds: 0.1 }, { state: 'synced' });
             expect(text('split-sync-bar-outcome')).toContain('SYNC_BAR.DONE');

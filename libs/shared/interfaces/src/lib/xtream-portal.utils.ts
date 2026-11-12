@@ -6,7 +6,22 @@ export interface XtreamPortalStatusResponseLike {
         auth?: boolean | number | string | null;
         exp_date?: number | string | null;
         status?: string | null;
+        max_connections?: number | string | null;
+        active_cons?: number | string | null;
     } | null;
+}
+
+/** What a subscription allows at the same time, and what is in use now. */
+export interface XtreamConnectionLimits {
+    /** Simultaneous connections the subscription allows (at least 1). */
+    max: number;
+    /** Connections the server counts as open right now; null when unknown. */
+    active: number | null;
+}
+
+export interface XtreamStreamAccount extends XtreamCredentialsFromUrl {
+    /** Base address of the panel, without a trailing slash. */
+    serverUrl: string;
 }
 
 export interface XtreamCredentialsFromUrl {
@@ -65,6 +80,68 @@ export function extractXtreamCredentialsFromUrl(
     }
 
     return { username, password };
+}
+
+const STREAM_KIND_SEGMENTS = new Set(['live', 'movie', 'series', 'timeshift']);
+const STREAM_ID_SEGMENT = /^\d+(?:\.[A-Za-z0-9]+)?$/;
+
+/**
+ * Reads the panel address and the account out of a stream address like
+ * `http://host:8080/live/user/pass/123.ts` (the `/live` part is optional).
+ * Anything that does not look like that returns null, so an ordinary playlist
+ * address is never mistaken for an Xtream account.
+ */
+export function extractXtreamAccountFromStreamUrl(
+    value: string
+): XtreamStreamAccount | null {
+    let url: URL;
+    try {
+        url = new URL(value.trim());
+    } catch {
+        return null;
+    }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+
+    const segments = url.pathname.split('/').filter(Boolean);
+    const kindIndex = segments.findIndex(
+        (segment, index) =>
+            STREAM_KIND_SEGMENTS.has(segment) && segments.length - index === 4
+    );
+    const start = kindIndex >= 0 ? kindIndex + 1 : segments.length - 3;
+    const [username, password, id] = segments.slice(start, start + 3);
+    if (start < 0 || !username || !password || !id) return null;
+    if (!STREAM_ID_SEGMENT.test(id)) return null;
+    // Without the /live-style marker only the bare user/pass/id shape counts.
+    if (kindIndex < 0 && segments.length !== 3) return null;
+
+    const prefix = segments.slice(0, kindIndex >= 0 ? kindIndex : 0).join('/');
+    return {
+        serverUrl: `${url.origin}${prefix ? `/${prefix}` : ''}`,
+        username: decodeURIComponent(username),
+        password: decodeURIComponent(password),
+    };
+}
+
+/**
+ * Reads how many simultaneous connections the subscription allows from an
+ * Xtream `get_account_info` response. Returns null when the panel does not
+ * say (a missing, empty or non-positive value is not a limit).
+ */
+export function resolveXtreamConnectionLimits(
+    response: XtreamPortalStatusResponseLike | null | undefined
+): XtreamConnectionLimits | null {
+    const max = Number(response?.user_info?.max_connections);
+    if (!Number.isFinite(max) || max < 1) return null;
+    const rawActive = response?.user_info?.active_cons;
+    const active =
+        rawActive === null || rawActive === undefined || rawActive === ''
+            ? NaN
+            : Number(rawActive);
+    return {
+        max: Math.floor(max),
+        active:
+            Number.isFinite(active) && active >= 0 ? Math.floor(active) : null,
+    };
 }
 
 export function resolveXtreamPortalStatus(

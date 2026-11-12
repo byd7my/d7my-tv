@@ -2,6 +2,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    effect,
     inject,
     signal,
 } from '@angular/core';
@@ -24,6 +25,8 @@ import {
 import {
     DataService,
     SPLIT_AUDIO_MAX_DELAY_SECONDS,
+    SplitAudioConnectionsService,
+    type SplitConnectionsReport,
     SplitAudioService,
 } from '@iptvnator/services';
 import {
@@ -67,6 +70,25 @@ export class SplitAudioDialogComponent {
     private readonly store = inject(Store);
     protected readonly splitAudio = inject(SplitAudioService);
     private readonly dataService = inject(DataService);
+    private readonly connectionsService = inject(SplitAudioConnectionsService);
+    private connectionsRequest = 0;
+
+    /** What the subscription allows at once, when its panel says. */
+    protected readonly connections = signal<SplitConnectionsReport | null>(
+        null
+    );
+    protected readonly connectionsMessage = computed(() => {
+        const report = this.connections();
+        if (!report) return null;
+        return {
+            key: `CHANNELS.SPLIT_AUDIO.CONNECTIONS_${report.verdict.toUpperCase()}`,
+            params: {
+                max: report.max,
+                active: report.active ?? '?',
+                needed: report.needed,
+            },
+        };
+    });
 
     protected readonly maxDelay = SPLIT_AUDIO_MAX_DELAY_SECONDS;
     protected readonly query = signal('');
@@ -103,6 +125,10 @@ export class SplitAudioDialogComponent {
     }
 
     constructor() {
+        // Re-read for the picture alone, then for each sound that is picked.
+        effect(() => {
+            void this.refreshConnections(this.selected()?.url ?? null);
+        });
         const active = this.splitAudio.activeAudio();
         const channel =
             active &&
@@ -111,6 +137,20 @@ export class SplitAudioDialogComponent {
             this.selected.set(channel);
             this.delay.set(active.delaySeconds ?? 0);
         }
+    }
+
+    private async refreshConnections(audioUrl: string | null): Promise<void> {
+        const request = ++this.connectionsRequest;
+        let report: SplitConnectionsReport | null = null;
+        try {
+            report = await this.connectionsService.inspect(
+                this.data.video.url,
+                audioUrl
+            );
+        } catch {
+            // The limit is only a hint; failing to read it never blocks playing.
+        }
+        if (request === this.connectionsRequest) this.connections.set(report);
     }
 
     protected onQuery(event: Event): void {

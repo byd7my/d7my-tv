@@ -6,8 +6,10 @@ import {
 import { Injectable, inject } from '@angular/core';
 import {
     normalizeXtreamServerUrl,
+    resolveXtreamConnectionLimits,
     resolveXtreamPortalExpiration,
     resolveXtreamPortalStatus,
+    XtreamConnectionLimits,
     XtreamPortalStatusResponseLike,
 } from '@iptvnator/shared/interfaces';
 import { DataService } from './data.service';
@@ -26,6 +28,8 @@ export interface PortalStatusDetails {
     status: PortalStatus;
     /** Unix seconds; null when the portal doesn't report an expiration. */
     expiresAtSeconds: number | null;
+    /** What the subscription allows at once; absent when the panel is silent. */
+    connections?: XtreamConnectionLimits;
 }
 
 interface XtreamPortalStatusResponse {
@@ -271,6 +275,7 @@ export class PortalStatusService {
             details: {
                 status: resolveXtreamPortalStatus(response),
                 expiresAtSeconds: resolveXtreamPortalExpiration(response),
+                ...this.connectionsOf(response),
             },
             timestamp: Date.now(),
         });
@@ -349,6 +354,7 @@ export class PortalStatusService {
                         expiresAtSeconds: resolveXtreamPortalExpiration(
                             response?.payload
                         ),
+                        ...this.connectionsOf(response?.payload),
                     };
                 }
             } catch {
@@ -357,6 +363,13 @@ export class PortalStatusService {
         }
 
         return { status: 'unavailable', expiresAtSeconds: null };
+    }
+
+    private connectionsOf(
+        response: XtreamPortalStatusResponseLike | undefined
+    ): { connections?: XtreamConnectionLimits } {
+        const connections = resolveXtreamConnectionLimits(response);
+        return connections ? { connections } : {};
     }
 
     /**

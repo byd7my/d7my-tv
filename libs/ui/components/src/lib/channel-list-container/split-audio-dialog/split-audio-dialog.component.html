@@ -73,6 +73,22 @@
         {{ 'CHANNELS.SPLIT_AUDIO.SHOW_FAVORITES' | translate }}
     </button>
 
+    @if (connectionsMessage(); as message) {
+        <p
+            class="split-audio__connections"
+            [class.split-audio__connections--warning]="
+                connections()?.verdict !== 'ok'
+            "
+            role="status"
+            data-test-id="split-audio-connections"
+        >
+            <mat-icon aria-hidden="true">{{
+                connections()?.verdict === 'ok' ? 'info' : 'warning'
+            }}</mat-icon>
+            {{ message.key | translate: message.params }}
+        </p>
+    }
+
     <ul class="split-audio__list">
         @for (channel of visibleChannels(); track channel.url) {
             <li>

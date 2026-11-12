@@ -84,12 +84,15 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
     protected readonly selection = signal<EmbeddedMpvFrameRegion | null>(null);
     protected readonly editing = signal<SyncSourceKey | null>(null);
     protected readonly manualInvalid = signal(false);
+    /** The delay just set for the user, shown for a few seconds. */
+    protected readonly appliedDelay = signal<string | null>(null);
 
     private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
     private readonly mainCanvas =
         viewChild<ElementRef<HTMLCanvasElement>>('mainCanvas');
     private drag: { pointerId: number; dx: number; dy: number } | null = null;
     private selecting: { pointerId: number; start: Point } | null = null;
+    private appliedTimer: ReturnType<typeof setTimeout> | null = null;
 
     protected readonly sync = computed(() => this.controls().sync);
     protected readonly isPicking = computed(() => this.sync().mode() === 'pick');
@@ -150,6 +153,7 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
+        if (this.appliedTimer) clearTimeout(this.appliedTimer);
         const sync = this.controls().sync;
         sync.mainFrameListener = null;
         sync.pickFrameListener = null;
@@ -319,6 +323,15 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
             x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
             y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)),
         };
+    }
+
+    /** Sets the suggested delay and tells the user it was done for them. */
+    protected applySuggestion(): void {
+        const target = this.targetLabel();
+        this.sync().applySuggestion();
+        this.appliedDelay.set(target);
+        if (this.appliedTimer) clearTimeout(this.appliedTimer);
+        this.appliedTimer = setTimeout(() => this.appliedDelay.set(null), 4000);
     }
 
     // ----------------------------------------------------------------- moving

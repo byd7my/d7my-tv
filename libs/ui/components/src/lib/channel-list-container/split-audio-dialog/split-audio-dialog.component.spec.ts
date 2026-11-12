@@ -4,7 +4,11 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Store } from '@ngrx/store';
 import { TranslateModule } from '@ngx-translate/core';
-import { DataService, SplitAudioService } from '@iptvnator/services';
+import {
+    DataService,
+    SplitAudioConnectionsService,
+    SplitAudioService,
+} from '@iptvnator/services';
 import { Channel } from '@iptvnator/shared/interfaces';
 import {
     SplitAudioDialogComponent,
@@ -27,6 +31,7 @@ describe('SplitAudioDialogComponent', () => {
     let fixture: ComponentFixture<SplitAudioDialogComponent>;
     let sendIpcEvent: jest.Mock;
     let close: jest.Mock;
+    let inspectConnections: jest.Mock;
     let splitAudio: SplitAudioService;
 
     const root = (): HTMLElement => fixture.nativeElement as HTMLElement;
@@ -47,6 +52,7 @@ describe('SplitAudioDialogComponent', () => {
         data.onSelect = undefined;
         sendIpcEvent = jest.fn().mockResolvedValue(undefined);
         close = jest.fn();
+        inspectConnections = jest.fn().mockResolvedValue(null);
 
         await TestBed.configureTestingModule({
             imports: [
@@ -62,6 +68,10 @@ describe('SplitAudioDialogComponent', () => {
                     useValue: { select: () => of(null), dispatch: jest.fn() },
                 },
                 { provide: DataService, useValue: { sendIpcEvent } },
+                {
+                    provide: SplitAudioConnectionsService,
+                    useValue: { inspect: inspectConnections },
+                },
             ],
         }).compileComponents();
 
@@ -75,6 +85,64 @@ describe('SplitAudioDialogComponent', () => {
             'Commentary',
             'News',
         ]);
+    });
+
+    describe('connection limit', () => {
+        const line = (): HTMLElement | null =>
+            root().querySelector('[data-test-id="split-audio-connections"]');
+
+        it('says nothing when the subscription reports no limit', async () => {
+            await fixture.whenStable();
+            fixture.detectChanges();
+
+            expect(line()).toBeNull();
+        });
+
+        it('warns before a sound is picked that cannot fit the subscription', async () => {
+            inspectConnections.mockResolvedValue({
+                verdict: 'short',
+                max: 1,
+                active: 1,
+                needed: 2,
+                sharedByBoth: true,
+            });
+            options()[0].click();
+            fixture.detectChanges();
+            await fixture.whenStable();
+            fixture.detectChanges();
+
+            expect(inspectConnections).toHaveBeenLastCalledWith(
+                video.url,
+                commentary.url
+            );
+            expect(line()?.textContent).toContain(
+                'CHANNELS.SPLIT_AUDIO.CONNECTIONS_SHORT'
+            );
+            expect(line()?.classList).toContain(
+                'split-audio__connections--warning'
+            );
+        });
+
+        it('only informs when there is room', async () => {
+            inspectConnections.mockResolvedValue({
+                verdict: 'ok',
+                max: 2,
+                active: 1,
+                needed: 2,
+                sharedByBoth: true,
+            });
+            options()[0].click();
+            fixture.detectChanges();
+            await fixture.whenStable();
+            fixture.detectChanges();
+
+            expect(line()?.textContent).toContain(
+                'CHANNELS.SPLIT_AUDIO.CONNECTIONS_OK'
+            );
+            expect(line()?.classList).not.toContain(
+                'split-audio__connections--warning'
+            );
+        });
     });
 
     it('narrows the list with the search box', () => {

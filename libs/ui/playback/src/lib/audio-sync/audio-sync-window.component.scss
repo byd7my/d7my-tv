@@ -417,3 +417,43 @@
     font-size: 0.78rem;
     color: var(--sa-text-dim);
 }
+
+// Small confirmation that the delay was set for the user. It floats over the
+// top of the window, so nothing underneath moves, and lets clicks through.
+.sync-toast {
+    position: absolute;
+    top: 48px;
+    left: 12px;
+    right: 12px;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(28, 28, 31, 0.96);
+    border: 1px solid rgba(60, 207, 122, 0.45);
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    font-size: 0.86rem;
+    font-weight: 700;
+    pointer-events: none;
+    animation: sync-toast-in 180ms ease-out;
+}
+
+.sync-toast mat-icon {
+    flex-shrink: 0;
+    color: var(--sa-ok);
+}
+
+@keyframes sync-toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sync-toast {
+        animation: none;
+    }
+}

@@ -1,6 +1,8 @@
 import {
+    extractXtreamAccountFromStreamUrl,
     extractXtreamCredentialsFromUrl,
     normalizeXtreamServerUrl,
+    resolveXtreamConnectionLimits,
     resolveXtreamPortalExpiration,
     resolveXtreamPortalStatus,
 } from './xtream-portal.utils';
@@ -126,9 +128,7 @@ describe('xtream portal utilities', () => {
                     user_info: { exp_date: '' },
                 })
             ).toBeNull();
-            expect(
-                resolveXtreamPortalExpiration({ user_info: {} })
-            ).toBeNull();
+            expect(resolveXtreamPortalExpiration({ user_info: {} })).toBeNull();
             expect(resolveXtreamPortalExpiration(null)).toBeNull();
         });
 
@@ -138,6 +138,82 @@ describe('xtream portal utilities', () => {
                     user_info: { exp_date: 'never' },
                 })
             ).toBeNull();
+        });
+    });
+    describe('extractXtreamAccountFromStreamUrl', () => {
+        it.each([
+            [
+                'http://host.example:8080/live/user1/pass1/123.ts',
+                {
+                    serverUrl: 'http://host.example:8080',
+                    username: 'user1',
+                    password: 'pass1',
+                },
+            ],
+            [
+                'https://host.example/user1/pass1/456',
+                {
+                    serverUrl: 'https://host.example',
+                    username: 'user1',
+                    password: 'pass1',
+                },
+            ],
+            [
+                'https://host.example/panel/live/u/p/9.m3u8',
+                {
+                    serverUrl: 'https://host.example/panel',
+                    username: 'u',
+                    password: 'p',
+                },
+            ],
+            [
+                'http://host.example/movie/a%20b/c%2Fd/77.mkv',
+                {
+                    serverUrl: 'http://host.example',
+                    username: 'a b',
+                    password: 'c/d',
+                },
+            ],
+        ])('reads the account from %s', (value, expected) => {
+            expect(extractXtreamAccountFromStreamUrl(value)).toEqual(expected);
+        });
+
+        it.each([
+            'not a url',
+            'rtsp://host.example/live/u/p/1.ts',
+            'http://host.example/stream.m3u8',
+            'http://host.example/channels/news/live.m3u8',
+            'http://host.example/a/b/c/d/e.ts',
+        ])('does not mistake %s for an Xtream stream', (value) => {
+            expect(extractXtreamAccountFromStreamUrl(value)).toBeNull();
+        });
+    });
+
+    describe('resolveXtreamConnectionLimits', () => {
+        it('reads the allowed and the open connections', () => {
+            expect(
+                resolveXtreamConnectionLimits({
+                    user_info: { max_connections: '2', active_cons: '1' },
+                })
+            ).toEqual({ max: 2, active: 1 });
+        });
+
+        it('keeps the limit when the open count is missing', () => {
+            expect(
+                resolveXtreamConnectionLimits({
+                    user_info: { max_connections: 3, active_cons: '' },
+                })
+            ).toEqual({ max: 3, active: null });
+        });
+
+        it.each([
+            { user_info: {} },
+            { user_info: { max_connections: '0' } },
+            { user_info: { max_connections: 'many' } },
+            null,
+            undefined,
+        ])('has no limit for %j', (response) => {
+            expect(resolveXtreamConnectionLimits(response)).toBeNull();
         });
     });
 });

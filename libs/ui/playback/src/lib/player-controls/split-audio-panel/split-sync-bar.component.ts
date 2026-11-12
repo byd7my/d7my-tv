@@ -2,7 +2,11 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    DestroyRef,
+    effect,
+    inject,
     input,
+    signal,
 } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -33,6 +37,28 @@ const TOLERANCE_SECONDS = 0.5;
 })
 export class SplitSyncBarComponent {
     readonly controls = input.required<ControlsSplitAudio>();
+
+    /** Shown for a few seconds when an automatic sync has just finished. */
+    protected readonly syncedNotice = signal(false);
+    private syncedTimer: ReturnType<typeof setTimeout> | null = null;
+    private wasDone = false;
+
+    constructor() {
+        inject(DestroyRef).onDestroy(() => {
+            if (this.syncedTimer) clearTimeout(this.syncedTimer);
+        });
+        effect(() => {
+            const done = this.isAuto() && this.status()?.sync?.phase === 'done';
+            if (done && !this.wasDone) this.announceSynced();
+            this.wasDone = done;
+        });
+    }
+
+    private announceSynced(): void {
+        this.syncedNotice.set(true);
+        if (this.syncedTimer) clearTimeout(this.syncedTimer);
+        this.syncedTimer = setTimeout(() => this.syncedNotice.set(false), 4000);
+    }
 
     protected readonly sync = computed(() => this.controls().syncCtl);
     protected readonly status = computed(() => this.sync().status());

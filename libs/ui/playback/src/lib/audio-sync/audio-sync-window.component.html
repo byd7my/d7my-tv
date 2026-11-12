@@ -297,7 +297,7 @@
                             type="button"
                             class="sync__primary"
                             data-test-id="audio-sync-apply"
-                            (click)="sync().applySuggestion()"
+                            (click)="applySuggestion()"
                         >
                             {{
                                 'CHANNELS.SPLIT_AUDIO.SYNC.APPLY_SUGGESTION'
@@ -376,6 +376,13 @@
         }
     }
 </div>
+
+@if (appliedDelay(); as applied) {
+    <div class="sync-toast" role="status" data-test-id="audio-sync-applied">
+        <mat-icon aria-hidden="true">check_circle</mat-icon>
+        {{ 'CHANNELS.SPLIT_AUDIO.SYNC.APPLIED' | translate: { value: applied } }}
+    </div>
+}
 
 <ng-template #readout let-source="source" let-data="data">
     <div class="sync__readout">

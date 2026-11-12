@@ -84,13 +84,37 @@ describe('AudioSyncWindowComponent', () => {
         sync.offset.set(4);
         fixture.detectChanges();
 
+        expect(byId('audio-sync-applied')).toBeNull();
         byId('audio-sync-apply')?.click();
         expect(setDelay).toHaveBeenCalledWith(4);
+        fixture.detectChanges();
+        expect(text('audio-sync-applied')).toContain('CHANNELS.SPLIT_AUDIO.SYNC.APPLIED');
 
         byId('audio-sync-delay-plus')?.click();
         expect(adjustDelay).toHaveBeenCalledWith(0.5);
         byId('audio-sync-delay-minus')?.click();
         expect(adjustDelay).toHaveBeenCalledWith(-0.5);
+    });
+
+    it('lets the confirmation go after a few seconds', () => {
+        jest.useFakeTimers();
+        try {
+            mount();
+            sync.main.set({ text: '10:00', confidence: 90, live: true, problem: null, manual: false });
+            sync.audioReadout.set({ text: '10:04', confidence: 90, live: true, problem: null, manual: false });
+            sync.offset.set(4);
+            fixture.detectChanges();
+
+            byId('audio-sync-apply')?.click();
+            fixture.detectChanges();
+            expect(byId('audio-sync-applied')).not.toBeNull();
+
+            jest.advanceTimersByTime(4100);
+            fixture.detectChanges();
+            expect(byId('audio-sync-applied')).toBeNull();
+        } finally {
+            jest.useRealTimers();
+        }
     });
 
     it('says so when in sync and offers no correction', () => {
