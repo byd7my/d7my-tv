@@ -9,14 +9,14 @@
  * fake zero.
  */
 export interface PlayerStreamStats {
-    /** Displayed video size in pixels (mpv `dwidth`/`dheight`). */
+    /** Coded video size in pixels (mpv `video-params/w`/`h`; `<video>` videoWidth). */
     width: number | null;
     height: number | null;
     /** Presented-frame rate on web engines; filter-output estimate on MPV. */
     fps: number | null;
     /** Declared source rate; never substitutes for a measured playback stall. */
     nominalFps: number | null;
-    /** Aggregate rendition bitrate, including audio, when declared. */
+    /** Aggregate bitrate the playlist or manifest DECLARES (not measured). */
     streamBitrateBps: number | null;
     /** Video bitrate in bits per second. */
     videoBitrateBps: number | null;
@@ -40,7 +40,33 @@ export interface PlayerStreamStats {
     droppedFrames: number | null;
     /** Total frames (displayed plus dropped); denominator for the drop rate. */
     totalFrames: number | null;
+    /**
+     * The size the picture is shown at, only when it differs from the coded
+     * size above (an anamorphic 1440x1080 stream shown as 1920x1080).
+     */
+    displayWidth: number | null;
+    displayHeight: number | null;
+    /**
+     * What is downloaded per second, in bits, container overhead included.
+     * Not the encoded bitrate and not what a manifest declares.
+     */
+    networkBitrateBps: number | null;
+    /** What the player is doing with the stream right now. */
+    status: PlayerStreamStatus | null;
+    /** The playback engine's name, e.g. `Embedded MPV`. */
+    engine: string | null;
+    /** The decoder in use: `no` for software, else the hardware API's name. */
+    decoder: string | null;
 }
+
+export type PlayerStreamStatus =
+    | 'loading'
+    | 'playing'
+    | 'paused'
+    | 'buffering'
+    | 'reconnecting'
+    | 'ended'
+    | 'error';
 
 /**
  * Pull-based stats provider an engine adapter exposes on its

@@ -2,6 +2,7 @@ import type { EmbeddedMpvSession } from '@iptvnator/shared/interfaces';
 import {
     hasStreamStatsData,
     type PlayerStreamStats,
+    type PlayerStreamStatus,
 } from '../player-controls/player-stream-stats.model';
 
 /**
@@ -20,12 +21,25 @@ export function toPlayerStreamStats(
     }
 
     const stats = session.stats;
+    // The coded size is what the stream really is; the displayed size (mpv
+    // `dwidth`/`dheight`) is only shown when it differs. An engine that does
+    // not report the coded size keeps the displayed one as before.
+    const shownWidth = positiveOrNull(session.videoWidth);
+    const shownHeight = positiveOrNull(session.videoHeight);
+    const codedWidth = positiveOrNull(stats?.sourceWidth);
+    const codedHeight = positiveOrNull(stats?.sourceHeight);
+    const hasCoded = codedWidth !== null && codedHeight !== null;
+    const differs =
+        hasCoded &&
+        shownWidth !== null &&
+        shownHeight !== null &&
+        (shownWidth !== codedWidth || shownHeight !== codedHeight);
     // Every field is listed explicitly (no spread of a neutral default): a new
     // stat then fails to compile here until mpv's source for it is decided,
     // instead of silently reporting null forever.
-    const mapped: PlayerStreamStats = {
-        width: positiveOrNull(session.videoWidth),
-        height: positiveOrNull(session.videoHeight),
+    const measured: PlayerStreamStats = {
+        width: hasCoded ? codedWidth : shownWidth,
+        height: hasCoded ? codedHeight : shownHeight,
         fps: finiteOrNull(stats?.fps),
         nominalFps: null,
         streamBitrateBps: null,
@@ -41,9 +55,34 @@ export function toPlayerStreamStats(
         // mpv counts drops, not presented frames, so a drop rate cannot be
         // derived here the way it can from a <video> element.
         totalFrames: null,
+        displayWidth: differs ? shownWidth : null,
+        displayHeight: differs ? shownHeight : null,
+        networkBitrateBps: finiteOrNull(stats?.networkBitrateBps),
+        status: null,
+        engine: null,
+        decoder: nonEmptyOrNull(stats?.hwdec),
     };
 
-    return hasStreamStatsData(mapped) ? mapped : null;
+    // Whether there is anything to show is decided by what was measured; the
+    // engine name and the status alone must not make the info button appear.
+    if (!hasStreamStatsData(measured)) {
+        return null;
+    }
+    return {
+        ...measured,
+        status: statusOf(session),
+        engine: 'Embedded MPV',
+    };
+}
+
+function statusOf(session: EmbeddedMpvSession): PlayerStreamStatus | null {
+    if (session.status === 'error') return 'error';
+    if (session.status === 'ended') return 'ended';
+    if (session.reconnect) return 'reconnecting';
+    if (session.status === 'loading') return 'loading';
+    if (session.stats?.buffering) return 'buffering';
+    if (session.status === 'paused') return 'paused';
+    return session.status === 'playing' ? 'playing' : null;
 }
 
 function finiteOrNull(value: number | undefined): number | null {

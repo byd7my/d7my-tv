@@ -561,6 +561,23 @@ mpv properties at session init and map them into their session snapshot:
 | `demuxer-cache-duration`                        | `bufferedAheadSeconds`   |
 | `frame-drop-count` + `decoder-frame-drop-count` | `droppedFrames` (summed) |
 
+The frame-copy helper alone also observes four more properties, which the
+popover uses to tell *what is encoded* from *what is downloaded* and *what is
+shown*:
+
+| mpv property       | `stats` field       | Meaning                                                    |
+| ------------------ | ------------------- | ---------------------------------------------------------- |
+| `video-params/w,h` | `sourceWidth/Height`| The **coded** picture size (not the displayed one)         |
+| `cache-speed`      | `networkBitrateBps` | Bytes per second read from the network, times 8 (overhead included) |
+| `paused-for-cache` | `buffering`         | Playback is waiting for data                               |
+| `hwdec-current`    | `hwdec`             | The decoder in use; `no` means software                   |
+
+The popover shows the coded size as the resolution and the `dwidth`/`dheight`
+size below as "Shown as" only when the two differ (an anamorphic 1440x1080
+stream is displayed as 1920x1080). These were checked against mpv 0.37 playing
+a local stream encoded with known values; the helper's own build has been
+syntax-checked only.
+
 The resolution row has a different source: it comes from `dwidth`/`dheight` on
 `EmbeddedMpvSession.videoWidth`/`videoHeight`, which **only the frame-copy
 helper observes** (it needs them to size its frames anyway). The native-view

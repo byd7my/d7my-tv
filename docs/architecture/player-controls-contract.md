@@ -639,12 +639,35 @@ the panel the moment the last group disappears.
 ### Stream info popover
 
 An `info` button in the **top-right corner** of the overlay opens a popover with
-live technical data about the stream: resolution with its derived aspect ratio,
-measured and declared frame rates, aggregate stream bitrate, video codec/bitrate,
-audio codec/bitrate, audio channel
-layout, audio sample rate, container, buffered-ahead seconds, and dropped
-frames. Rows whose value is unknown are omitted; a popover with no rows at all
-shows a short "no data yet" line.
+live technical data about the stream the picture comes from. The popover opens
+with how the stream is doing (playing, buffering, reconnecting, error — a
+colour dot repeats the word) and the engine that plays it, then groups the
+rows by what a viewer wonders about:
+
+- **Picture** — coded size with its everyday name and aspect ratio (and, only
+  when it differs, the size it is shown at: an anamorphic 1440x1080 stream is
+  shown as 1920x1080), measured and declared frame rates, video codec with its
+  measured bitrate, hardware or software decoding.
+- **Sound** — audio codec and bitrate, channel layout, sample rate.
+- **Connection** — network download rate (what arrives, container overhead
+  included — not the encoded bitrate), seconds buffered ahead, dropped frames,
+  the bitrate the stream *declares*, and the stream format.
+
+Each row has one main value and an optional quieter second line, and every row
+has a one-sentence plain-language explanation that appears only after the
+viewer picks "Explain these numbers". Codec and container ids are shown by
+their everyday names (`hevc` → H.265 (HEVC)); an id with no known name is shown
+as the engine wrote it. Rows whose value is unknown are omitted — nothing is
+estimated or taken from the playlist or channel name — and a popover with no
+rows at all shows a short "no data yet" line. The popover describes the
+picture stream only; a separately chosen audio channel is not measured here.
+
+The popover uses the same liquid-glass surface as the split-audio panel
+(frosted, rim-lit, 28px radius, one rounded block per section, pill button) with
+fixed colours, so it reads the same over any video in both app themes.
+
+The rows are built by the pure `buildStreamStatsView` (`stream-stats-view.ts`);
+the component only translates keys and prints values.
 
 The button renders only when `capabilities.streamStats` is true, which an
 adapter sets from what its engine can actually report — engines that report

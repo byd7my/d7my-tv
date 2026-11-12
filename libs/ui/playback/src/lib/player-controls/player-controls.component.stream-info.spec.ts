@@ -154,8 +154,54 @@ describe('PlayerControlsComponent stream info', () => {
             '.player-controls__stats-row'
         );
         expect(rows).toHaveLength(2);
-        expect(rows[0].textContent).toContain('1920 × 1080 · 16:9');
+        expect(rows[0].textContent).toContain('1920 × 1080');
+        expect(rows[0].textContent).toContain('Full HD · 16:9');
         expect(rows[1].textContent).toContain('50 fps');
+    });
+
+    it('explains each row only after the viewer asks, and never invents a row', () => {
+        openPanel();
+        const hints = () =>
+            fixture.nativeElement.querySelectorAll(
+                '.player-controls__stats-hint'
+            );
+        expect(hints()).toHaveLength(0);
+
+        fixture.nativeElement
+            .querySelector(
+                '[data-test-id="player-controls-stream-info-explain"]'
+            )
+            .click();
+        fixture.detectChanges();
+
+        expect(hints()).toHaveLength(2);
+        expect(
+            fixture.nativeElement.querySelectorAll(
+                '.player-controls__stats-row'
+            )
+        ).toHaveLength(2);
+    });
+
+    it('shows how the stream is doing beside the engine that plays it', () => {
+        sample.mockReturnValue(
+            emptyStreamStats({
+                fps: 25,
+                status: 'buffering',
+                engine: 'Embedded MPV',
+            })
+        );
+
+        openPanel();
+
+        const status = fixture.nativeElement.querySelector(
+            '[data-test-id="player-controls-stream-info-status"]'
+        );
+        expect(status.textContent).toContain('Embedded MPV');
+        expect(
+            status
+                .querySelector('.player-controls__stats-dot')
+                .getAttribute('data-tone')
+        ).toBe('wait');
     });
 
     it('samples only while the popover is open', () => {

@@ -6,6 +6,9 @@ import { type PlayerStreamStatsSource } from './player-stream-stats.model';
 import { WebVideoStreamStatsSampler } from './web-video-stream-stats';
 import { emptyStreamStats } from './stream-stats.spec-helpers';
 
+const rowsOf = (stats: ControlsStreamStats) =>
+    stats.view().sections.flatMap((section) => section.rows);
+
 describe('ControlsStreamStats', () => {
     beforeEach(() => {
         jest.useFakeTimers();
@@ -29,7 +32,7 @@ describe('ControlsStreamStats', () => {
         jest.advanceTimersByTime(5 * STREAM_STATS_SAMPLE_INTERVAL_MS);
 
         expect(sample).not.toHaveBeenCalled();
-        expect(stats.rows()).toEqual([]);
+        expect(stats.hasRows()).toBe(false);
     });
 
     it('samples immediately on start, then on the interval', () => {
@@ -54,7 +57,7 @@ describe('ControlsStreamStats', () => {
 
         expect(sample).toHaveBeenCalledTimes(1);
         // A reopen must show fresh numbers, never the previous stream's.
-        expect(stats.rows()).toEqual([]);
+        expect(stats.hasRows()).toBe(false);
     });
 
     it('starts a fresh frame measurement when reopened after a long pause', () => {
@@ -75,25 +78,29 @@ describe('ControlsStreamStats', () => {
         stats.start();
         quality.totalVideoFrames += 30;
         jest.advanceTimersByTime(1000);
-        expect(stats.rows()).toContainEqual({
-            labelKey: 'EMBEDDED_MPV.PLAYER.STATS_FRAME_RATE',
-            value: '30 fps',
-        });
+        expect(rowsOf(stats)).toContainEqual(
+            expect.objectContaining({
+                labelKey: 'EMBEDDED_MPV.PLAYER.STATS_FRAME_RATE',
+                value: '30 fps',
+            })
+        );
         stats.stop();
         jest.advanceTimersByTime(60000);
         quality.totalVideoFrames += 30;
         stats.start();
         expect(
-            stats
-                .rows()
-                .some((row) => row.labelKey.endsWith('STATS_FRAME_RATE'))
+            rowsOf(stats).some((row) =>
+                row.labelKey.endsWith('STATS_FRAME_RATE')
+            )
         ).toBe(false);
         quality.totalVideoFrames += 30;
         jest.advanceTimersByTime(1000);
-        expect(stats.rows()).toContainEqual({
-            labelKey: 'EMBEDDED_MPV.PLAYER.STATS_FRAME_RATE',
-            value: '30 fps',
-        });
+        expect(rowsOf(stats)).toContainEqual(
+            expect.objectContaining({
+                labelKey: 'EMBEDDED_MPV.PLAYER.STATS_FRAME_RATE',
+                value: '30 fps',
+            })
+        );
         stats.dispose();
     });
 
@@ -109,7 +116,7 @@ describe('ControlsStreamStats', () => {
         expect(sample).toHaveBeenCalledTimes(1);
     });
 
-    it('renders rows from the sampled snapshot', () => {
+    it('groups the sampled snapshot into sections', () => {
         const { source } = createSource(
             jest.fn(() => emptyStreamStats({ width: 1920, height: 1080 }))
         );
@@ -117,12 +124,28 @@ describe('ControlsStreamStats', () => {
 
         stats.start();
 
-        expect(stats.rows()).toEqual([
+        expect(stats.view().sections).toEqual([
             {
-                labelKey: 'EMBEDDED_MPV.PLAYER.STATS_RESOLUTION',
-                value: '1920 × 1080 · 16:9',
+                titleKey: 'EMBEDDED_MPV.PLAYER.STATS_SECTION_PICTURE',
+                rows: [
+                    expect.objectContaining({
+                        labelKey: 'EMBEDDED_MPV.PLAYER.STATS_RESOLUTION',
+                        value: '1920 × 1080',
+                        detail: 'Full HD · 16:9',
+                    }),
+                ],
             },
         ]);
+    });
+
+    it('keeps the explanations hidden until the viewer asks for them', () => {
+        const stats = new ControlsStreamStats(() => undefined);
+
+        expect(stats.showHints()).toBe(false);
+        stats.toggleHints();
+        expect(stats.showHints()).toBe(true);
+        stats.toggleHints();
+        expect(stats.showHints()).toBe(false);
     });
 
     it('survives an engine that throws while tearing down', () => {

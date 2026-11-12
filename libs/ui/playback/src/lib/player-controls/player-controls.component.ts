@@ -24,6 +24,7 @@ import { bindCursorHiding } from './controls-cursor';
 import { ControlsSettings, ControlsSplitAudio } from './controls-settings';
 import { AudioSyncWindowComponent } from '../audio-sync/audio-sync-window.component';
 import { SplitAudioPanelComponent } from './split-audio-panel/split-audio-panel.component';
+import { StreamInfoPanelComponent } from './stream-info-panel/stream-info-panel.component';
 import { SplitSyncBarComponent } from './split-audio-panel/split-sync-bar.component';
 import { ControlsShortcuts } from './controls-shortcuts';
 import { ControlsStreamStats } from './controls-stream-stats';
@@ -58,6 +59,7 @@ import { PlayerUpNextCardComponent } from './player-up-next-card.component';
         TranslatePipe,
         PlayerSettingsPanelComponent,
         SplitAudioPanelComponent,
+        StreamInfoPanelComponent,
         SplitSyncBarComponent,
         AudioSyncWindowComponent,
         PlayerTimelineComponent,
@@ -285,16 +287,7 @@ export class PlayerControlsComponent implements OnDestroy {
                 this.volume.reconcileController(controller, volume)
             );
         });
-        effect((onCleanup) => {
-            // Every close path (toggle, Escape, capability loss, teardown)
-            // runs through the signal, so the sampler can never outlive the
-            // panel it feeds.
-            if (!this.menus.statsOpen()) {
-                return;
-            }
-            untracked(() => this.streamStats.start());
-            onCleanup(() => this.streamStats.stop());
-        });
+        this.streamStats.bindTo(this.menus.statsOpen);
         bindCursorHiding(
             () => this.playerSurface(),
             () => this.hideCursor()
