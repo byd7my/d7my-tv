@@ -7,6 +7,14 @@ const PLUS_CLOCK = /(?<!\d)(\d{1,3})\s?\+\s?(\d{1,2})(?!\d)/g;
 /** A stoppage clock only starts from a half or an extra-time boundary. */
 const MIN_PLUS_BASE = 40;
 
+/** Every match of a global pattern in a line (`matchAll` is not in the build's lib). */
+function matchesIn(pattern: RegExp, line: string): RegExpExecArray[] {
+    const found: RegExpExecArray[] = [];
+    const regex = new RegExp(pattern.source, 'g');
+    for (let m = regex.exec(line); m; m = regex.exec(line)) found.push(m);
+    return found;
+}
+
 /**
  * Finds the match clock inside what the OCR read from a bigger area, where
  * the clock is one line among scores, team names and "+5" added time. The
@@ -16,13 +24,13 @@ const MIN_PLUS_BASE = 40;
 export function findClockInText(text: string): string | null {
     const lines = text.split(/\r?\n/);
     for (const line of lines) {
-        for (const match of line.matchAll(COLON_CLOCK)) {
+        for (const match of matchesIn(COLON_CLOCK, line)) {
             const clock = `${match[1]}:${match[2]}`;
             if (parseMatchClock(clock)) return clock;
         }
     }
     for (const line of lines) {
-        for (const match of line.matchAll(PLUS_CLOCK)) {
+        for (const match of matchesIn(PLUS_CLOCK, line)) {
             if (Number(match[1]) < MIN_PLUS_BASE) continue;
             const clock = `${match[1]}+${match[2]}`;
             if (parseMatchClock(clock)) return clock;
