@@ -4,11 +4,7 @@ import type {
     EmbeddedMpvFrameRegion,
 } from '@iptvnator/shared/interfaces';
 import { parseManualClock } from '../match-clock/match-clock.util';
-import {
-    OffsetSmoother,
-    residualSeconds,
-    suggestCorrection,
-} from './audio-sync-math';
+import { OffsetSmoother, residualSeconds, suggestCorrection } from './audio-sync-math';
 import { loadRegions, saveRegion } from './audio-sync-regions';
 import { AudioSyncReadings } from './audio-sync-readings';
 import { AudioSyncCompare } from './audio-sync-compare';
@@ -218,8 +214,7 @@ export class AudioSyncController {
         if (!this.isOpen()) return;
         this.isOpen.set(false);
         if (this.autoRunning()) {
-            this.mainFrameListener = null;
-            this.pickFrameListener = null;
+            this.mainFrameListener = this.pickFrameListener = null;
             // The picture the clocks are read from needs a canvas again.
             this.split.rebind();
             return;
@@ -258,8 +253,7 @@ export class AudioSyncController {
 
     stopAuto(): void {
         if (!this.autoRunning()) return;
-        if (this.isOpen()) this.autoRunning.set(false);
-        else this.shutdown();
+        if (this.isOpen()) this.autoRunning.set(false); else this.shutdown();
     }
 
     private teardown(): void {
@@ -276,8 +270,7 @@ export class AudioSyncController {
     }
 
     toggle(): void {
-        if (this.isOpen()) this.close();
-        else this.open();
+        if (this.isOpen()) this.close(); else this.open();
     }
 
     /** Back to picking the scoreboard region(s). */
@@ -493,11 +486,7 @@ export class AudioSyncController {
         const last = this.measure.last();
         this.audioReadout.set(
             last
-                ? {
-                      ...EMPTY_READOUT,
-                      text: last.audioText,
-                      problem: 'measured',
-                  }
+                ? { ...EMPTY_READOUT, text: last.audioText, problem: 'measured' }
                 : { ...EMPTY_READOUT, problem: 'idle' }
         );
         this.previewStatus.set('idle');

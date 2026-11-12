@@ -87,9 +87,7 @@ export class PlayerControlsComponent implements OnDestroy {
     readonly shortcutsEnabled = input(true);
     readonly mediaTitle = input<PlayerMediaTitle | null>(null);
     /** Chapters / programmes drawn as track segments; null draws one. */
-    readonly timelineSegments = input<readonly PlayerTimelineSegment[] | null>(
-        null
-    );
+    readonly timelineSegments = input<readonly PlayerTimelineSegment[] | null>(null);
     /** The next episode, for the "Up next" card near the end of this one. */
     readonly upNext = input<PlayerUpNextItem | null>(null);
     readonly previousEpisodeRequested = output<void>();
