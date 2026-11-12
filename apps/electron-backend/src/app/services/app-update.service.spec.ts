@@ -143,6 +143,8 @@ function createService(
         cancelPreparedQuit?: () => void;
         channel?: AppUpdateChannel;
         appVersion?: string;
+        autoDownload?: boolean;
+        recheckIntervalMs?: number;
     } = {}
 ) {
     const updater = new FakeUpdater();
@@ -153,8 +155,10 @@ function createService(
             isPackaged: overrides.isPackaged ?? true,
         },
         appVersion: overrides.appVersion,
+        autoDownload: overrides.autoDownload,
         channel: overrides.channel,
         getMainWindow: () => win,
+        recheckIntervalMs: overrides.recheckIntervalMs,
         cancelPreparedQuit: overrides.cancelPreparedQuit,
         platform: overrides.platform ?? 'darwin',
         prepareQuit: overrides.prepareQuit,
@@ -459,6 +463,81 @@ describe('AppUpdateService', () => {
         expect(updater.autoDownload).toBe(false);
         expect(updater.downloadUpdate).not.toHaveBeenCalled();
         expect(updater.checkForUpdates).toHaveBeenCalledTimes(1);
+    });
+
+    it('downloads a found update by itself when asked to', async () => {
+        const { service, updater } = createService({ autoDownload: true });
+
+        service.handleUpdateAvailable({ version: '0.24.0' });
+        await Promise.resolve();
+
+        expect(updater.downloadUpdate).toHaveBeenCalledTimes(1);
+        expect(service.getStatus().status).toBe(
+            ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Downloading
+        );
+    });
+
+    it('leaves the download to the user by default', () => {
+        const { service, updater } = createService();
+
+        service.handleUpdateAvailable({ version: '0.24.0' });
+
+        expect(updater.downloadUpdate).not.toHaveBeenCalled();
+        expect(service.getStatus().status).toBe(
+            ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Available
+        );
+    });
+
+    describe('periodic checks', () => {
+        beforeEach(() => jest.useFakeTimers());
+        afterEach(() => jest.useRealTimers());
+
+        it('looks again after the interval, and only once per interval', async () => {
+            const { service, updater } = createService({
+                recheckIntervalMs: 1000,
+            });
+
+            await service.checkForUpdatesOnStartup();
+            service.handleUpdateNotAvailable({ version: '0.22.0' });
+            expect(updater.checkForUpdates).toHaveBeenCalledTimes(1);
+
+            await jest.advanceTimersByTimeAsync(1000);
+            expect(updater.checkForUpdates).toHaveBeenCalledTimes(2);
+
+            // A second startup call does not start a second timer.
+            await service.checkForUpdatesOnStartup();
+            service.handleUpdateNotAvailable({ version: '0.22.0' });
+            await jest.advanceTimersByTimeAsync(1000);
+            expect(updater.checkForUpdates).toHaveBeenCalledTimes(4);
+
+            service.stopPeriodicChecksForShutdown();
+        });
+
+        it('does not disturb a download or an update that is ready', async () => {
+            const { service, updater } = createService({
+                recheckIntervalMs: 1000,
+            });
+            await service.checkForUpdatesOnStartup();
+            service.handleUpdateDownloaded({ version: '0.24.0' });
+
+            await jest.advanceTimersByTimeAsync(5000);
+
+            expect(updater.checkForUpdates).toHaveBeenCalledTimes(1);
+            expect(service.getStatus().status).toBe(
+                ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Downloaded
+            );
+            service.stopPeriodicChecksForShutdown();
+        });
+
+        it('checks only at startup without an interval', async () => {
+            const { service, updater } = createService();
+            await service.checkForUpdatesOnStartup();
+            service.handleUpdateNotAvailable({ version: '0.22.0' });
+
+            await jest.advanceTimersByTimeAsync(24 * 3600 * 1000);
+
+            expect(updater.checkForUpdates).toHaveBeenCalledTimes(1);
+        });
     });
 
     it('loads release notes lazily and navigates between cached versions', async () => {

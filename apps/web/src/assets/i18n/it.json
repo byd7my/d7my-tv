@@ -1159,7 +1159,8 @@
                     "announcing": "Freezing soon",
                     "freezing": "Freezing to sync",
                     "resuming": "Resuming",
-                    "failed": "Not synced"
+                    "failed": "Not synced",
+                    "noPair": "Audio non connesso: un piano con 1 connessione non basta"
                 },
                 "FREEZE_SOON": "The picture freezes in {{in}}s for {{seconds}}s to sync the sound",
                 "PICTURE_FROZEN": "Picture frozen to sync · seconds left:",

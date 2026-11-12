@@ -15,6 +15,8 @@ import type { ControlsSplitAudio } from '../controls-split-audio';
 const IN_SYNC_BAND_SECONDS = 0.15;
 /** The accuracy margin of "synced" (the clocks are read in whole seconds). */
 const TOLERANCE_SECONDS = 0.5;
+/** Without any pair status this long, the bar says the sound is not connected. */
+const NO_PAIR_AFTER_MS = 15000;
 
 /**
  * A thin strip over the top of the video while sync runs: the mode, the state,
@@ -43,14 +45,35 @@ export class SplitSyncBarComponent {
     private syncedTimer: ReturnType<typeof setTimeout> | null = null;
     private wasDone = false;
 
+    /** The backend sent no pair status for a while: the sound session is not there. */
+    protected readonly noPair = signal(false);
+    private noPairTimer: ReturnType<typeof setTimeout> | null = null;
+
     constructor() {
         inject(DestroyRef).onDestroy(() => {
             if (this.syncedTimer) clearTimeout(this.syncedTimer);
+            if (this.noPairTimer) clearTimeout(this.noPairTimer);
         });
         effect(() => {
             const done = this.isAuto() && this.status()?.sync?.phase === 'done';
             if (done && !this.wasDone) this.announceSynced();
             this.wasDone = done;
+        });
+        // "Starting…" must not stay for ever: without a status the pair never
+        // came up (or was dropped, e.g. a plan with one connection).
+        effect(() => {
+            const missing = this.status() === null;
+            if (!missing) {
+                if (this.noPairTimer) clearTimeout(this.noPairTimer);
+                this.noPairTimer = null;
+                this.noPair.set(false);
+                return;
+            }
+            if (this.noPairTimer) return;
+            this.noPairTimer = setTimeout(() => {
+                this.noPairTimer = null;
+                this.noPair.set(true);
+            }, NO_PAIR_AFTER_MS);
         });
     }
 
@@ -102,7 +125,7 @@ export class SplitSyncBarComponent {
     /** State key for the label: the backend's state, or "waiting for a value" in manual. */
     protected readonly stateKey = computed(() => {
         const status = this.status();
-        if (!status) return 'starting';
+        if (!status) return this.noPair() ? 'noPair' : 'starting';
         if (
             !this.isAuto() &&
             status.lateness === null &&
@@ -208,6 +231,7 @@ export class SplitSyncBarComponent {
 
     /** Colour of the state dot: working, finished well, or not synced. */
     protected readonly tone = computed<'busy' | 'ok' | 'bad'>(() => {
+        if (this.noPair()) return 'bad';
         const phase = this.status()?.sync?.phase;
         if (this.isAuto() && phase === 'failed') return 'bad';
         if (this.isAuto() && phase === 'done') return 'ok';

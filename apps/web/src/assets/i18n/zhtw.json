@@ -1159,7 +1159,8 @@
                     "announcing": "Freezing soon",
                     "freezing": "Freezing to sync",
                     "resuming": "Resuming",
-                    "failed": "Not synced"
+                    "failed": "Not synced",
+                    "noPair": "聲音未連線：僅支援 1 個連線的方案無法使用"
                 },
                 "FREEZE_SOON": "The picture freezes in {{in}}s for {{seconds}}s to sync the sound",
                 "PICTURE_FROZEN": "Picture frozen to sync · seconds left:",

@@ -44,6 +44,7 @@ import XtreamEvents from '../events/xtream.events';
 import { registerStreamProbeHandlers } from '../events/stream-probe';
 import { registerConnectivityGuardHandlers } from '../events/connectivity-guard.events';
 import { traceStartupPhase } from '../services/debug-trace';
+import { APP_UPDATE_RECHECK_MS } from '../services/app-update-schedule';
 import { AppUpdateService } from '../services/app-update.service';
 import {
     onAppUpdateChannelChange,
@@ -80,6 +81,10 @@ export function bootstrapDeferredEvents(
         // the install's window close and strand the update.
         prepareQuit: () => windowCloseGuard.allowNextClose(),
         cancelPreparedQuit: () => windowCloseGuard.revokeAllowedClose(),
+        // A found update downloads by itself and the app looks again every
+        // few hours: the user only restarts. Installing stays their click.
+        autoDownload: true,
+        recheckIntervalMs: APP_UPDATE_RECHECK_MS,
     });
     AppUpdateEvents.bootstrapAppUpdateEvents(appUpdateService);
     onAppUpdateChannelChange((channel) => appUpdateService.setChannel(channel));

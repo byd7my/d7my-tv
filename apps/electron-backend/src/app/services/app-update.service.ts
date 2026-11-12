@@ -19,6 +19,7 @@ import {
     ReleaseFetchResponse,
 } from './app-update-release-catalog';
 import { AppUpdateReleaseCatalogs } from './app-update-release-notes';
+import { startPeriodicUpdateChecks } from './app-update-schedule';
 
 export const APP_UPDATE_MANUAL_DOWNLOAD_URL = appUpdateReleasesPageUrl(
     DEFAULT_APP_UPDATE_CHANNEL
@@ -103,6 +104,13 @@ export interface AppUpdateServiceOptions {
      * leak into the next genuine close.
      */
     cancelPreparedQuit?: () => void;
+    /**
+     * Download a found update at once, in the background, so the user only
+     * has to restart. Off by default: the download is then the user's click.
+     */
+    autoDownload?: boolean;
+    /** Look again for a newer release this often while the app runs (ms). */
+    recheckIntervalMs?: number;
 }
 
 function isSelfUpdateSupported(
@@ -175,6 +183,7 @@ export class AppUpdateService {
     private status: ElectronBridgeAppUpdateStatus;
     /** True between prepareQuit() and the quit — or the error that voids it. */
     private quitPreparationPending = false;
+    private stopPeriodicChecks: (() => void) | null = null;
 
     constructor(private readonly options: AppUpdateServiceOptions) {
         this.currentVersion = resolveCurrentVersion(
@@ -298,7 +307,35 @@ export class AppUpdateService {
             return this.getStatus();
         }
 
+        this.startPeriodicChecks();
         return this.checkForUpdates();
+    }
+
+    /** Stops the periodic checks (the app is quitting, or a test ends). */
+    stopPeriodicChecksForShutdown(): void {
+        this.stopPeriodicChecks?.();
+        this.stopPeriodicChecks = null;
+    }
+
+    /**
+     * An app left open for days would never learn of a release otherwise.
+     * A check is skipped while one runs or an update is on its way or ready:
+     * it would only reset what the user is about to install.
+     */
+    private startPeriodicChecks(): void {
+        const interval = this.options.recheckIntervalMs;
+        if (this.stopPeriodicChecks || !interval || interval <= 0) return;
+        this.stopPeriodicChecks = startPeriodicUpdateChecks(() => {
+            const { status } = this.status;
+            if (
+                status === ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Checking ||
+                status === ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Downloading ||
+                status === ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Downloaded
+            ) {
+                return;
+            }
+            void this.checkForUpdates();
+        }, interval);
     }
 
     /** Release notes for a version; see `AppUpdateReleaseCatalogs`. */
@@ -371,6 +408,10 @@ export class AppUpdateService {
             release,
             status: ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Available,
         });
+
+        if (this.options.autoDownload && this.updater) {
+            void this.downloadUpdate();
+        }
     }
 
     handleUpdateNotAvailable(info: AppUpdateInfo): void {

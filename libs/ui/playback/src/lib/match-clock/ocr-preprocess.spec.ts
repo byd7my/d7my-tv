@@ -34,6 +34,19 @@ describe('normalizeForOcr', () => {
         expect(out[8 * 4]).toBeLessThan(60);
     });
 
+    it('flips the light/dark guess when asked (a light clock box in a dark scoreboard)', () => {
+        const dark = [30, 0, 60];
+        const input = image([
+            dark, dark, dark, dark, dark, dark, dark, dark,
+            [255, 255, 255], [255, 255, 255],
+        ]);
+
+        const out = normalizeForOcr(input, true);
+
+        expect(out[0]).toBeLessThan(60); // box stays dark
+        expect(out[8 * 4]).toBeGreaterThan(200); // text stays light
+    });
+
     it('survives an empty or flat image', () => {
         expect(normalizeForOcr(new Uint8ClampedArray(0))).toHaveLength(0);
         expect(() => normalizeForOcr(image([[9, 9, 9], [9, 9, 9]]))).not.toThrow();

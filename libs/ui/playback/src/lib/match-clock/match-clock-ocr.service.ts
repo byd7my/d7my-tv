@@ -1,5 +1,14 @@
 import { Injectable } from '@angular/core';
+import {
+    effectiveConfidence,
+    recognizeClock,
+    type OcrPass,
+    type OcrReading,
+} from './match-clock-ocr-passes';
 import { normalizeForOcr, ocrScaleFor } from './ocr-preprocess';
+
+export { effectiveConfidence };
+export type { OcrReading };
 
 export interface OcrImage {
     width: number;
@@ -8,35 +17,16 @@ export interface OcrImage {
     data: Uint8ClampedArray;
 }
 
-export interface OcrReading {
-    text: string;
-    /** 0..100 as reported by the engine. */
-    confidence: number;
-}
-
 /** Minimal surface of a tesseract.js worker that this service uses. */
 interface OcrWorker {
     recognize(image: HTMLCanvasElement): Promise<{
         data: { text: string; confidence: number };
     }>;
+    setParameters(params: Record<string, string>): Promise<unknown>;
     terminate(): Promise<unknown>;
 }
 
-/** Looks like a match clock ("87:43", "45+2"). */
-const CLOCK_SHAPE = /^\d{1,3}(?::\d{2}|\+\d{1,2}(?::\d{2})?)$/;
-/** Stands in when the engine reports no confidence of its own. */
-const SHAPE_CONFIDENCE = 70;
-
-/**
- * The digit-only LSTM line mode often reports a confidence of exactly 0 even
- * for a perfect read, so a 0 is "unknown", not "wrong": a text that has the
- * shape of a clock gets a modest default, and the clock tracker raises trust
- * as consecutive readings agree.
- */
-export function effectiveConfidence(text: string, reported: number): number {
-    if (Number.isFinite(reported) && reported > 0) return reported;
-    return CLOCK_SHAPE.test(text.replace(/\s+/g, '')) ? SHAPE_CONFIDENCE : 0;
-}
+const PAGE_SEG_MODE = { line: '7', sparse: '11' } as const;
 
 type TesseractApi = typeof import('tesseract.js');
 
@@ -69,24 +59,57 @@ const PADDING = 12;
 @Injectable({ providedIn: 'root' })
 export class MatchClockOcrService {
     private worker: Promise<OcrWorker> | null = null;
+    /** The page mode the worker is in now (it is switched only when needed). */
+    private mode: OcrPass['mode'] | null = null;
+    /** The way that read a clock last: tried first next time. */
+    private lastPass: OcrPass | null = null;
+    /** One reading at a time: a reading switches the worker's mode. */
+    private queue: Promise<unknown> = Promise.resolve();
 
-    async recognize(image: OcrImage): Promise<OcrReading> {
-        const worker = await this.ensureWorker();
-        const { data } = await worker.recognize(this.toCanvas(image));
-        const text = (data.text ?? '').trim();
-        return { text, confidence: effectiveConfidence(text, data.confidence) };
+    recognize(image: OcrImage): Promise<OcrReading> {
+        const run = () => this.recognizeNow(image);
+        const result = this.queue.then(run, run);
+        this.queue = result.catch(() => undefined);
+        return result;
     }
 
     /** Frees the engine; the next `recognize` loads it again. */
     async dispose(): Promise<void> {
         const pending = this.worker;
         this.worker = null;
+        this.mode = null;
         if (!pending) return;
         try {
             await (await pending).terminate();
         } catch {
             // already gone
         }
+    }
+
+    private async recognizeNow(image: OcrImage): Promise<OcrReading> {
+        const worker = await this.ensureWorker();
+        // A tight box around the digits reads as one line; a whole scoreboard
+        // needs a search for the clock among its scores and names.
+        const { reading, pass } = await recognizeClock(async (pass) => {
+            await this.useMode(worker, pass.mode);
+            const { data } = await worker.recognize(
+                this.toCanvas(image, pass.flip)
+            );
+            return { text: data.text ?? '', confidence: data.confidence };
+        }, this.lastPass);
+        if (pass) this.lastPass = pass;
+        return reading;
+    }
+
+    private async useMode(
+        worker: OcrWorker,
+        mode: OcrPass['mode']
+    ): Promise<void> {
+        if (this.mode === mode) return;
+        await worker.setParameters({
+            tessedit_pageseg_mode: PAGE_SEG_MODE[mode],
+        });
+        this.mode = mode;
     }
 
     private ensureWorker(): Promise<OcrWorker> {
@@ -112,20 +135,24 @@ export class MatchClockOcrService {
         });
         await worker.setParameters({
             tessedit_char_whitelist: '0123456789:+',
-            // 7 = a single text line (PSM.SINGLE_LINE).
-            tessedit_pageseg_mode: '7' as never,
+            tessedit_pageseg_mode: PAGE_SEG_MODE.line as never,
         });
+        this.mode = 'line';
         return worker as unknown as OcrWorker;
     }
 
-    private toCanvas(image: OcrImage): HTMLCanvasElement {
+    private toCanvas(image: OcrImage, flip: boolean): HTMLCanvasElement {
         const source = document.createElement('canvas');
         source.width = image.width;
         source.height = image.height;
         const sourceContext = source.getContext('2d');
         if (!sourceContext) throw new Error('2D canvas unavailable');
         sourceContext.putImageData(
-            new ImageData(normalizeForOcr(image.data), image.width, image.height),
+            new ImageData(
+                normalizeForOcr(image.data, flip),
+                image.width,
+                image.height
+            ),
             0,
             0
         );

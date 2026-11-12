@@ -10,8 +10,13 @@ const CLIP_FRACTION = 0.02;
 /** Mean luminance below this means light-on-dark text. */
 const DARK_MEAN = 128;
 
+/**
+ * `flip` turns the light/dark guess around: the mean of a whole scoreboard
+ * can be dark while the clock sits in a light box (or the other way).
+ */
 export function normalizeForOcr(
-    rgba: Uint8ClampedArray
+    rgba: Uint8ClampedArray,
+    flip = false
 ): Uint8ClampedArray<ArrayBuffer> {
     const pixels = rgba.length / 4;
     const luminance = new Uint8ClampedArray(pixels);
@@ -36,7 +41,7 @@ export function normalizeForOcr(
         seen += histogram[high--];
     }
     const range = Math.max(1, high - low);
-    const invert = pixels > 0 && sum / pixels < DARK_MEAN;
+    const invert = pixels > 0 && (sum / pixels < DARK_MEAN) !== flip;
 
     const out = new Uint8ClampedArray(rgba.length);
     for (let i = 0; i < pixels; i++) {

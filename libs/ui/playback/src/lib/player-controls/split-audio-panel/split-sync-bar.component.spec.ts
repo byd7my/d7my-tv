@@ -115,6 +115,25 @@ describe('SplitSyncBarComponent', () => {
         expect(text('split-sync-bar-state')).toContain('needsValue');
     });
 
+    it('says the sound is not connected when no pair status arrives, then recovers', () => {
+        jest.useFakeTimers();
+        try {
+            state.update((value) => ({ ...value, splitAudio: undefined }));
+            fixture.detectChanges();
+            expect(text('split-sync-bar-state')).toContain('starting');
+
+            jest.advanceTimersByTime(15100);
+            fixture.detectChanges();
+            expect(text('split-sync-bar-state')).toContain('noPair');
+
+            state.update((value) => ({ ...value, splitAudio: STATUS }));
+            fixture.detectChanges();
+            expect(text('split-sync-bar-state')).toContain('correcting');
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
     it('shows both clocks and a place for the background reader in auto', () => {
         controls.syncCtl.setMode('auto');
         fixture.detectChanges();
