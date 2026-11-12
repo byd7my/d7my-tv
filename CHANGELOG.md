@@ -11,6 +11,17 @@ this marker — see `.changes/README.md`.
 
 <!-- next-release -->
 
+# 0.26.17 (2026-11-12)
+
+### Features
+
+- **app** — The app now looks for a new version every 6 hours while it stays open, downloads it in the background, and only asks you to restart once it is ready. Before, it checked once at startup and waited for you to click Download. ([4b355dd](https://github.com/byd7my/d7my-tv/commit/4b355dda40f51efcef50811cfaae34a8f3987b8f))
+
+### Fixes
+
+- **playback** — Auto Sync can now read the match clock when the chosen area covers the whole scoreboard, not only the digits: it looks for the clock among the scores and team names, and tries both light and dark digits. ([4b355dd](https://github.com/byd7my/d7my-tv/commit/4b355dda40f51efcef50811cfaae34a8f3987b8f))
+- **playback** — The Auto Sync bar no longer stays on "Starting…" for ever: when the sound session does not come up within 15 seconds it says "Sound not connected" and points at the one-connection plan limit. ([4b355dd](https://github.com/byd7my/d7my-tv/commit/4b355dda40f51efcef50811cfaae34a8f3987b8f))
+
 # 0.26.16 (2026-11-12)
 
 ### Features
