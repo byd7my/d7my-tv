@@ -11,6 +11,16 @@ this marker — see `.changes/README.md`.
 
 <!-- next-release -->
 
+# 0.26.13 (2026-11-12)
+
+<details>
+<summary>Internal changes</summary>
+
+- **playback** — Visual refresh of the two-session audio panel and the sync status bar: calmer glass look, clearer order, state-first status strip with the leading side and a freeze progress line. "Cancel sync" is now "Stop sync" in the bar. No behavior or setting changed. ([0cca568](https://github.com/4gray/iptvnator/commit/0cca568cbff2badddb9a3f56e94a5e12adb43364))
+- **playback** — Opt-in two-session mode for audio from another channel (off by default, frame-copy engine only, Settings > Playback). Auto Sync is one run per press of Sync: it freezes the side that is ahead once (announced, capped, cache-checked), corrects the rest gently, says "Synced" and then stays silent until pressed again. Manual sync and "Quick sync" are separate; legacy audio-add is unchanged. ([0cca568](https://github.com/4gray/iptvnator/commit/0cca568cbff2badddb9a3f56e94a5e12adb43364))
+
+</details>
+
 # 0.26.12 (2026-11-11)
 
 ### Fixes
