@@ -381,7 +381,7 @@ export function resolvePackagedLinuxExecutable(
         });
 
     for (const directory of unpackedDirectories) {
-        for (const executableName of ['IPTVnator', 'iptvnator']) {
+        for (const executableName of ['D7my-TV', 'iptvnator']) {
             const candidate = join(
                 executablesRoot,
                 directory.name,

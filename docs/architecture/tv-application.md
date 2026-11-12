@@ -45,7 +45,7 @@ script, ES2018 and unsupported-builtin checks; Tizen also checks its XML,
 minimum version, icon and exact privilege set. `tv:package-tizen` invokes the
 external Tizen CLI using a local `TIZEN_SIGNING_PROFILE`; signing material and
 WGT output stay outside Git. The neutral widget ID is
-`https://github.com/4gray/iptvnator/tv`, package `IPTVnatorT` and app ID
+`https://github.com/byd7my/d7my-tv/tv`, package `IPTVnatorT` and app ID
 `IPTVnatorT.TV`; the maintainer may change these before distribution.
 Internet permits configured backends/media/artwork; `tv.inputdevice` permits
 remote media-key registration. No other platform privilege is requested.

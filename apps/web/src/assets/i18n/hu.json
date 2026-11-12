@@ -17,7 +17,7 @@
         "EMPTY": "Nincs találat",
         "SEARCH_HINT": "Adjon meg legalább két karaktert",
         "EMPTY_HELP": "Próbáljon az eredeti címmel keresni, vagy tartsa meg a szolgáltatótól származó adatokat.",
-        "AUTO_HELP": "Törölje a kézi javítást, hogy az IPTVnator ismét automatikusan kereshesse meg a metaadatokat.",
+        "AUTO_HELP": "Törölje a kézi javítást, hogy az D7my-TV ismét automatikusan kereshesse meg a metaadatokat.",
         "PROVIDER_HELP": "Tartsa meg a forrásból származó eredeti képeket, leírást és epizódadatokat. Ennél a címnél a TMDB-alapú adatkiegészítés kikapcsolva marad.",
         "SEARCH_ERROR": "A TMDB-keresés nem érhető el. Ellenőrizze a kapcsolatot és az API-kulcsot, majd próbálja újra.",
         "SAVE_ERROR": "Nem sikerült alkalmazni a választást. Ellenőrizze a kapcsolatot és a böngészőben rendelkezésre álló tárhelyet, majd próbálja újra.",
@@ -37,7 +37,7 @@
     "SHOW_LESS": "Kevesebb megjelenítése",
     "PLAYLISTS": "Lejátszási listák",
     "HOME": {
-        "TITLE": "IPTVnator",
+        "TITLE": "D7my-TV",
         "SUBTITLE": "Válasszon egy lejátszási listát, vagy adjon hozzá újat.",
         "TABS": {
             "RECENTLY_ADDED": "Legutóbb hozzáadott lejátszási listák",
@@ -53,7 +53,7 @@
             "UNTITLED_PLAYLIST": "Névtelen lejátszási lista",
             "PLAYLIST_ACTIONS": "Lejátszási lista műveletei",
             "ADD_FIRST": "Adja hozzá az első lejátszási listát",
-            "WELCOME_TITLE": "Üdvözöljük az IPTVnatorban!",
+            "WELCOME_TITLE": "Üdvözöljük az D7my-TVban!",
             "WELCOME_DESCRIPTION": "A kezdéshez adja hozzá első lejátszási listáját. Kapcsolódjon IPTV-szolgáltatójához, és élvezze az élő adásokat, filmeket és sorozatokat.",
             "ADD_YOUR_FIRST": "Első lejátszási lista hozzáadása",
             "FEATURE_M3U": "M3U/M3U8-fájlok",
@@ -209,7 +209,7 @@
             "OPEN_FAILED": "Nem sikerült megnyitni a következő fájlt: „{{filename}}”."
         },
         "URL_UPLOAD": {
-            "SERVER_SUMMARY": "A lejátszási lista URL-címét és a bejelentkezési adatokat az IPTVnator jelenlegi telepítésének háttérkiszolgálója kapja meg.",
+            "SERVER_SUMMARY": "A lejátszási lista URL-címét és a bejelentkezési adatokat az D7my-TV jelenlegi telepítésének háttérkiszolgálója kapja meg.",
             "XTREAM_SUGGESTION_TITLE": "Az Xtream elérhető lehet",
             "XTREAM_SUGGESTION_DESCRIPTION": "Előfizetési adatok, valamint filmek és sorozatok is elérhetők lehetnek, ha a szolgáltató biztosítja őket.",
             "SET_UP_XTREAM": "Xtream beállítása",
@@ -228,7 +228,7 @@
             "ERROR_TLS_HOST_UNKNOWN": "Nem sikerült azonosítani a lejátszási lista kiszolgálóját. Ismételje meg a műveletet kézzel.",
             "TRUST_TLS_HOST": "Kiszolgáló megbízhatónak jelölése",
             "TRUST_TLS_HOST_TITLE": "Megbízik ebben a kiszolgálóban az érvénytelen tanúsítvány ellenére?",
-            "TRUST_TLS_HOST_WARNING": "Csak akkor folytassa, ha megbízik a lejátszási lista kiszolgálójában. Az IPTVnator ennél a kiszolgálónál engedélyezi az érvénytelen TLS-tanúsítványokat, más kiszolgálóknál azonban továbbra is érvényes tanúsítványt követel meg."
+            "TRUST_TLS_HOST_WARNING": "Csak akkor folytassa, ha megbízik a lejátszási lista kiszolgálójában. Az D7my-TV ennél a kiszolgálónál engedélyezi az érvénytelen TLS-tanúsítványokat, más kiszolgálóknál azonban továbbra is érvényes tanúsítványt követel meg."
         },
         "TEXT_IMPORT": {
             "LABEL": "M3U/M3U8-lejátszási lista beillesztése szövegként"
@@ -374,7 +374,7 @@
         "NAV_SERVER": "Kiszolgáló",
         "SERVER_DESCRIPTION": "A lejátszási listákat, a kedvenceket és a lejátszási előrehaladást a kiszolgáló tárolja, így azok minden, ehhez a címhez csatlakozó eszközön elérhetők.",
         "SERVER_CONNECTION": "Kapcsolat",
-        "SERVER_CONNECTION_DESCRIPTION": "Az IPTVnator alkalmazás adatainak tárolására használt kiszolgáló.",
+        "SERVER_CONNECTION_DESCRIPTION": "Az D7my-TV alkalmazás adatainak tárolására használt kiszolgáló.",
         "SERVER_CONNECTED": "Csatlakozva",
         "SERVER_OFFLINE": "Nem érhető el",
         "SERVER_STORAGE": "Tárhely",
@@ -446,7 +446,7 @@
         "TMDB_ATTRIBUTION": "Ez a termék a TMDB API-ját használja, de a TMDB nem hagyta jóvá és nem tanúsította.",
         "APP_PREFERENCES": "Az alkalmazás beállításai",
         "HERO_EYEBROW": "Munkaterület-beállítások",
-        "HERO_TITLE": "Az IPTVnator személyre szabása",
+        "HERO_TITLE": "Az D7my-TV személyre szabása",
         "HERO_DESCRIPTION": "A lejátszás, a műsorújság, a távoli hozzáférés és az adatkezelés beállítása egy helyen, a munkaterület jelenlegi megjelenésének megtartásával.",
         "SUBTITLE": "Az alkalmazás beállításainak módosítása",
         "DESCRIPTION": "Módosítsa az alábbi beállításokat, majd erősítse meg a változtatásokat a Változtatások mentése gombbal.",
@@ -512,7 +512,7 @@
         "EPG_SOURCE_FORMATS_EXAMPLES": "Példák:",
         "VIDEO_PLAYER_DESCRIPTION": "Az alapértelmezett videólejátszó kiválasztása",
         "WEB_PLAYER_SHARED_CONTROLS": "Egységes vezérlők a webes lejátszókhoz",
-        "WEB_PLAYER_SHARED_CONTROLS_DESCRIPTION": "Az IPTVnator közös vezérlőinek használata a HTML5-, Video.js- és ArtPlayer-lejátszóban.",
+        "WEB_PLAYER_SHARED_CONTROLS_DESCRIPTION": "Az D7my-TV közös vezérlőinek használata a HTML5-, Video.js- és ArtPlayer-lejátszóban.",
         "PLAYER_AMBIENT_MODE": "Elmosott háttér a lejátszó körül",
         "PLAYER_AMBIENT_MODE_DESCRIPTION": "A lejátszó körüli terület kitöltése elmosott, elsötétített borítóképpel egyszerű fekete sávok helyett.",
         "PLAY_TRAILERS_IN_BACKGROUND": "Előzetesek lejátszása a részletek hátterében",
@@ -557,20 +557,13 @@
         "STRIP_COUNTRY_PREFIX": "Ország- és csoportelőtagok eltávolítása a csatornanevekből",
         "STRIP_COUNTRY_PREFIX_DESCRIPTION": "Eltávolítja az élő csatornák nevéből az olyan ország- vagy csoportelőtagokat, mint az „US | ” vagy az „UK - ”.",
         "VERSION_DESCRIPTION": "Az alkalmazás jelenlegi verziója",
-        "ABOUT_SUBTITLE": "Verzióadatok, a projekt hivatkozásai és az IPTVnator támogatási lehetőségei.",
+        "ABOUT_SUBTITLE": "Version and project link.",
         "EMBEDDED_MPV_NOTICE_TITLE": "Beágyazott MPV-futtatókörnyezet",
         "EMBEDDED_MPV_NOTICE_DESCRIPTION": "Az asztali kiadások tartalmazhatják a kísérleti beágyazott MPV-lejátszóhoz szükséges libmpv- és FFmpeg-könyvtárakat. A felhasználóknak nem kell külön telepíteniük az MPV alkalmazást; szükség esetén továbbra is használható külső MPV- vagy VLC-lejátszó.",
         "COMMUNITY": "Projekt és közösség",
-        "COMMUNITY_DESCRIPTION": "Jelölje csillaggal a GitHub-adattárat, olvassa a blogot, vagy csatlakozzon a Telegram-csoporthoz frissítésekért és segítségért.",
-        "LINK_BLOG": "Blog",
+        "COMMUNITY_DESCRIPTION": "Star the repository or open an issue to report a problem.",
         "LINK_GITHUB_DESCRIPTION": "Jelölje csillaggal a GitHub-adattárat, nyisson hibajegyet, vagy járuljon hozzá a fejlesztéshez",
-        "LINK_BLOG_DESCRIPTION": "Kiadási hírek, tippek és projektfrissítések",
-        "LINK_TELEGRAM_DESCRIPTION": "Bejelentések, közösség és támogatás",
-        "SUPPORT_TITLE": "A projekt támogatása",
-        "SUPPORT_DESCRIPTION": "Az IPTVnator ingyenes és nyílt forráskódú alkalmazás, amelynek fejlesztése is nyilvánosan zajlik. Ha a mindennapjai részévé vált, egy kisebb hozzájárulás is segít életben tartani a projektet és alakítani a jövőjét – köszönjük.",
-        "SUPPORT_SPONSORS_HINT": "Rendszeres vagy egyszeri támogatás",
-        "SUPPORT_KOFI_HINT": "Hívjon meg egy kávéra",
-        "EPG_NOTE": "Az EPG jelenleg csak az IPTVnator Electron-alapú változatában érhető el.",
+        "EPG_NOTE": "Az EPG jelenleg csak az D7my-TV Electron-alapú változatában érhető el.",
         "EPG_NOTE_URL_TEXT": "További információ",
         "IMPORT_EXPORT_DATA": "Lejátszási listák biztonsági mentéseinek importálása és exportálása",
         "IMPORT_EXPORT_DATA_DESCRIPTION": "Lejátszási lista biztonsági mentéseinek exportálása vagy visszaállítása, beleértve az M3U-pillanatképeket, az Xtream/Stalker-kapcsolati metaadatokat, a felhasználói állapotot és az EPG-források URL-címeit.",
@@ -603,10 +596,10 @@
         "PLAYLISTS_REMOVED": "Az összes lejátszási listát és a hozzájuk tartozó adatokat eltávolítottuk.",
         "MPV_PLAYER_PATH_LABEL": "Az MPV elérési útja",
         "MPV_PLAYER_PATH_DESCRIPTION": "Adja meg az MPV elérési útját. macOS rendszeren használható az MPV alkalmazáscsomag, például /Applications/mpv.app, vagy a futtatható fájl elérési útja.",
-        "MPV_COMPATIBLE_PLAYER_TIP": "macOS rendszeren az IINA MPV-kompatibilis lejátszóként indítható, de a futtatható fájl elérési útját adja meg, például /Applications/IINA.app/Contents/MacOS/iina-cli vagy /Applications/IINA.app/Contents/MacOS/IINA. Az IPTVnator vezérlőfunkciói, a lejátszási pozíció lekérdezése és a példány újrafelhasználása csak MPV IPC használatakor garantált.",
+        "MPV_COMPATIBLE_PLAYER_TIP": "macOS rendszeren az IINA MPV-kompatibilis lejátszóként indítható, de a futtatható fájl elérési útját adja meg, például /Applications/IINA.app/Contents/MacOS/iina-cli vagy /Applications/IINA.app/Contents/MacOS/IINA. Az D7my-TV vezérlőfunkciói, a lejátszási pozíció lekérdezése és a példány újrafelhasználása csak MPV IPC használatakor garantált.",
         "MPV_PLAYER_PATH": "Az MPV-lejátszó elérési útja",
         "MPV_PLAYER_ARGUMENTS_LABEL": "MPV parancssori argumentumai",
-        "MPV_PLAYER_ARGUMENTS_DESCRIPTION": "Az IPTVnator új külső lejátszófolyamat indításakor ezeket a nem kötelező argumentumokat adja át az MPV-nek.",
+        "MPV_PLAYER_ARGUMENTS_DESCRIPTION": "Az D7my-TV új külső lejátszófolyamat indításakor ezeket a nem kötelező argumentumokat adja át az MPV-nek.",
         "MPV_PLAYER_ARGUMENTS": "MPV-argumentumok",
         "MPV_REUSE_INSTANCE_LABEL": "MPV-példány újrafelhasználása",
         "MPV_REUSE_INSTANCE_DESCRIPTION": "Bekapcsolásakor az alkalmazás ugyanabban az MPV-ablakban játssza le a különböző adatfolyamokat. Kikapcsolásakor minden adatfolyam új MPV-ablakban nyílik meg.",
@@ -618,9 +611,9 @@
         "VLC_PLAYER_PATH_DESCRIPTION": "Adja meg a VLC elérési útját. macOS rendszeren használható a VLC alkalmazáscsomag, például /Applications/VLC.app, vagy a futtatható fájl elérési útja.",
         "VLC_PLAYER_PATH": "A VLC-lejátszó elérési útja",
         "VLC_PLAYER_ARGUMENTS_LABEL": "VLC parancssori argumentumai",
-        "VLC_PLAYER_ARGUMENTS_DESCRIPTION": "Az IPTVnator új külső lejátszófolyamat indításakor ezeket a nem kötelező argumentumokat adja át a VLC-nek.",
+        "VLC_PLAYER_ARGUMENTS_DESCRIPTION": "Az D7my-TV új külső lejátszófolyamat indításakor ezeket a nem kötelező argumentumokat adja át a VLC-nek.",
         "VLC_PLAYER_ARGUMENTS": "VLC-argumentumok",
-        "EXTERNAL_PLAYER_ARGUMENTS_HINT": "Soronként egy argumentumot adjon meg. Az alkalmazás ezeket az adatfolyamhoz tartozó IPTVnator-beállítások előtt alkalmazza.",
+        "EXTERNAL_PLAYER_ARGUMENTS_HINT": "Soronként egy argumentumot adjon meg. Az alkalmazás ezeket az adatfolyamhoz tartozó D7my-TV-beállítások előtt alkalmazza.",
         "VLC_REUSE_INSTANCE_LABEL": "VLC-példány újrafelhasználása",
         "VLC_REUSE_INSTANCE_DESCRIPTION": "Bekapcsolásakor az alkalmazás ugyanabban a VLC-ablakban játssza le a különböző adatfolyamokat. Kikapcsolásakor minden adatfolyam új VLC-ablakban nyílik meg.",
         "REMOTE_CONTROL": "Távvezérlés",
@@ -749,12 +742,12 @@
         "MIGRATION_FAILED": "Az áthelyezés nem sikerült. A lejátszási listák továbbra is megvannak ebben a böngészőben. A Beállítások → Kiszolgáló menüpontban próbálkozhat újra.",
         "MIGRATION_RELOAD": "Újratöltés",
         "SIGN_IN_TITLE": "Hozzáférési token szükséges",
-        "SIGN_IN_DESCRIPTION": "Ez az IPTVnator-kiszolgáló hozzáférési tokent kér a lejátszási listák megjelenítéséhez.",
+        "SIGN_IN_DESCRIPTION": "Ez az D7my-TV-kiszolgáló hozzáférési tokent kér a lejátszási listák megjelenítéséhez.",
         "SIGN_IN_TOKEN_LABEL": "Hozzáférési token",
         "SIGN_IN_HINT": "A tokent a kiszolgáló IPTVNATOR_ACCESS_TOKEN beállításánál találja.",
         "SIGN_IN_REJECTED": "A kiszolgáló elutasította a tokent. Ellenőrizze, majd próbálja újra.",
         "SIGN_IN_UNREACHABLE": "A kiszolgáló nem érhető el. Ellenőrizze a kapcsolatot, majd próbálja újra.",
-        "SIGN_IN_STORAGE": "Ez a böngésző nem engedi, hogy az IPTVnator megőrizze a tokent. Engedélyezze a webhelyadatokat ehhez az oldalhoz, és próbálja újra.",
+        "SIGN_IN_STORAGE": "Ez a böngésző nem engedi, hogy az D7my-TV megőrizze a tokent. Engedélyezze a webhelyadatokat ehhez az oldalhoz, és próbálja újra.",
         "SIGN_IN_CONTINUE": "Tovább",
         "STATUS_ONLINE": "Kapcsolat a kiszolgálóval létrejött",
         "STATUS_OFFLINE": "A kiszolgáló nem érhető el",
@@ -1322,10 +1315,10 @@
         "RETRY": "Újrapróbálkozás",
         "ALLOW_PRIVATE_SOURCE": "Forrás engedélyezése",
         "ALLOW_PRIVATE_SOURCE_TITLE": "Engedélyezi a magánhálózaton található EPG-forrást?",
-        "ALLOW_PRIVATE_SOURCE_WARNING": "Csak akkor engedélyezze, ha megbízik az EPG-forrásban. Az IPTVnator engedélyezi, hogy a megadott EPG URL-címe magánhálózati vagy helyi hálózati címekhez kapcsolódjon.",
+        "ALLOW_PRIVATE_SOURCE_WARNING": "Csak akkor engedélyezze, ha megbízik az EPG-forrásban. Az D7my-TV engedélyezi, hogy a megadott EPG URL-címe magánhálózati vagy helyi hálózati címekhez kapcsolódjon.",
         "TRUST_TLS_HOST": "Kiszolgáló megbízhatónak jelölése",
         "TRUST_TLS_HOST_TITLE": "Megbízik ebben a kiszolgálóban az érvénytelen tanúsítvány ellenére?",
-        "TRUST_TLS_HOST_WARNING": "Csak akkor folytassa, ha megbízik ebben a kiszolgálóban. Az IPTVnator ennél a kiszolgálónál engedélyezi az érvénytelen TLS-tanúsítványokat, más kiszolgálóknál azonban továbbra is érvényes tanúsítványt követel meg.",
+        "TRUST_TLS_HOST_WARNING": "Csak akkor folytassa, ha megbízik ebben a kiszolgálóban. Az D7my-TV ennél a kiszolgálónál engedélyezi az érvénytelen TLS-tanúsítványokat, más kiszolgálóknál azonban továbbra is érvényes tanúsítványt követel meg.",
         "CURRENT_PROGRAM": "Aktuális műsor",
         "ARCHIVE_PLAYBACK": "Műsor visszanézése",
         "COLLAPSE_PANEL": "EPG-panel összecsukása",
@@ -1444,7 +1437,6 @@
     "NO": "Nem",
     "MENU": {
         "OPEN": "Menü megnyitása",
-        "SUPPORT_ARIA": "Az IPTVnator támogatása a GitHubon",
         "SETTINGS_ARIA": "Beállítások megnyitása",
         "BUG_REPORT": "Hibabejelentés",
         "WHAT_IS_NEW": "Újdonságok",
@@ -1453,12 +1445,10 @@
         "SUPPORT_PROJECT": "A projekt támogatása"
     },
     "ABOUT": {
-        "TITLE": "Az IPTVnator névjegye",
+        "TITLE": "Az D7my-TV névjegye",
         "DESCRIPTION": "Több platformon használható IPTV-lejátszó M3U- és M3U8-lejátszási listák, kedvencek, elektronikus műsorújság, műsorarchívum és visszanézhető adások támogatásával.",
         "VERSION": "Verzió",
-        "GITHUB_TOOLTIP": "Az IPTVnator GitHub-adattára",
-        "BUY_ME_A_COFFEE_TOOLTIP": "Hívjon meg egy kávéra",
-        "TWITTER_TOOLTIP": "Megosztás a Twitteren"
+        "GITHUB_TOOLTIP": "Az D7my-TV GitHub-adattára"
     },
     "UPDATE_AVAILABLE": "Frissítés érhető el",
     "PWA_UPDATE_READY": "A frissítés telepítésre kész. Az alkalmazás újratöltése megszakítja a lejátszást.",
@@ -1913,7 +1903,7 @@
         "STOP_RECORDING": "Felvétel leállítása",
         "REMOVE_RECORDING_DIALOG": {
             "TITLE": "Eltávolítja a felvételt a kezelőből?",
-            "MESSAGE": "A művelet eltávolítja a bejegyzést az IPTVnator alkalmazásból. A felvett fájl a lemezen marad."
+            "MESSAGE": "A művelet eltávolítja a bejegyzést az D7my-TV alkalmazásból. A felvett fájl a lemezen marad."
         },
         "RECORDING_DETAIL": {
             "PROGRAMS": "Felvett műsorok",
@@ -1924,7 +1914,7 @@
         "REMOVE_FROM_MANAGER": "Eltávolítás a letöltéskezelőből",
         "REMOVE_COMPLETED_DIALOG": {
             "TITLE": "Eltávolítja a letöltéskezelőből?",
-            "MESSAGE": "A művelet eltávolítja a bejegyzést az IPTVnator letöltéskezelőjéből. A letöltött médiafájl a lemezen marad."
+            "MESSAGE": "A művelet eltávolítja a bejegyzést az D7my-TV letöltéskezelőjéből. A letöltött médiafájl a lemezen marad."
         },
         "REMOVE_PARTIAL_DIALOG": {
             "TITLE": "Eltávolítja a részleges letöltést?",
@@ -2012,8 +2002,8 @@
             "TOGGLE_MUTE": "Nem sikerült be- vagy kikapcsolni a némítást",
             "STATUS": "Nem sikerült lekérni a távvezérlés állapotát"
         },
-        "HEADER": "IPTVnator távvezérlő",
-        "FOOTER": "IPTVnator távvezérlő"
+        "HEADER": "D7my-TV távvezérlő",
+        "FOOTER": "D7my-TV távvezérlő"
     },
     "WORKSPACE": {
         "FAVORITES_ONLY": "Csak kedvencek",
@@ -2335,7 +2325,7 @@
         },
         "SHORTCUTS": {
             "TITLE": "Billentyűparancsok",
-            "SUBTITLE": "Az IPTVnator munkaterületének, navigációjának, lejátszójának, párbeszédpaneljeinek és listáinak billentyűparancsai.",
+            "SUBTITLE": "Az D7my-TV munkaterületének, navigációjának, lejátszójának, párbeszédpaneljeinek és listáinak billentyűparancsai.",
             "OPEN_TOOLTIP": "Billentyűparancsok (?)",
             "OPEN_ARIA": "Billentyűparancsok megnyitása",
             "PLATFORM": {
@@ -2547,8 +2537,8 @@
     "SOURCE_SYNC": {
         "CONNECTION_RECOVERY": "A mentett kiszolgálókapcsolat nem érhető el. Ellenőrizze a böngésző tárhelyét, vagy csatlakozzon újra a Beállítások → Kiszolgáló menüpontban.",
         "TITLE": "Kiszolgáló",
-        "DESCRIPTION": "Az eszközök közötti forrásmegosztáshoz csatlakozzon az otthoni kiszolgálón vagy NAS-on, Docker-konténerben futó IPTVnatorhoz.",
-        "URL": "Az IPTVnator-kiszolgáló címe",
+        "DESCRIPTION": "Az eszközök közötti forrásmegosztáshoz csatlakozzon az otthoni kiszolgálón vagy NAS-on, Docker-konténerben futó D7my-TVhoz.",
+        "URL": "Az D7my-TV-kiszolgáló címe",
         "TOKEN": "Hozzáférési token (nem kötelező)",
         "TOKEN_HINT": "Adja meg a kiszolgálón beállított IPTVNATOR_ACCESS_TOKEN értékét, vagy kérje el a kiszolgáló tulajdonosától. Ha nincs beállítva hozzáférési token, hagyja üresen a mezőt.",
         "RESTART_HINT": "A kiszolgálón tárolt médiatárak közötti váltás vagy a kapcsolat bontása az alkalmazás újratöltésével jár. Az eredeti helyi médiatár megmarad.",
@@ -2575,9 +2565,9 @@
         "STATE_locked": "Adjon meg érvényes hozzáférési tokent ehhez a kiszolgálóhoz.",
         "STATE_conflict": "A megosztott forrást egy másik eszközön módosították. Frissítse az adatokat, majd végezze el újra a kívánt változtatást.",
         "SETUP_GUIDE": "Útmutató a kiszolgáló beállításához",
-        "URL_HINT": "Adja meg azt a címet, amelyen az IPTVnatort a böngészőjében eléri (például: {{example}}). Az /api útvonalat az alkalmazás automatikusan hozzáfűzi.",
+        "URL_HINT": "Adja meg azt a címet, amelyen az D7my-TVt a böngészőjében eléri (például: {{example}}). Az /api útvonalat az alkalmazás automatikusan hozzáfűzi.",
         "URL_INVALID": "Adjon meg teljes, http:// vagy https:// kezdetű URL-címet bejelentkezési adatok, lekérdezési paraméterek és a # utáni URL-töredék nélkül.",
-        "CONNECTION_FAILED": "Nem sikerült csatlakozni. Ellenőrizze a kiszolgáló címét, győződjön meg arról, hogy az IPTVnator fut és erről az eszközről is elérhető, majd próbálja újra."
+        "CONNECTION_FAILED": "Nem sikerült csatlakozni. Ellenőrizze a kiszolgáló címét, győződjön meg arról, hogy az D7my-TV fut és erről az eszközről is elérhető, majd próbálja újra."
     },
     "ACTIVITY_SYNC": {
         "TITLE": "Megtekintési adatok szinkronizálása",

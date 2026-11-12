@@ -1020,7 +1020,7 @@ describe('EmbeddedMpvNativeService power blocker', () => {
     });
 
     it.each([
-        ['Flatpak', 'FLATPAK_ID', 'com.fourgray.iptvnator'],
+        ['Flatpak', 'FLATPAK_ID', 'com.d7my.tv'],
         ['Snap', 'SNAP', '/snap/iptvnator/1'],
     ])(
         'explains that %s sandboxes cannot use a system mpv instead of asking to install it',

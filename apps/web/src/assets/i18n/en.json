@@ -17,7 +17,7 @@
         "EMPTY": "No titles found",
         "SEARCH_HINT": "Enter at least two characters",
         "EMPTY_HELP": "Try the original title, or keep the provider data.",
-        "AUTO_HELP": "Remove your correction and let IPTVnator find metadata automatically again.",
+        "AUTO_HELP": "Remove your correction and let D7my-TV find metadata automatically again.",
         "PROVIDER_HELP": "Keep the original artwork, description and episode information from this source. TMDB enrichment stays off for this title.",
         "SEARCH_ERROR": "TMDB search is unavailable. Check your connection and API key, then try again.",
         "SAVE_ERROR": "Could not apply this choice. Check your connection and available browser storage, then try again.",
@@ -37,7 +37,7 @@
     "SHOW_LESS": "Less",
     "PLAYLISTS": "Playlists",
     "HOME": {
-        "TITLE": "IPTVnator",
+        "TITLE": "D7my-TV",
         "SUBTITLE": "Please select a playlist from the list or add a new playlist",
         "TABS": {
             "RECENTLY_ADDED": "Recently added playlists",
@@ -53,7 +53,7 @@
             "UNTITLED_PLAYLIST": "Untitled playlist",
             "PLAYLIST_ACTIONS": "Playlist actions",
             "ADD_FIRST": "Please add your first playlist",
-            "WELCOME_TITLE": "Welcome to IPTVnator",
+            "WELCOME_TITLE": "Welcome to D7my-TV",
             "WELCOME_DESCRIPTION": "Start your streaming journey by adding your first playlist. Connect to your favorite IPTV service and enjoy live TV, movies, and series.",
             "ADD_YOUR_FIRST": "Add Your First Playlist",
             "FEATURE_M3U": "M3U/M3U8 Files",
@@ -228,7 +228,7 @@
             "ERROR_TLS_HOST_UNKNOWN": "Could not determine the playlist host. Please retry manually.",
             "TRUST_TLS_HOST": "Trust host",
             "TRUST_TLS_HOST_TITLE": "Trust invalid certificate?",
-            "TRUST_TLS_HOST_WARNING": "Only continue if you trust this playlist host. IPTVnator will allow invalid TLS certificates for this host, but other hosts still require valid certificates."
+            "TRUST_TLS_HOST_WARNING": "Only continue if you trust this playlist host. D7my-TV will allow invalid TLS certificates for this host, but other hosts still require valid certificates."
         },
         "TEXT_IMPORT": {
             "LABEL": "Insert m3u(8) playlist as text"
@@ -374,7 +374,7 @@
         "NAV_SERVER": "Server",
         "SERVER_DESCRIPTION": "Playlists, favorites and watch progress are stored on this server and shared by every device that opens it.",
         "SERVER_CONNECTION": "Connection",
-        "SERVER_CONNECTION_DESCRIPTION": "The IPTVnator server this app saves to.",
+        "SERVER_CONNECTION_DESCRIPTION": "The D7my-TV server this app saves to.",
         "SERVER_CONNECTED": "Connected",
         "SERVER_OFFLINE": "Unavailable",
         "SERVER_STORAGE": "Storage",
@@ -446,7 +446,7 @@
         "TMDB_ATTRIBUTION": "This product uses the TMDB API but is not endorsed or certified by TMDB.",
         "APP_PREFERENCES": "App preferences",
         "HERO_EYEBROW": "Workspace settings",
-        "HERO_TITLE": "Shape how IPTVnator feels",
+        "HERO_TITLE": "Shape how D7my-TV feels",
         "HERO_DESCRIPTION": "Tune playback, guides, remote access and data handling from one place without losing the current workspace style.",
         "SUBTITLE": "Change the configuration of the application",
         "DESCRIPTION": "Please adapt the options from the list below and confirm with the save changes button",
@@ -512,7 +512,7 @@
         "EPG_SOURCE_FORMATS_EXAMPLES": "Examples:",
         "VIDEO_PLAYER_DESCRIPTION": "Select default video player",
         "WEB_PLAYER_SHARED_CONTROLS": "Unified controls for web players",
-        "WEB_PLAYER_SHARED_CONTROLS_DESCRIPTION": "Use IPTVnator's shared controls in HTML5, Video.js, and ArtPlayer.",
+        "WEB_PLAYER_SHARED_CONTROLS_DESCRIPTION": "Use D7my-TV's shared controls in HTML5, Video.js, and ArtPlayer.",
         "PLAYER_AMBIENT_MODE": "Ambient background fill",
         "PLAYER_AMBIENT_MODE_DESCRIPTION": "Fill the space around the player with a blurred, dimmed poster instead of plain black bars.",
         "PLAY_TRAILERS_IN_BACKGROUND": "Play trailers in details background",
@@ -543,7 +543,7 @@
         "EPG_VIEW_MODE_TIMELINE": "Timeline",
         "EPG_VIEW_MODE_LIST": "List",
         "STARTUP_BEHAVIOR": "Startup view",
-        "STARTUP_BEHAVIOR_DESCRIPTION": "Choose whether IPTVnator opens the first available workspace view or restores your last section-level view. First view means Dashboard when enabled, otherwise Sources.",
+        "STARTUP_BEHAVIOR_DESCRIPTION": "Choose whether D7my-TV opens the first available workspace view or restores your last section-level view. First view means Dashboard when enabled, otherwise Sources.",
         "STARTUP_BEHAVIOR_FIRST_VIEW": "First available view",
         "STARTUP_BEHAVIOR_RESTORE_LAST_VIEW": "Restore last view",
         "STARTUP_WINDOW_MODE": "Window on startup",
@@ -557,20 +557,13 @@
         "STRIP_COUNTRY_PREFIX": "Strip country prefixes from channel names",
         "STRIP_COUNTRY_PREFIX_DESCRIPTION": "Removes country/group prefixes like \"US | \" or \"UK - \" from live channel names throughout the app.",
         "VERSION_DESCRIPTION": "Current version of the application",
-        "ABOUT_SUBTITLE": "Version, project links and ways to support IPTVnator.",
+        "ABOUT_SUBTITLE": "Version and project link.",
         "EMBEDDED_MPV_NOTICE_TITLE": "Embedded MPV runtime",
         "EMBEDDED_MPV_NOTICE_DESCRIPTION": "Desktop builds can include bundled libmpv and FFmpeg libraries for the experimental Embedded MPV player. Users do not need to install the MPV app separately; external MPV and VLC remain available as fallback players.",
         "COMMUNITY": "Project & community",
-        "COMMUNITY_DESCRIPTION": "Star the repository, read the blog or join the Telegram group for updates and help.",
-        "LINK_BLOG": "Blog",
+        "COMMUNITY_DESCRIPTION": "Star the repository or open an issue to report a problem.",
         "LINK_GITHUB_DESCRIPTION": "Star the repo, open an issue or contribute",
-        "LINK_BLOG_DESCRIPTION": "Release notes, tips and project updates",
-        "LINK_TELEGRAM_DESCRIPTION": "Announcements, community and support",
-        "SUPPORT_TITLE": "Support the project",
-        "SUPPORT_DESCRIPTION": "IPTVnator is free and open source, built in the open. If it is part of your daily routine, a small contribution helps keep the project alive and shape what comes next — thank you.",
-        "SUPPORT_SPONSORS_HINT": "Recurring or one-time",
-        "SUPPORT_KOFI_HINT": "Buy me a coffee",
-        "EPG_NOTE": "Currently EPG is available only in the electron-based version of IPTVnator.",
+        "EPG_NOTE": "Currently EPG is available only in the electron-based version of D7my-TV.",
         "EPG_NOTE_URL_TEXT": "Check it here",
         "IMPORT_EXPORT_DATA": "Import/export playlist backups",
         "IMPORT_EXPORT_DATA_DESCRIPTION": "Export or restore playlist backups including M3U snapshots, Xtream/Stalker connection metadata, user state, and EPG source URLs.",
@@ -603,10 +596,10 @@
         "PLAYLISTS_REMOVED": "All playlists and playlist data were removed.",
         "MPV_PLAYER_PATH_LABEL": "mpv path",
         "MPV_PLAYER_PATH_DESCRIPTION": "Set the path to MPV. On macOS you can use the MPV app bundle, such as /Applications/mpv.app, or the executable path.",
-        "MPV_COMPATIBLE_PLAYER_TIP": "IINA can be launched as an MPV-compatible player on macOS, but use its executable path, such as /Applications/IINA.app/Contents/MacOS/iina-cli or /Applications/IINA.app/Contents/MacOS/IINA. IPTVnator controls, position polling, and reuse-instance behavior are guaranteed only for MPV IPC.",
+        "MPV_COMPATIBLE_PLAYER_TIP": "IINA can be launched as an MPV-compatible player on macOS, but use its executable path, such as /Applications/IINA.app/Contents/MacOS/iina-cli or /Applications/IINA.app/Contents/MacOS/IINA. D7my-TV controls, position polling, and reuse-instance behavior are guaranteed only for MPV IPC.",
         "MPV_PLAYER_PATH": "mpv player path",
         "MPV_PLAYER_ARGUMENTS_LABEL": "mpv command-line arguments",
-        "MPV_PLAYER_ARGUMENTS_DESCRIPTION": "Optional arguments passed to mpv when IPTVnator starts a new external player process.",
+        "MPV_PLAYER_ARGUMENTS_DESCRIPTION": "Optional arguments passed to mpv when D7my-TV starts a new external player process.",
         "MPV_PLAYER_ARGUMENTS": "mpv arguments",
         "MPV_REUSE_INSTANCE_LABEL": "Reuse MPV instance",
         "MPV_REUSE_INSTANCE_DESCRIPTION": "When enabled, the same MPV window will be reused for playing different streams. When disabled, each stream opens in a new MPV window.",
@@ -618,9 +611,9 @@
         "VLC_PLAYER_PATH_DESCRIPTION": "Set the path to VLC. On macOS you can use the VLC app bundle, such as /Applications/VLC.app, or the executable path.",
         "VLC_PLAYER_PATH": "VLC player path",
         "VLC_PLAYER_ARGUMENTS_LABEL": "VLC command-line arguments",
-        "VLC_PLAYER_ARGUMENTS_DESCRIPTION": "Optional arguments passed to VLC when IPTVnator starts a new external player process.",
+        "VLC_PLAYER_ARGUMENTS_DESCRIPTION": "Optional arguments passed to VLC when D7my-TV starts a new external player process.",
         "VLC_PLAYER_ARGUMENTS": "VLC arguments",
-        "EXTERNAL_PLAYER_ARGUMENTS_HINT": "Use one argument per line. These values are applied before stream-specific IPTVnator options.",
+        "EXTERNAL_PLAYER_ARGUMENTS_HINT": "Use one argument per line. These values are applied before stream-specific D7my-TV options.",
         "VLC_REUSE_INSTANCE_LABEL": "Reuse VLC instance",
         "VLC_REUSE_INSTANCE_DESCRIPTION": "When enabled, the same VLC window will be reused for playing different streams. When disabled, each stream opens in a new VLC window.",
         "REMOTE_CONTROL": "Remote control",
@@ -749,12 +742,12 @@
         "MIGRATION_FAILED": "Moving failed. Your playlists are still in this browser; try again from Settings → Server.",
         "MIGRATION_RELOAD": "Reload",
         "SIGN_IN_TITLE": "Access token required",
-        "SIGN_IN_DESCRIPTION": "This IPTVnator server asks for an access token before it shows your playlists.",
+        "SIGN_IN_DESCRIPTION": "This D7my-TV server asks for an access token before it shows your playlists.",
         "SIGN_IN_TOKEN_LABEL": "Access token",
         "SIGN_IN_HINT": "Find it in the server's IPTVNATOR_ACCESS_TOKEN setting.",
         "SIGN_IN_REJECTED": "Token rejected. Check it and try again.",
         "SIGN_IN_UNREACHABLE": "Cannot reach the server. Check the connection and try again.",
-        "SIGN_IN_STORAGE": "This browser does not let IPTVnator keep the token. Allow site data for this page and try again.",
+        "SIGN_IN_STORAGE": "This browser does not let D7my-TV keep the token. Allow site data for this page and try again.",
         "SIGN_IN_CONTINUE": "Continue",
         "STATUS_ONLINE": "Server connected",
         "STATUS_OFFLINE": "Server unavailable",
@@ -1322,10 +1315,10 @@
         "RETRY": "Retry",
         "ALLOW_PRIVATE_SOURCE": "Allow source",
         "ALLOW_PRIVATE_SOURCE_TITLE": "Allow private-network EPG source?",
-        "ALLOW_PRIVATE_SOURCE_WARNING": "Only allow this if you trust the EPG source. IPTVnator will let this exact EPG URL connect to private or local network addresses.",
+        "ALLOW_PRIVATE_SOURCE_WARNING": "Only allow this if you trust the EPG source. D7my-TV will let this exact EPG URL connect to private or local network addresses.",
         "TRUST_TLS_HOST": "Trust host",
         "TRUST_TLS_HOST_TITLE": "Trust invalid certificate?",
-        "TRUST_TLS_HOST_WARNING": "Only continue if you trust this host. IPTVnator will allow invalid TLS certificates for this host, but other hosts still require valid certificates.",
+        "TRUST_TLS_HOST_WARNING": "Only continue if you trust this host. D7my-TV will allow invalid TLS certificates for this host, but other hosts still require valid certificates.",
         "CURRENT_PROGRAM": "Current program",
         "ARCHIVE_PLAYBACK": "Archive playback",
         "COLLAPSE_PANEL": "Collapse EPG panel",
@@ -1444,7 +1437,6 @@
     "NO": "No",
     "MENU": {
         "OPEN": "Open menu",
-        "SUPPORT_ARIA": "Support IPTVnator on GitHub",
         "SETTINGS_ARIA": "Open settings",
         "BUG_REPORT": "Report a bug",
         "WHAT_IS_NEW": "What is new",
@@ -1453,12 +1445,10 @@
         "SUPPORT_PROJECT": "Support project"
     },
     "ABOUT": {
-        "TITLE": "About IPTVnator",
+        "TITLE": "About D7my-TV",
         "DESCRIPTION": "Cross-platform IPTV player application with multiple features, such as support of m3u and m3u8 playlists, favorites, TV guide, TV archive/catchup and more.",
         "VERSION": "Version",
-        "GITHUB_TOOLTIP": "IPTVnator repository on GitHub",
-        "BUY_ME_A_COFFEE_TOOLTIP": "Buy me a coffee",
-        "TWITTER_TOOLTIP": "Share on Twitter"
+        "GITHUB_TOOLTIP": "D7my-TV repository on GitHub"
     },
     "UPDATE_AVAILABLE": "Update available",
     "PWA_UPDATE_READY": "An update is ready. Reloading stops playback.",
@@ -1913,7 +1903,7 @@
         "STOP_RECORDING": "Stop recording",
         "REMOVE_RECORDING_DIALOG": {
             "TITLE": "Remove recording from manager?",
-            "MESSAGE": "This removes the entry from IPTVnator. The recorded file remains on disk."
+            "MESSAGE": "This removes the entry from D7my-TV. The recorded file remains on disk."
         },
         "RECORDING_DETAIL": {
             "PROGRAMS": "Recorded programs",
@@ -1924,7 +1914,7 @@
         "REMOVE_FROM_MANAGER": "Remove from manager",
         "REMOVE_COMPLETED_DIALOG": {
             "TITLE": "Remove from manager?",
-            "MESSAGE": "This removes the entry from IPTVnator. The downloaded media file remains on disk."
+            "MESSAGE": "This removes the entry from D7my-TV. The downloaded media file remains on disk."
         },
         "REMOVE_PARTIAL_DIALOG": {
             "TITLE": "Remove partial download?",
@@ -2012,8 +2002,8 @@
             "TOGGLE_MUTE": "Failed to toggle mute",
             "STATUS": "Failed to fetch remote status"
         },
-        "HEADER": "IPTVnator Remote Control",
-        "FOOTER": "IPTVnator Remote Control"
+        "HEADER": "D7my-TV Remote Control",
+        "FOOTER": "D7my-TV Remote Control"
     },
     "WORKSPACE": {
         "FAVORITES_ONLY": "Favorites only",
@@ -2335,7 +2325,7 @@
         },
         "SHORTCUTS": {
             "TITLE": "Keyboard shortcuts",
-            "SUBTITLE": "Workspace, navigation, playback, and dialog shortcuts available in IPTVnator.",
+            "SUBTITLE": "Workspace, navigation, playback, and dialog shortcuts available in D7my-TV.",
             "OPEN_TOOLTIP": "Keyboard shortcuts (?)",
             "OPEN_ARIA": "Open keyboard shortcuts",
             "PLATFORM": {
@@ -2547,8 +2537,8 @@
     "SOURCE_SYNC": {
         "CONNECTION_RECOVERY": "Saved server connection unavailable. Check browser storage or reconnect in Server settings.",
         "TITLE": "Server",
-        "DESCRIPTION": "Connect to IPTVnator running in Docker on your home server or NAS to share sources between devices.",
-        "URL": "IPTVnator server address",
+        "DESCRIPTION": "Connect to D7my-TV running in Docker on your home server or NAS to share sources between devices.",
+        "URL": "D7my-TV server address",
         "TOKEN": "Access token (optional)",
         "TOKEN_HINT": "Use the IPTVNATOR_ACCESS_TOKEN set on your server, or ask its owner. Leave empty if no token is configured.",
         "RESTART_HINT": "Switching server libraries or disconnecting reloads the app. Your original local library is kept.",
@@ -2575,9 +2565,9 @@
         "STATE_locked": "Enter a valid access token for this server.",
         "STATE_conflict": "The shared source changed on another device. Refresh and reapply your edit.",
         "SETUP_GUIDE": "How to set up your server",
-        "URL_HINT": "Use the address where you open IPTVnator in your browser ({{example}}). The /api path is added automatically.",
+        "URL_HINT": "Use the address where you open D7my-TV in your browser ({{example}}). The /api path is added automatically.",
         "URL_INVALID": "Enter a full http:// or https:// address without login details, query parameters or # fragments.",
-        "CONNECTION_FAILED": "Could not connect. Check the server address, that IPTVnator is running, and access from this device, then try again."
+        "CONNECTION_FAILED": "Could not connect. Check the server address, that D7my-TV is running, and access from this device, then try again."
     },
     "ACTIVITY_SYNC": {
         "TITLE": "Viewing activity synchronization",

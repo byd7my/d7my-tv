@@ -11,7 +11,6 @@ on:
             - '.agents/**'
             - '.codex/**'
             - '.claude/**'
-            - 'apps/website/**'
     pull_request:
         branches:
             - master
@@ -22,7 +21,6 @@ on:
             - '.agents/**'
             - '.codex/**'
             - '.claude/**'
-            - 'apps/website/**'
     workflow_dispatch:
 
 # Superseded PR pushes cancel their still-running E2E matrix (the most

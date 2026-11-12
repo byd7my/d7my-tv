@@ -9,7 +9,7 @@ const SNAP_GRAPHICS_RUNTIME_DIRECTORY = 'graphics';
 const SNAP_X64_LIBRARY_TRIPLET = 'x86_64-linux-gnu';
 const TRUSTED_SNAP_BASE_LIBRARY_ROOT = '/usr/lib/x86_64-linux-gnu';
 const TRUSTED_SNAP_HELPER_PATH = '/usr/sbin:/usr/bin:/sbin:/bin';
-const TRUSTED_FLATPAK_APP_ID = 'com.fourgray.iptvnator';
+const TRUSTED_FLATPAK_APP_ID = 'com.d7my.tv';
 const TRUSTED_FLATPAK_APP_ROOT = '/app';
 const TRUSTED_FLATPAK_EGL_EXTERNAL_PLATFORM_CONFIG_DIRS = [
     '/etc/egl/egl_external_platform.d',

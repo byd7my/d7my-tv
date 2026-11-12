@@ -2,7 +2,7 @@
 <widget
     xmlns="http://www.w3.org/ns/widgets"
     xmlns:tizen="http://tizen.org/ns/widgets"
-    id="https://github.com/4gray/iptvnator/tv"
+    id="https://github.com/byd7my/d7my-tv/tv"
     version="__TV_VERSION__"
     viewmodes="maximized"
 >

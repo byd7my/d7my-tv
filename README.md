@@ -1,43 +1,30 @@
-# IPTVnator
+# D7my-TV
 
 <p align="center">
-  <img src="./apps/web/src/assets/icons/favicon.256x256.png" width="96" height="96" alt="IPTVnator icon" />
+  <img src="./apps/web/src/assets/icons/favicon.256x256.png" width="96" height="96" alt="D7my-TV icon" />
 </p>
 
-**A free, open-source IPTV player for macOS, Windows, Linux and the browser.**
+**A free, open-source IPTV player for Windows with a built-in MPV engine.**
 Bring your M3U playlists, Xtream Codes account or Stalker portal to watch live
 TV, browse movies and series, and pick up where you left off.
 
-**[Download](https://4gray.github.io/iptvnator/download/)** ·
-[Website](https://4gray.github.io/iptvnator/) ·
-[Getting started](https://4gray.github.io/iptvnator/guides/) ·
+[Releases](https://github.com/byd7my/d7my-tv/releases) ·
+[Issues](https://github.com/byd7my/d7my-tv/issues) ·
 [Gallery](docs/screenshots.md)
 
-[![Release](https://img.shields.io/github/v/release/4gray/iptvnator)](https://github.com/4gray/iptvnator/releases)
-[![CI](https://img.shields.io/github/actions/workflow/status/4gray/iptvnator/ci.yml?branch=master&label=CI)](https://github.com/4gray/iptvnator/actions/workflows/ci.yml)
-[![Downloads](https://img.shields.io/github/downloads/4gray/iptvnator/total)](https://github.com/4gray/iptvnator/releases)
-
-![IPTVnator dashboard with continue watching and live favorites in light and dark themes](./apps/website/public/screenshots/dashboard-themes.webp)
-
 > [!IMPORTANT]
-> IPTVnator is a **player**: it does not provide or sell subscriptions, channels,
-> playlists or other media. Screenshots show demonstration content. Download
-> only from the [official website](https://4gray.github.io/iptvnator/) or
-> [GitHub Releases](https://github.com/4gray/iptvnator/releases).
-> [Learn about unofficial websites](https://4gray.github.io/iptvnator/blog/beware-unofficial-iptvnator-websites/).
+> D7my-TV is a **player**: it does not provide or sell subscriptions, channels,
+> playlists or other media. Download only from
+> [GitHub Releases](https://github.com/byd7my/d7my-tv/releases).
+
+D7my-TV is based on [IPTVnator](https://github.com/4gray/iptvnator) (MIT
+licensed) and is an independent project.
 
 ## Download
 
-Get the latest stable desktop release from the
-[download page](https://4gray.github.io/iptvnator/download/) or
-[GitHub Releases](https://github.com/4gray/iptvnator/releases).
-
-| macOS | Windows | Linux |
-| --- | --- | --- |
-| [Apple Silicon / Intel](https://4gray.github.io/iptvnator/download/macos/) | [Installer / portable](https://4gray.github.io/iptvnator/download/windows/) | [AppImage, deb, rpm and more](https://4gray.github.io/iptvnator/download/linux/) |
-
-For package-manager commands, experimental Linux Embedded MPV support and
-nightly builds, see [Installation](docs/installation.md).
+Get the latest build from
+[GitHub Releases](https://github.com/byd7my/d7my-tv/releases). For other
+install options and nightly builds, see [Installation](docs/installation.md).
 
 ## Features
 
@@ -47,8 +34,8 @@ nightly builds, see [Installation](docs/installation.md).
   EPG and catch-up on desktop.
 - **Movies and series:** posters, seasons, watch history and resume positions;
   optional TMDB metadata with your own API key.
-- **Playback options:** built-in web players, external MPV/VLC/IINA and
-  experimental Embedded MPV on desktop.
+- **Playback options:** the built-in MPV engine with live stream info and audio sync
+  controls on desktop.
 - **Watch later:** desktop downloads for movies and episodes, plus
   continue-watching and favorites across sources.
 - **Make it yours:** light and dark themes, 21 language options, keyboard
@@ -82,14 +69,14 @@ reverse proxies, playback troubleshooting and platform limits.
 ### LG webOS and Samsung Tizen
 
 LG webOS and Samsung Tizen share a dedicated, experimental TV client for M3U,
-Xtream Codes and Stalker / Ministra sources. It requires a compatible IPTVnator
+Xtream Codes and Stalker / Ministra sources. It requires a compatible D7my-TV
 web backend. Build and install the package for your TV in Developer Mode.
 
 - [LG webOS installation](apps/tv/README.md#installation)
 - [Samsung Tizen installation and signing](apps/tv/tizen/README.md)
 
 Add sources from your phone by scanning a QR code, or connect the TV to your
-self-hosted IPTVnator source library. Favorites, history and resume positions
+self-hosted D7my-TV source library. Favorites, history and resume positions
 currently stay on the TV.
 
 See the [TV README](apps/tv/README.md) for compatibility, phone setup, source
@@ -106,42 +93,18 @@ The `Build TV shell APK` workflow can publish a GitHub release, marked as a
 pre-release by default. For APK builds, installation and remote controls, see
 the [Android shell guide](./tv-shell/README.md).
 
-### Enigma2 receivers
-
-Dreaminator is a standalone IPTV plugin and browser-based playlist manager for
-Enigma2 receivers. Organize channels in a browser and watch with the receiver's
-remote. Tested on the Dreambox DM520 and Vu+ Uno 4K SE.
-
-[Dreaminator on GitHub](https://github.com/4gray/dreaminator) ·
-[Dreaminator on the IPTVnator blog](https://4gray.github.io/iptvnator/blog/dreaminator-enigma2/)
-
 ## Help and development
 
-- [User guides](https://4gray.github.io/iptvnator/guides/) — sources, EPG,
-  playback, downloads and updates.
-- [Troubleshooting](docs/troubleshooting.md) — macOS and Linux startup fixes.
+- [Troubleshooting](docs/troubleshooting.md) — startup fixes.
 - [Build and develop](docs/development/README.md) — Node/pnpm setup, local
   Electron/PWA runs and diagnostics.
 - [Developer and agent documentation](docs/maintenance/agent-context-map.md) —
   subsystem contracts; [AGENTS.md](AGENTS.md) and the
   [agent workflow](docs/development/agent-workflow.md) cover contribution rules.
-- [Report a bug](https://github.com/4gray/iptvnator/issues) or join
-  [Telegram](https://t.me/iptvnator) / [Bluesky](https://bsky.app/profile/iptvnator.bsky.social).
+- [Report a bug](https://github.com/byd7my/d7my-tv/issues).
 
-## Support the project
+## License
 
-Support development through [GitHub Sponsors](https://github.com/sponsors/4gray),
-[Ko-fi](https://ko-fi.com/4gray), or a star on GitHub.
-
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-
-[![All Contributors](https://img.shields.io/badge/all_contributors-13-orange.svg?style=flat-square)](https://github.com/4gray/iptvnator/graphs/contributors)
-
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
-
-## License and trademark
-
-The source code is [MIT licensed](LICENSE.md). The IPTVnator name and logo are
-unregistered trademarks of the project owner and are not covered by that
-license. Forks and redistributions, including app-store submissions, must use
-a different name and their own icon. See [TRADEMARK.md](TRADEMARK.md).
+The source code is [MIT licensed](LICENSE.md). Copyright notices of the
+original IPTVnator project are kept as the license requires. The IPTVnator name
+and logo belong to their owner; see [TRADEMARK.md](TRADEMARK.md).

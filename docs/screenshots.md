@@ -4,7 +4,7 @@
 
 IPTVnator is a player and does not supply channels or media. Images show demonstration content. Screenshots can include features from the development version.
 
-[Interactive website gallery](https://4gray.github.io/iptvnator/#screenshots) · [Full feature list](features.md)
+[Full feature list](features.md)
 
 ## Dashboard in light and dark themes
 

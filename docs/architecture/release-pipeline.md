@@ -332,7 +332,7 @@ lookup failure, a `test-<branch>` draft — is left alone.
 
 Every push to `master` of `4gray/iptvnator` is also a nightly. The same
 `build-and-make.yaml` run that builds the matrix publishes its artifacts as a
-**prerelease of `4gray/iptvnator-nightly`** instead of the rolling
+**prerelease of `byd7my/d7my-tv-nightly`** instead of the rolling
 `test-master` draft: a draft is invisible to anyone without write access and
 to electron-updater, while a published prerelease is what the desktop app's
 **Nightly** update channel installs. PR builds keep their `test-pr-<n>`
@@ -376,7 +376,7 @@ frontend and backend builds and before electron-builder reads it
 **Publication** (steps at the end of the `create-release` job):
 
 1. `NIGHTLY_RELEASE_TOKEN` — a fine-grained PAT with *Contents: read/write*
-   on `4gray/iptvnator-nightly` — is required. Without it the run only warns;
+   on `byd7my/d7my-tv-nightly` — is required. Without it the run only warns;
    `GITHUB_TOKEN` cannot write to another repository. The nightly repository
    needs one commit on its default branch, because `gh release create`
    creates the release tag there.

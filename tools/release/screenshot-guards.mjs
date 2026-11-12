@@ -344,7 +344,7 @@ export function isAllowedRequestUrl(url) {
  */
 export const STUB_URL_PREFIXES = [
     // Settings "release notes" / update check.
-    'https://api.github.com/repos/4gray/iptvnator/releases',
+    'https://api.github.com/repos/byd7my/d7my-tv/releases',
 ];
 
 export function stubbedResponseFor(url) {

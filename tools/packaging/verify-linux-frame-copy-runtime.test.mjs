@@ -428,7 +428,7 @@ test('extracts every payload format with argument arrays and no shell', () => {
         if (command === 'ostree' && args[0] === 'refs') {
             return {
                 status: 0,
-                stdout: 'app/com.fourgray.iptvnator/x86_64/stable\n',
+                stdout: 'app/com.d7my.tv/x86_64/stable\n',
                 stderr: '',
             };
         }
@@ -599,7 +599,7 @@ test('initializes a user-checkout OSTree repository before importing Flatpak bun
                 if (command === 'ostree' && args[0] === 'refs') {
                     return {
                         status: 0,
-                        stdout: 'app/com.fourgray.iptvnator/x86_64/stable\n',
+                        stdout: 'app/com.d7my.tv/x86_64/stable\n',
                         stderr: '',
                     };
                 }
@@ -1824,7 +1824,7 @@ test('verifies an outer Flatpak artifact with an unwrapped Electron ELF', () => 
                         destination,
                         'files',
                         'lib',
-                        'com.fourgray.iptvnator'
+                        'com.d7my.tv'
                     );
                     const resourceDir = path.join(appDir, 'resources');
                     const nativeDir = path.join(

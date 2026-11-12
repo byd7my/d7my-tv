@@ -1,10 +1,8 @@
 name: Build and Make Electron App
 
 # Docs-only changes never affect the packaged app, so they skip the build
-# matrix. apps/website/** is intentionally NOT ignored: the Linux build job
-# builds the website to verify AppStream screenshot assets. Tag pushes are
-# unaffected — GitHub does not evaluate paths filters for tags, so v* release
-# builds always run.
+# matrix. Tag pushes are unaffected — GitHub does not evaluate paths filters
+# for tags, so v* release builds always run.
 #
 # Known accepted edge case: if a PR built a test-pr-<n> draft and later
 # reverts its code changes so the remaining diff is docs-only, new pushes
@@ -19,7 +17,7 @@ name: Build and Make Electron App
 # (tools/release/nightly-version.mjs), every build job writes it into
 # package.json so electron-updater treats the build as newer than the
 # released version, and the release job publishes the artifacts as a
-# prerelease of 4gray/iptvnator-nightly instead of the rolling test-master
+# prerelease of byd7my/d7my-tv-nightly instead of the rolling test-master
 # draft. Contract: docs/architecture/release-pipeline.md ("Nightly channel").
 on:
     push:
@@ -803,24 +801,7 @@ jobs:
 
             - name: Validate AppStream metadata
               if: matrix.os == 'linux'
-              run: appstreamcli validate --pedantic --no-net apps/electron-backend/linux/com.fourgray.iptvnator.metainfo.xml
-
-            - name: Build website
-              if: matrix.os == 'linux'
-              run: pnpm nx build website --skip-nx-cache
-
-            - name: Verify AppStream website assets
-              if: matrix.os == 'linux'
-              shell: bash
-              run: |
-                  set -euo pipefail
-
-                  for screenshot in player playlists epg settings; do
-                      if ! find dist/apps/website -path "*/appstream/${screenshot}.png" -print -quit | grep -q .; then
-                          echo "::error::Missing AppStream website asset for ${screenshot}.png"
-                          exit 1
-                      fi
-                  done
+              run: appstreamcli validate --pedantic --no-net apps/electron-backend/linux/com.d7my.tv.metainfo.xml
 
             - name: Override macOS arch in electron-builder.json
               if: matrix.os == 'macos'
@@ -1330,10 +1311,10 @@ jobs:
                           --artifact "${FLATPAK_BUNDLE}" --profile flatpak
                   flatpak install --user --noninteractive -y "${FLATPAK_BUNDLE}"
                   xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 \
-                      flatpak run --command=sh com.fourgray.iptvnator -c '
+                      flatpak run --command=sh com.d7my.tv -c '
                       set -euo pipefail
 
-                      test -f /app/share/metainfo/com.fourgray.iptvnator.metainfo.xml
+                      test -f /app/share/metainfo/com.d7my.tv.metainfo.xml
                       test -L /app/bin/iptvnator
 
                       LAUNCHER_PATH="$(readlink -f /app/bin/iptvnator)"
@@ -1364,7 +1345,7 @@ jobs:
                       xvfb-run -a dbus-run-session -- timeout --verbose -k 10 300 flatpak run \
                           --env=LIBGL_ALWAYS_SOFTWARE=1 \
                           --env=ELECTRON_ENABLE_LOGGING=1 \
-                          com.fourgray.iptvnator \
+                          com.d7my.tv \
                           --embedded-mpv-runtime-probe 2>&1
                   )"
                   PROBE_STATUS=$?
@@ -1581,7 +1562,7 @@ jobs:
             # Master pushes publish to the nightly repository (steps at the
             # end of this job) instead of the rolling draft.
             NIGHTLY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository == '4gray/iptvnator' }}
-            NIGHTLY_REPOSITORY: 4gray/iptvnator-nightly
+            NIGHTLY_REPOSITORY: byd7my/d7my-tv-nightly
             NIGHTLY_KEEP_RELEASES: '20'
 
         steps:

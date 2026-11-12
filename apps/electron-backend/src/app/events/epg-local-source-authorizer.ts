@@ -81,7 +81,7 @@ export async function promptForLocalEpgSource(
         type: 'question',
         title: 'Allow local EPG file?',
         message: 'Read this file as an EPG source?',
-        detail: `${filePath}\n\nIPTVnator will read the XMLTV guide data in this file. Only allow files you added yourself.`,
+        detail: `${filePath}\n\nD7my-TV will read the XMLTV guide data in this file. Only allow files you added yourself.`,
         buttons: ['Allow', 'Cancel'],
         defaultId: 0,
         cancelId: 1,

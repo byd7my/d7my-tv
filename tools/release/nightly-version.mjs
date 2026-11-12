@@ -1,7 +1,7 @@
 /**
  * Nightly build version for master merges.
  *
- * Every push to master publishes a prerelease to `4gray/iptvnator-nightly`
+ * Every push to master publishes a prerelease to `byd7my/d7my-tv-nightly`
  * that the desktop updater's nightly channel can install. electron-updater
  * only offers a version that is semver-greater than the running one, and the
  * released version in `package.json` is what stable users run, so a nightly

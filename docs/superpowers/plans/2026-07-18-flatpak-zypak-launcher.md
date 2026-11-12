@@ -558,7 +558,7 @@ assert.deepEqual(
                 destination,
                 'files',
                 'lib',
-                'com.fourgray.iptvnator'
+                'com.d7my.tv'
             );
             const resourceDir = path.join(appDir, 'resources');
             const nativeDir = path.join(
@@ -615,7 +615,7 @@ diagnostics:
 PROBE_OUTPUT="$(
     xvfb-run -a dbus-run-session -- flatpak run \
         --env=LIBGL_ALWAYS_SOFTWARE=1 \
-        com.fourgray.iptvnator \
+        com.d7my.tv \
         --embedded-mpv-runtime-probe 2>&1
 )"
 printf '%s\n' "${PROBE_OUTPUT}"

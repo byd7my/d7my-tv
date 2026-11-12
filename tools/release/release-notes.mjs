@@ -14,7 +14,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
-export const REPO_URL = 'https://github.com/4gray/iptvnator';
+export const REPO_URL = 'https://github.com/byd7my/d7my-tv';
 
 /** Render order. `internal` is last and is excluded from user-facing output. */
 export const NOTE_TYPES = ['breaking', 'feature', 'fix', 'perf', 'internal'];

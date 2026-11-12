@@ -57,7 +57,7 @@ export function requiredAssetRules(version) {
         }
     }
 
-    const windowsSetup = `iptvnator-${version}-windows-x64-setup.exe`;
+    const windowsSetup = `d7my-tv-${version}-windows-x64-setup.exe`;
 
     rules.push(exact('Windows', windowsSetup));
     rules.push(exact('Windows blockmap', `${windowsSetup}.blockmap`));

@@ -23,10 +23,8 @@ declare const __non_webpack_require__: NodeJS.Require;
 publishCompileCacheOutcome(
     enableStartupCompileCache({
         module: nodeModule as CompileCacheModule,
-        // Read before main.ts calls app.setName(), deliberately: renaming
-        // here would move every path derived from the app name, including
-        // the settings store's, for existing Linux profiles. On macOS and
-        // Windows the directory is the same either way.
+        // Read before main.ts calls app.setName(), deliberately: the packaged
+        // product name and that call agree, so the directory is the same.
         userDataPath: () => app.getPath('userData'),
     })
 );

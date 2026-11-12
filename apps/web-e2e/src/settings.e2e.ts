@@ -312,7 +312,7 @@ test.describe('Settings', () => {
     }) => {
         // Offline, or rate-limited by api.github.com: the release check never
         // answers, yet the installed version is known locally.
-        await page.route('**/repos/4gray/iptvnator/releases*', (route) =>
+        await page.route('**/repos/byd7my/d7my-tv/releases*', (route) =>
             route.abort()
         );
         await openSettings(page);

@@ -346,7 +346,7 @@ then uses the default system loader without a private path. Bundled profiles
 put the validated packaged `native/lib` first. AppImage and Flatpak resolve the
 declared external graphics/audio interfaces through their normal host or
 sandbox loader.
-For the exact `com.fourgray.iptvnator` Flatpak payload under `/app`, the helper
+For the exact `com.d7my.tv` Flatpak payload under `/app`, the helper
 reconstructs Freedesktop Platform 24.08's immutable
 `__EGL_EXTERNAL_PLATFORM_CONFIG_DIRS` value:
 `/etc/egl/egl_external_platform.d:/usr/lib/x86_64-linux-gnu/GL/egl/egl_external_platform.d:/usr/share/egl/egl_external_platform.d`.

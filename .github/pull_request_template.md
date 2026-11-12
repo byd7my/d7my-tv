@@ -11,7 +11,7 @@ Keep the description short — what changed and why is enough.
 
 Changes a user could notice need one file in `.changes/` describing the change
 in plain language — see
-[`.changes/README.md`](https://github.com/4gray/iptvnator/blob/master/.changes/README.md).
+[`.changes/README.md`](https://github.com/byd7my/d7my-tv/blob/main/.changes/README.md).
 It becomes the release notes and the website post, so it is worth a minute.
 
 - [ ] Added a note under `.changes/`

@@ -335,7 +335,7 @@ describe('network policy handed to the main process', () => {
         assert.ok(policy.hosts.includes('127.0.0.1'));
         assert.ok(policy.protocols.includes('http:'));
         assert.deepEqual(policy.stubPrefixes, [
-            'https://api.github.com/repos/4gray/iptvnator/releases',
+            'https://api.github.com/repos/byd7my/d7my-tv/releases',
         ]);
     });
 
@@ -459,7 +459,7 @@ describe('G3 — network gate', () => {
 describe('G3 — local stubs', () => {
     it('stubs the GitHub releases update check with an empty payload', () => {
         const stub = stubbedResponseFor(
-            'https://api.github.com/repos/4gray/iptvnator/releases?per_page=100'
+            'https://api.github.com/repos/byd7my/d7my-tv/releases?per_page=100'
         );
 
         assert.deepEqual(stub, { body: '[]', contentType: 'application/json' });
@@ -467,7 +467,7 @@ describe('G3 — local stubs', () => {
 
     it('stubs nothing else', () => {
         for (const url of [
-            'https://api.github.com/repos/4gray/iptvnator/issues',
+            'https://api.github.com/repos/byd7my/d7my-tv/issues',
             'https://api.github.com/repos/other/repo/releases',
             'https://api.themoviedb.org/3/trending/all/week',
             'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
@@ -726,7 +726,7 @@ describe('external request verdict', () => {
         const violations = externalRequestViolations([
             'http://localhost:3211/player_api.php',
             'file:///dist/apps/web/index.html',
-            'https://api.github.com/repos/4gray/iptvnator/releases',
+            'https://api.github.com/repos/byd7my/d7my-tv/releases',
             'https://image.tmdb.org/t/p/w500/a.jpg',
             'https://image.tmdb.org/t/p/w500/a.jpg',
             'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',

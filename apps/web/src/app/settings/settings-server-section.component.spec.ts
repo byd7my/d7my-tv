@@ -288,7 +288,7 @@ describe('source server settings', () => {
                 '[data-test-id="source-server-help"]'
             ).href
         ).toBe(
-            'https://github.com/4gray/iptvnator/blob/master/docker/README.md#connect-your-clients'
+            'https://github.com/byd7my/d7my-tv/blob/main/docker/README.md#connect-your-clients'
         );
     });
 

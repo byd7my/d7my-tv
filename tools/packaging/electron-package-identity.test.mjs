@@ -151,9 +151,9 @@ function writeWindowsHelperFixture(helperPath, importedDllName) {
 }
 
 test('Linux package identity does not expose the internal Electron backend project name', () => {
-    assert.equal(electronBuilderConfig.productName, 'IPTVnator');
+    assert.equal(electronBuilderConfig.productName, 'D7my-TV');
     assert.equal(electronBuilderConfig.extraMetadata?.name, 'iptvnator');
-    assert.equal(electronBuilderConfig.extraMetadata?.productName, 'IPTVnator');
+    assert.equal(electronBuilderConfig.extraMetadata?.productName, 'D7my-TV');
     assert.equal(electronBuilderConfig.linux?.executableName, 'iptvnator');
     assert.equal(electronBuilderConfig.extraMetadata?.desktopName, 'iptvnator');
     assert.ok(
@@ -211,15 +211,15 @@ test('AppImage desktop metadata supports AppManager without changing other Linux
                     ];
                 })
         );
-        assert.equal(fields['X-AppImage-Name'], 'IPTVnator');
+        assert.equal(fields['X-AppImage-Name'], 'D7my-TV');
         assert.equal(fields['X-AppImage-Version'], version);
         assert.equal(
             fields['X-AppImage-Homepage'],
-            'https://github.com/4gray/iptvnator'
+            'https://github.com/byd7my/d7my-tv'
         );
         assert.equal(
             fields['X-AppImage-UpdateURL'],
-            'https://github.com/4gray/iptvnator'
+            'https://github.com/byd7my/d7my-tv'
         );
         assert.equal(fields.StartupWMClass, 'iptvnator');
         assert.equal(fields.Exec, 'AppRun --ozone-platform=x11 %U');
@@ -240,7 +240,7 @@ test('AppImage desktop metadata supports AppManager without changing other Linux
 });
 
 test('playlist file associations are registered with the operating system', () => {
-    // Without these the OS never offers IPTVnator as a handler, so every
+    // Without these the OS never offers D7my-TV as a handler, so every
     // runtime path for an OS-supplied playlist is unreachable by double-click.
     assert.deepEqual(electronBuilderConfig.fileAssociations, [
         {

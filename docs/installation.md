@@ -2,15 +2,14 @@
 
 [Back to README](../README.md)
 
-Download the latest version of the application for macOS, Windows, and Linux from the [release page](https://github.com/4gray/iptvnator/releases).
+Download the latest version of the application for Windows from the [release page](https://github.com/byd7my/d7my-tv/releases).
 
 ## Nightly builds
 
 Every merge into `master` is published as a prerelease in
-[4gray/iptvnator-nightly](https://github.com/4gray/iptvnator-nightly). The
+[byd7my/d7my-tv-nightly](https://github.com/byd7my/d7my-tv-nightly). The
 desktop app can follow them: **Settings → About → Update channel → Nightly**
-offers each new build through the built-in updater (macOS, Windows, and the
-Linux AppImage). Nightly builds are untested snapshots — they may break, and
+offers each new build through the built-in updater (Windows). Nightly builds are untested snapshots — they may break, and
 their database changes are permanent, so switching back to **Stable** keeps
 the installed nightly until the next stable release is newer. Back up your
 playlists first, and mention the version and commit shown in *About* when

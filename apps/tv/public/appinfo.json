@@ -1,10 +1,10 @@
 {
     "id": "com.iptvnator.tv.prototype",
     "version": "0.1.25",
-    "vendor": "IPTVnator",
+    "vendor": "D7my-TV",
     "type": "web",
     "main": "index.html",
-    "title": "IPTVnator TV",
+    "title": "D7my-TV",
     "icon": "icon.png",
     "largeIcon": "large-icon.png",
     "resolution": "1920x1080",

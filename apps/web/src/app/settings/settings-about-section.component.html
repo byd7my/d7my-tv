@@ -15,7 +15,7 @@
                 />
                 <div class="settings-hero__text">
                     <div class="settings-hero__title">
-                        <span>IPTVnator</span>
+                        <span>D7my-TV</span>
                         @if (updateStatusChip(); as chip) {
                             <span
                                 class="settings-chip"
@@ -327,7 +327,7 @@
         >
             <a
                 class="link-card link-card--github"
-                href="https://github.com/4gray/iptvnator"
+                href="https://github.com/byd7my/d7my-tv"
                 target="_blank"
                 rel="noreferrer noopener"
                 data-test-id="link-github"
@@ -345,81 +345,6 @@
                     <span>{{ 'SETTINGS.LINK_GITHUB_DESCRIPTION' | translate }}</span>
                 </span>
             </a>
-            <a
-                class="link-card link-card--blog"
-                href="https://4gray.github.io/iptvnator/"
-                target="_blank"
-                rel="noreferrer noopener"
-                data-test-id="link-blog"
-            >
-                <span class="link-card__glyph">
-                    <mat-icon>menu_book</mat-icon>
-                </span>
-                <span class="link-card__text">
-                    <strong>{{ 'SETTINGS.LINK_BLOG' | translate }}</strong>
-                    <span>{{ 'SETTINGS.LINK_BLOG_DESCRIPTION' | translate }}</span>
-                </span>
-            </a>
-            <a
-                class="link-card link-card--telegram"
-                href="https://t.me/iptvnator"
-                target="_blank"
-                rel="noreferrer noopener"
-                data-test-id="link-telegram"
-            >
-                <span class="link-card__glyph">
-                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path
-                            fill="currentColor"
-                            d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"
-                        />
-                    </svg>
-                </span>
-                <span class="link-card__text">
-                    <strong>Telegram</strong>
-                    <span>{{
-                        'SETTINGS.LINK_TELEGRAM_DESCRIPTION' | translate
-                    }}</span>
-                </span>
-            </a>
-        </div>
-    </section>
-
-    <section class="settings-section">
-        <div
-            class="settings-card support-card"
-            data-setting-id="support"
-            data-test-id="support-card"
-            tabindex="-1"
-        >
-            <div class="support-card__copy">
-                <h4>{{ 'SETTINGS.SUPPORT_TITLE' | translate }}</h4>
-                <p>{{ 'SETTINGS.SUPPORT_DESCRIPTION' | translate }}</p>
-            </div>
-            <div class="support-card__actions">
-                <a
-                    mat-flat-button
-                    class="support-btn support-btn--sponsors"
-                    href="https://github.com/sponsors/4gray"
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    data-test-id="support-sponsors"
-                >
-                    <mat-icon class="support-btn__glyph">favorite</mat-icon>
-                    GitHub Sponsors
-                </a>
-                <a
-                    mat-flat-button
-                    class="support-btn support-btn--kofi"
-                    href="https://ko-fi.com/4gray"
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    data-test-id="support-kofi"
-                >
-                    <mat-icon class="support-btn__glyph">local_cafe</mat-icon>
-                    Ko-fi
-                </a>
-            </div>
         </div>
     </section>
 

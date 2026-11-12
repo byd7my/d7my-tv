@@ -49,7 +49,7 @@ import { AppMaintenanceService } from './services/app-maintenance.service';
         </div>
         @if (info(); as current) {
             <p class="startup-version" data-test-id="startup-version">
-                IPTVnator {{ current.currentVersion }} ·
+                D7my-TV {{ current.currentVersion }} ·
                 {{
                     (current.installedChannel === 'nightly'
                         ? 'SETTINGS.APP_UPDATE_CHANNEL_NIGHTLY'

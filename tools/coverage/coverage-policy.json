@@ -327,12 +327,6 @@
                 "reason": "Playwright semantic TV workflows are validated separately from source percentage coverage."
             },
             {
-                "name": "website",
-                "root": "apps/website",
-                "validationCommand": "pnpm nx test website",
-                "reason": "Astro marketing site; build output and targeted static checks are more meaningful than source percentage coverage."
-            },
-            {
                 "name": "packaging",
                 "root": "tools/packaging",
                 "validationCommand": "pnpm nx test packaging",

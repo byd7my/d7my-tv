@@ -32,8 +32,8 @@ function completeAssets(version) {
         `iptvnator-${version}-mac-x64.dmg.blockmap`,
         `iptvnator-${version}-mac-x64.zip`,
         `iptvnator-${version}-mac-x64.zip.blockmap`,
-        `iptvnator-${version}-windows-x64-setup.exe`,
-        `iptvnator-${version}-windows-x64-setup.exe.blockmap`,
+        `d7my-tv-${version}-windows-x64-setup.exe`,
+        `d7my-tv-${version}-windows-x64-setup.exe.blockmap`,
         'latest-linux-arm.yml',
         'latest-linux-arm64.yml',
         'latest-linux.yml',
@@ -153,7 +153,7 @@ describe('parseVerifyArguments', () => {
         assert.deepEqual(parseVerifyArguments([]), {
             version: null,
             wait: true,
-            repo: '4gray/iptvnator',
+            repo: 'byd7my/d7my-tv',
         });
     });
 
@@ -189,7 +189,7 @@ describe('parseVerifyArguments', () => {
 });
 
 describe('runVerification', () => {
-    const options = { version: '0.24.0', wait: true, repo: '4gray/iptvnator' };
+    const options = { version: '0.24.0', wait: true, repo: 'byd7my/d7my-tv' };
 
     it('passes a complete draft and points at the manual next steps', async () => {
         const result = await runVerification(options, io());
@@ -286,7 +286,7 @@ describe('runVerification', () => {
             })
         );
 
-        assert.deepEqual(watched, [{ repo: '4gray/iptvnator', runId: 7 }]);
+        assert.deepEqual(watched, [{ repo: 'byd7my/d7my-tv', runId: 7 }]);
         assert.equal(result.exitCode, 0);
     });
 

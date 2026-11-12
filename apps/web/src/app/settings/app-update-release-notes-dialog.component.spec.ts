@@ -7,7 +7,7 @@ const releaseNotes = {
     bodyMarkdown: '## v0.23.0\n\n- Added **desktop updater**',
     hasNext: false,
     hasPrevious: true,
-    htmlUrl: 'https://github.com/4gray/iptvnator/releases/tag/v0.23.0',
+    htmlUrl: 'https://github.com/byd7my/d7my-tv/releases/tag/v0.23.0',
     publishedAt: '2026-06-28T00:00:00.000Z',
     releaseName: 'v0.23.0',
     tagName: 'v0.23.0',

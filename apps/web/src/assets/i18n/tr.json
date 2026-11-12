@@ -17,7 +17,7 @@
         "EMPTY": "Yapım bulunamadı",
         "SEARCH_HINT": "En az iki karakter girin",
         "EMPTY_HELP": "Özgün adı deneyin veya sağlayıcı verilerini koruyun.",
-        "AUTO_HELP": "Düzeltmenizi kaldırın ve IPTVnator’ın meta verileri yeniden otomatik bulmasını sağlayın.",
+        "AUTO_HELP": "Düzeltmenizi kaldırın ve D7my-TV’ın meta verileri yeniden otomatik bulmasını sağlayın.",
         "PROVIDER_HELP": "Bu kaynaktaki özgün görseli, açıklamayı ve bölüm bilgilerini koruyun. Bu yapım için TMDB ile zenginleştirme kapalı kalır.",
         "SEARCH_ERROR": "TMDB araması kullanılamıyor. Bağlantınızı ve API anahtarınızı kontrol edip yeniden deneyin.",
         "SAVE_ERROR": "Bu seçim uygulanamadı. Bağlantınızı ve tarayıcıdaki kullanılabilir depolama alanını kontrol edip yeniden deneyin.",
@@ -37,7 +37,7 @@
     "SHOW_LESS": "Daha az",
     "PLAYLISTS": "Oynatma Listeleri",
     "HOME": {
-        "TITLE": "IPTVnator",
+        "TITLE": "D7my-TV",
         "SUBTITLE": "Lütfen listeden bir oynatma listesi seçin veya yeni bir liste ekleyin",
         "TABS": {
             "RECENTLY_ADDED": "Son Eklenen Listeler",
@@ -53,7 +53,7 @@
             "UNTITLED_PLAYLIST": "Adsız oynatma listesi",
             "PLAYLIST_ACTIONS": "Oynatma listesi eylemleri",
             "ADD_FIRST": "Lütfen ilk oynatma listenizi ekleyin",
-            "WELCOME_TITLE": "IPTVnator'a Hoş Geldiniz",
+            "WELCOME_TITLE": "D7my-TV'a Hoş Geldiniz",
             "WELCOME_DESCRIPTION": "İlk oynatma listenizi ekleyerek yayın yolculuğunuza başlayın. Favori IPTV hizmetinize bağlanın ve canlı TV, film ve dizilerin keyfini çıkarın.",
             "ADD_YOUR_FIRST": "İlk Oynatma Listenizi Ekleyin",
             "FEATURE_M3U": "M3U/M3U8 Dosyaları",
@@ -228,7 +228,7 @@
             "ERROR_TLS_HOST_UNKNOWN": "Oynatma listesi ana bilgisayarı belirlenemedi. Lütfen el ile yeniden deneyin.",
             "TRUST_TLS_HOST": "Ana bilgisayara güven",
             "TRUST_TLS_HOST_TITLE": "Geçersiz sertifikaya güvenilsin mi?",
-            "TRUST_TLS_HOST_WARNING": "Yalnızca bu oynatma listesi ana bilgisayarına güveniyorsanız devam edin. IPTVnator bu ana bilgisayar için geçersiz TLS sertifikalarına izin verir, ancak diğer ana bilgisayarlar için geçerli sertifika gerekmeye devam eder."
+            "TRUST_TLS_HOST_WARNING": "Yalnızca bu oynatma listesi ana bilgisayarına güveniyorsanız devam edin. D7my-TV bu ana bilgisayar için geçersiz TLS sertifikalarına izin verir, ancak diğer ana bilgisayarlar için geçerli sertifika gerekmeye devam eder."
         },
         "TEXT_IMPORT": {
             "LABEL": "m3u(8) oynatma listesini metin olarak girin"
@@ -374,7 +374,7 @@
         "NAV_SERVER": "Sunucu",
         "SERVER_DESCRIPTION": "Oynatma listeleri, favoriler ve izleme ilerlemesi bu sunucuda saklanır ve onu açan her cihazla paylaşılır.",
         "SERVER_CONNECTION": "Bağlantı",
-        "SERVER_CONNECTION_DESCRIPTION": "Bu uygulamanın verileri kaydettiği IPTVnator sunucusu.",
+        "SERVER_CONNECTION_DESCRIPTION": "Bu uygulamanın verileri kaydettiği D7my-TV sunucusu.",
         "SERVER_CONNECTED": "Bağlı",
         "SERVER_OFFLINE": "Kullanılamıyor",
         "SERVER_STORAGE": "Depolama",
@@ -446,7 +446,7 @@
         "TMDB_ATTRIBUTION": "Bu ürün TMDB API'sini kullanır ancak TMDB tarafından onaylanmamış veya sertifikalandırılmamıştır.",
         "APP_PREFERENCES": "Uygulama tercihleri",
         "HERO_EYEBROW": "Çalışma alanı ayarları",
-        "HERO_TITLE": "IPTVnator'un nasıl hissettirdiğini şekillendirin",
+        "HERO_TITLE": "D7my-TV'un nasıl hissettirdiğini şekillendirin",
         "HERO_DESCRIPTION": "Oynatma, rehberler, uzaktan erişim ve veri yönetimini geçerli çalışma alanı stilini kaybetmeden tek bir yerden ayarlayın.",
         "SUBTITLE": "Uygulamanın yapılandırmasını değiştir",
         "DESCRIPTION": "Lütfen aşağıdaki seçenekleri düzenleyin ve değişiklikleri kaydet düğmesiyle onaylayın",
@@ -512,7 +512,7 @@
         "EPG_SOURCE_FORMATS_EXAMPLES": "Örnekler:",
         "VIDEO_PLAYER_DESCRIPTION": "Varsayılan video oynatıcıyı seçin",
         "WEB_PLAYER_SHARED_CONTROLS": "Web oynatıcıları için birleşik kontroller",
-        "WEB_PLAYER_SHARED_CONTROLS_DESCRIPTION": "HTML5, Video.js ve ArtPlayer'da IPTVnator'ın ortak kontrollerini kullan.",
+        "WEB_PLAYER_SHARED_CONTROLS_DESCRIPTION": "HTML5, Video.js ve ArtPlayer'da D7my-TV'ın ortak kontrollerini kullan.",
         "PLAYER_AMBIENT_MODE": "Ortam ışığı dolgusu",
         "PLAYER_AMBIENT_MODE_DESCRIPTION": "Oynatıcının çevresindeki boşluğu siyah çubuklar yerine bulanık ve karartılmış bir poster ile doldurur.",
         "PLAY_TRAILERS_IN_BACKGROUND": "Fragmanları ayrıntıların arka planında oynat",
@@ -543,7 +543,7 @@
         "EPG_VIEW_MODE_TIMELINE": "Zaman çizelgesi",
         "EPG_VIEW_MODE_LIST": "Liste",
         "STARTUP_BEHAVIOR": "Başlangıç görünümü",
-        "STARTUP_BEHAVIOR_DESCRIPTION": "IPTVnator'un ilk kullanılabilir çalışma alanı görünümünü mü açacağını yoksa bölüm düzeyindeki son görünümünüzü mü geri yükleyeceğini seçin. İlk görünüm, Pano etkinleştirildiğinde Pano, aksi takdirde Kaynaklar anlamına gelir.",
+        "STARTUP_BEHAVIOR_DESCRIPTION": "D7my-TV'un ilk kullanılabilir çalışma alanı görünümünü mü açacağını yoksa bölüm düzeyindeki son görünümünüzü mü geri yükleyeceğini seçin. İlk görünüm, Pano etkinleştirildiğinde Pano, aksi takdirde Kaynaklar anlamına gelir.",
         "STARTUP_BEHAVIOR_FIRST_VIEW": "İlk kullanılabilir görünüm",
         "STARTUP_BEHAVIOR_RESTORE_LAST_VIEW": "Son görünümü geri yükle",
         "STARTUP_WINDOW_MODE": "Başlangıçta pencere",
@@ -557,20 +557,13 @@
         "STRIP_COUNTRY_PREFIX": "Kanal adlarından ülke ön eklerini kaldır",
         "STRIP_COUNTRY_PREFIX_DESCRIPTION": "Uygulama genelinde canlı kanal adlarından \"US | \" veya \"UK - \" gibi ülke/grup ön eklerini kaldırır.",
         "VERSION_DESCRIPTION": "Uygulamanın geçerli sürümü",
-        "ABOUT_SUBTITLE": "Sürüm, proje bağlantıları ve IPTVnator'u desteklemenin yolları.",
+        "ABOUT_SUBTITLE": "Version and project link.",
         "EMBEDDED_MPV_NOTICE_TITLE": "Gömülü MPV çalışma zamanı",
         "EMBEDDED_MPV_NOTICE_DESCRIPTION": "Masaüstü sürümleri, deneysel Gömülü MPV oynatıcı için paketlenmiş libmpv ve FFmpeg kitaplıklarını içerebilir. Kullanıcıların MPV uygulamasını ayrıca kurmasına gerek yoktur; harici MPV ve VLC, yedek oynatıcı olarak kullanılabilir kalır.",
         "COMMUNITY": "Proje ve topluluk",
-        "COMMUNITY_DESCRIPTION": "Depoyu yıldızlayın, blogu okuyun veya güncellemeler ve yardım için Telegram grubuna katılın.",
-        "LINK_BLOG": "Blog",
+        "COMMUNITY_DESCRIPTION": "Star the repository or open an issue to report a problem.",
         "LINK_GITHUB_DESCRIPTION": "Depoyu yıldızlayın, sorun açın veya katkıda bulunun",
-        "LINK_BLOG_DESCRIPTION": "Sürüm notları, ipuçları ve proje güncellemeleri",
-        "LINK_TELEGRAM_DESCRIPTION": "Duyurular, topluluk ve destek",
-        "SUPPORT_TITLE": "Projeyi destekleyin",
-        "SUPPORT_DESCRIPTION": "IPTVnator ücretsiz ve açık kaynaklıdır, açıkta geliştirilir. Günlük rutininizin bir parçasıysa, küçük bir katkı projeyi canlı tutmaya ve sırada ne olduğunu şekillendirmeye yardımcı olur — teşekkürler.",
-        "SUPPORT_SPONSORS_HINT": "Yinelenen veya tek seferlik",
-        "SUPPORT_KOFI_HINT": "Bana bir kahve ısmarla",
-        "EPG_NOTE": "EPG şu anda yalnızca IPTVnator’ın Electron tabanlı sürümünde kullanılabilir.",
+        "EPG_NOTE": "EPG şu anda yalnızca D7my-TV’ın Electron tabanlı sürümünde kullanılabilir.",
         "EPG_NOTE_URL_TEXT": "Buradan kontrol edin",
         "IMPORT_EXPORT_DATA": "Oynatma listelerini içe/dışa aktar",
         "IMPORT_EXPORT_DATA_DESCRIPTION": "M3U anlık görüntüleri, Xtream/Stalker bağlantı meta verileri, kullanıcı durumu ve EPG kaynak URL’leri dahil oynatma listesi yedeklerini dışa aktarın veya geri yükleyin.",
@@ -603,10 +596,10 @@
         "PLAYLISTS_REMOVED": "Tüm oynatma listeleri ve oynatma listesi verileri kaldırıldı.",
         "MPV_PLAYER_PATH_LABEL": "mpv yolu",
         "MPV_PLAYER_PATH_DESCRIPTION": "MPV yolunu ayarlayın. macOS’ta /Applications/mpv.app gibi MPV uygulama paketini veya yürütülebilir dosya yolunu kullanabilirsiniz.",
-        "MPV_COMPATIBLE_PLAYER_TIP": "IINA, macOS’ta MPV uyumlu bir oynatıcı olarak başlatılabilir; ancak /Applications/IINA.app/Contents/MacOS/iina-cli veya /Applications/IINA.app/Contents/MacOS/IINA gibi yürütülebilir dosya yolunu kullanın. IPTVnator kontrolleri, konum yoklama ve örnek yeniden kullanımı yalnızca MPV IPC için garanti edilir.",
+        "MPV_COMPATIBLE_PLAYER_TIP": "IINA, macOS’ta MPV uyumlu bir oynatıcı olarak başlatılabilir; ancak /Applications/IINA.app/Contents/MacOS/iina-cli veya /Applications/IINA.app/Contents/MacOS/IINA gibi yürütülebilir dosya yolunu kullanın. D7my-TV kontrolleri, konum yoklama ve örnek yeniden kullanımı yalnızca MPV IPC için garanti edilir.",
         "MPV_PLAYER_PATH": "mpv oynatıcı yolu",
         "MPV_PLAYER_ARGUMENTS_LABEL": "mpv komut satırı argümanları",
-        "MPV_PLAYER_ARGUMENTS_DESCRIPTION": "IPTVnator yeni bir harici oynatıcı işlemi başlattığında mpv’ye iletilen isteğe bağlı argümanlar.",
+        "MPV_PLAYER_ARGUMENTS_DESCRIPTION": "D7my-TV yeni bir harici oynatıcı işlemi başlattığında mpv’ye iletilen isteğe bağlı argümanlar.",
         "MPV_PLAYER_ARGUMENTS": "mpv argümanları",
         "MPV_REUSE_INSTANCE_LABEL": "MPV örneğini yeniden kullan",
         "MPV_REUSE_INSTANCE_DESCRIPTION": "Etkinleştirildiğinde, farklı yayınları oynatmak için aynı MPV penceresi yeniden kullanılır. Devre dışı bırakıldığında, her yayın yeni bir MPV penceresinde açılır.",
@@ -618,9 +611,9 @@
         "VLC_PLAYER_PATH_DESCRIPTION": "VLC yolunu ayarlayın. macOS’ta /Applications/VLC.app gibi VLC uygulama paketini veya yürütülebilir dosya yolunu kullanabilirsiniz.",
         "VLC_PLAYER_PATH": "VLC oynatıcı yolu",
         "VLC_PLAYER_ARGUMENTS_LABEL": "VLC komut satırı argümanları",
-        "VLC_PLAYER_ARGUMENTS_DESCRIPTION": "IPTVnator yeni bir harici oynatıcı işlemi başlattığında VLC’ye iletilen isteğe bağlı argümanlar.",
+        "VLC_PLAYER_ARGUMENTS_DESCRIPTION": "D7my-TV yeni bir harici oynatıcı işlemi başlattığında VLC’ye iletilen isteğe bağlı argümanlar.",
         "VLC_PLAYER_ARGUMENTS": "VLC argümanları",
-        "EXTERNAL_PLAYER_ARGUMENTS_HINT": "Her satıra bir argüman girin. Bu değerler, akışa özel IPTVnator seçeneklerinden önce uygulanır.",
+        "EXTERNAL_PLAYER_ARGUMENTS_HINT": "Her satıra bir argüman girin. Bu değerler, akışa özel D7my-TV seçeneklerinden önce uygulanır.",
         "VLC_REUSE_INSTANCE_LABEL": "VLC örneğini yeniden kullan",
         "VLC_REUSE_INSTANCE_DESCRIPTION": "Etkinleştirildiğinde, farklı yayınları oynatmak için aynı VLC penceresi yeniden kullanılır. Devre dışı bırakıldığında, her yayın yeni bir VLC penceresinde açılır.",
         "REMOTE_CONTROL": "Uzaktan kontrol",
@@ -749,12 +742,12 @@
         "MIGRATION_FAILED": "Taşıma başarısız oldu. Oynatma listeleriniz hâlâ bu tarayıcıda; Ayarlar → Sunucu bölümünden tekrar deneyin.",
         "MIGRATION_RELOAD": "Yeniden yükle",
         "SIGN_IN_TITLE": "Erişim belirteci gerekli",
-        "SIGN_IN_DESCRIPTION": "Bu IPTVnator sunucusu oynatma listelerinizi göstermeden önce bir erişim belirteci istiyor.",
+        "SIGN_IN_DESCRIPTION": "Bu D7my-TV sunucusu oynatma listelerinizi göstermeden önce bir erişim belirteci istiyor.",
         "SIGN_IN_TOKEN_LABEL": "Erişim belirteci",
         "SIGN_IN_HINT": "Sunucunun IPTVNATOR_ACCESS_TOKEN ayarında bulabilirsiniz.",
         "SIGN_IN_REJECTED": "Belirteç reddedildi. Kontrol edip tekrar deneyin.",
         "SIGN_IN_UNREACHABLE": "Sunucuya ulaşılamıyor. Bağlantıyı kontrol edip tekrar deneyin.",
-        "SIGN_IN_STORAGE": "Bu tarayıcı IPTVnator'ın belirteci saklamasına izin vermiyor. Bu sayfa için site verilerine izin verip tekrar deneyin.",
+        "SIGN_IN_STORAGE": "Bu tarayıcı D7my-TV'ın belirteci saklamasına izin vermiyor. Bu sayfa için site verilerine izin verip tekrar deneyin.",
         "SIGN_IN_CONTINUE": "Devam",
         "STATUS_ONLINE": "Sunucu bağlı",
         "STATUS_OFFLINE": "Sunucu kullanılamıyor",
@@ -1322,10 +1315,10 @@
         "RETRY": "Tekrar Dene",
         "ALLOW_PRIVATE_SOURCE": "Kaynağa izin ver",
         "ALLOW_PRIVATE_SOURCE_TITLE": "Özel ağ EPG kaynağına izin verilsin mi?",
-        "ALLOW_PRIVATE_SOURCE_WARNING": "Buna yalnızca EPG kaynağına güveniyorsanız izin verin. IPTVnator, bu tam EPG URL’sinin özel veya yerel ağ adreslerine bağlanmasına izin verir.",
+        "ALLOW_PRIVATE_SOURCE_WARNING": "Buna yalnızca EPG kaynağına güveniyorsanız izin verin. D7my-TV, bu tam EPG URL’sinin özel veya yerel ağ adreslerine bağlanmasına izin verir.",
         "TRUST_TLS_HOST": "Ana bilgisayara güven",
         "TRUST_TLS_HOST_TITLE": "Geçersiz sertifikaya güvenilsin mi?",
-        "TRUST_TLS_HOST_WARNING": "Yalnızca bu ana bilgisayara güveniyorsanız devam edin. IPTVnator bu ana bilgisayar için geçersiz TLS sertifikalarına izin verir, ancak diğer ana bilgisayarlar için geçerli sertifika gerekmeye devam eder.",
+        "TRUST_TLS_HOST_WARNING": "Yalnızca bu ana bilgisayara güveniyorsanız devam edin. D7my-TV bu ana bilgisayar için geçersiz TLS sertifikalarına izin verir, ancak diğer ana bilgisayarlar için geçerli sertifika gerekmeye devam eder.",
         "CURRENT_PROGRAM": "Geçerli program",
         "ARCHIVE_PLAYBACK": "Arşiv oynatma",
         "COLLAPSE_PANEL": "EPG panelini daralt",
@@ -1444,7 +1437,6 @@
     "NO": "Hayır",
     "MENU": {
         "OPEN": "Menüyü aç",
-        "SUPPORT_ARIA": "IPTVnator'u GitHub'da destekleyin",
         "SETTINGS_ARIA": "Ayarları aç",
         "BUG_REPORT": "Hata bildir",
         "WHAT_IS_NEW": "Yeni ne var?",
@@ -1453,12 +1445,10 @@
         "SUPPORT_PROJECT": "Projeyi destekleyin"
     },
     "ABOUT": {
-        "TITLE": "IPTVnator Hakkında",
+        "TITLE": "D7my-TV Hakkında",
         "DESCRIPTION": "Çoklu özellikler sunan, m3u ve m3u8 oynatma listeleri, favoriler, TV rehberi, TV arşivi/geri dönük izleme ve daha fazlasını destekleyen çok platformlu IPTV oynatıcı uygulaması.",
         "VERSION": "Sürüm",
-        "GITHUB_TOOLTIP": "GitHub’daki IPTVnator deposu",
-        "BUY_ME_A_COFFEE_TOOLTIP": "Bana bir kahve ısmarla",
-        "TWITTER_TOOLTIP": "Twitter’da paylaş"
+        "GITHUB_TOOLTIP": "GitHub’daki D7my-TV deposu"
     },
     "UPDATE_AVAILABLE": "Güncelleme mevcut",
     "PWA_UPDATE_READY": "Bir güncelleme hazır. Yeniden yüklemek oynatmayı durdurur.",
@@ -1913,7 +1903,7 @@
         "STOP_RECORDING": "Kaydı durdur",
         "REMOVE_RECORDING_DIALOG": {
             "TITLE": "Kayıt yöneticiden kaldırılsın mı?",
-            "MESSAGE": "Bu işlem, kaydı IPTVnator'dan kaldırır. Kaydedilen dosya diskte kalır."
+            "MESSAGE": "Bu işlem, kaydı D7my-TV'dan kaldırır. Kaydedilen dosya diskte kalır."
         },
         "RECORDING_DETAIL": {
             "PROGRAMS": "Kaydedilen programlar",
@@ -1924,7 +1914,7 @@
         "REMOVE_FROM_MANAGER": "İndirme yöneticisinden kaldır",
         "REMOVE_COMPLETED_DIALOG": {
             "TITLE": "İndirme yöneticisinden kaldırılsın mı?",
-            "MESSAGE": "Bu işlem öğeyi IPTVnator’dan kaldırır. İndirilen medya dosyası diskte kalır."
+            "MESSAGE": "Bu işlem öğeyi D7my-TV’dan kaldırır. İndirilen medya dosyası diskte kalır."
         },
         "REMOVE_PARTIAL_DIALOG": {
             "TITLE": "Kısmi indirme kaldırılsın mı?",
@@ -2012,8 +2002,8 @@
             "TOGGLE_MUTE": "Ses açılamadı veya kapatılamadı",
             "STATUS": "Uzaktan kumanda durumu alınamadı"
         },
-        "HEADER": "IPTVnator Uzaktan Kumanda",
-        "FOOTER": "IPTVnator Uzaktan Kumanda"
+        "HEADER": "D7my-TV Uzaktan Kumanda",
+        "FOOTER": "D7my-TV Uzaktan Kumanda"
     },
     "WORKSPACE": {
         "FAVORITES_ONLY": "Yalnızca favoriler",
@@ -2335,7 +2325,7 @@
         },
         "SHORTCUTS": {
             "TITLE": "Klavye kısayolları",
-            "SUBTITLE": "IPTVnator’da çalışma alanı, gezinme, oynatma ve iletişim kutuları için kullanılabilir kısayollar.",
+            "SUBTITLE": "D7my-TV’da çalışma alanı, gezinme, oynatma ve iletişim kutuları için kullanılabilir kısayollar.",
             "OPEN_TOOLTIP": "Klavye kısayolları (?)",
             "OPEN_ARIA": "Klavye kısayollarını aç",
             "PLATFORM": {
@@ -2547,8 +2537,8 @@
     "SOURCE_SYNC": {
         "CONNECTION_RECOVERY": "Kayıtlı sunucu bağlantısı kullanılamıyor. Tarayıcı depolamasını kontrol edin veya Sunucu ayarlarından yeniden bağlanın.",
         "TITLE": "Sunucu",
-        "DESCRIPTION": "Kaynakları cihazlar arasında paylaşmak için ev sunucunuzda veya NAS üzerinde Docker ile çalışan IPTVnator’a bağlanın.",
-        "URL": "IPTVnator sunucu adresi",
+        "DESCRIPTION": "Kaynakları cihazlar arasında paylaşmak için ev sunucunuzda veya NAS üzerinde Docker ile çalışan D7my-TV’a bağlanın.",
+        "URL": "D7my-TV sunucu adresi",
         "TOKEN": "Erişim belirteci (isteğe bağlı)",
         "TOKEN_HINT": "Sunucuda ayarlanan IPTVNATOR_ACCESS_TOKEN değerini kullanın veya sunucunun sahibinden isteyin. Belirteç ayarlanmadıysa boş bırakın.",
         "RESTART_HINT": "Sunucu kitaplığını değiştirmek veya bağlantıyı kesmek uygulamayı yeniden yükler. Özgün yerel kitaplığınız korunur.",
@@ -2575,9 +2565,9 @@
         "STATE_locked": "Geçerli bir erişim belirteci girin.",
         "STATE_conflict": "Kaynak başka bir cihazda değişti. Yenileyip düzenlemeyi yeniden uygulayın.",
         "SETUP_GUIDE": "Sunucunuzu nasıl kurarsınız",
-        "URL_HINT": "IPTVnator’ı tarayıcınızda açtığınız adresi kullanın ({{example}}). /api yolu otomatik eklenir.",
+        "URL_HINT": "D7my-TV’ı tarayıcınızda açtığınız adresi kullanın ({{example}}). /api yolu otomatik eklenir.",
         "URL_INVALID": "Giriş bilgileri, sorgu parametreleri veya # parçası içermeyen tam bir http:// ya da https:// adresi girin.",
-        "CONNECTION_FAILED": "Bağlanılamadı. Sunucu adresini, IPTVnator’ın çalıştığını ve bu cihazdan erişilebildiğini kontrol edip yeniden deneyin."
+        "CONNECTION_FAILED": "Bağlanılamadı. Sunucu adresini, D7my-TV’ın çalıştığını ve bu cihazdan erişilebildiğini kontrol edip yeniden deneyin."
     },
     "ACTIVITY_SYNC": {
         "TITLE": "İzleme etkinliği eşitleme",

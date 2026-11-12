@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://4gray.github.io/iptvnator/sitemap-index.xml

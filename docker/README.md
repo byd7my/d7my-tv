@@ -1,16 +1,13 @@
-# Self-hosted IPTVnator
+# Self-hosted D7my-TV
 
-User-facing overview with quick start, variables and FAQ:
-<https://4gray.github.io/iptvnator/download/docker/>. This file is the
-reference behind it.
+This file is the reference for the self-hosted image.
 
 The self-hosted image contains both pieces required for the browser PWA:
 
 - Angular PWA static files served by nginx
 - The monorepo `web-backend` Express app proxied under `/api`
 
-The historical standalone `4gray/iptvnator-backend` image is no longer needed
-for the default Docker deployment.
+A separate backend image is not needed for the default Docker deployment.
 
 ## PWA Limitations And Playback Troubleshooting
 
@@ -46,7 +43,7 @@ container are required for the default local deployment.
 ## Build The Image
 
 ```bash
-docker build -t 4gray/iptvnator -f docker/Dockerfile .
+docker build -t d7my-tv -f docker/Dockerfile .
 ```
 
 The image build runs:

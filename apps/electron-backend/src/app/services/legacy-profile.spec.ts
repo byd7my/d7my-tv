@@ -9,7 +9,11 @@ import {
 } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { selectLegacyProfile, copyLegacyIndexedDb } from './legacy-profile';
+import {
+    selectLegacyProfile,
+    copyLegacyIndexedDb,
+    migrateRenamedProfile,
+} from './legacy-profile';
 
 describe('packaged legacy profile compatibility', () => {
     let root: string;
@@ -75,5 +79,66 @@ describe('packaged legacy profile compatibility', () => {
         mkdirSync(current);
         writeFileSync(join(current, 'config.json'), '{}');
         expect(selectLegacyProfile(root, current)).toBeNull();
+    });
+});
+
+describe('profile of the former app name', () => {
+    let root: string;
+    beforeEach(() => {
+        root = mkdtempSync(join(tmpdir(), 'd7my-profile-migration-'));
+    });
+    afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+    function seed(name: string): string {
+        const folder = join(root, name);
+        mkdirSync(join(folder, 'IndexedDB'), { recursive: true });
+        writeFileSync(join(folder, 'config.json'), '{"theme":"dark"}');
+        writeFileSync(join(folder, 'SingletonLock'), 'locked');
+        return folder;
+    }
+
+    it('copies the old profile once and keeps the old folder', () => {
+        const old = seed('iptvnator');
+        const current = join(root, 'D7my-TV');
+
+        expect(migrateRenamedProfile(root, current)).toBe(true);
+        expect(readFileSync(join(current, 'config.json'), 'utf8')).toBe(
+            '{"theme":"dark"}'
+        );
+        expect(lstatSync(join(current, 'IndexedDB')).isDirectory()).toBe(true);
+        expect(() => lstatSync(join(current, 'SingletonLock'))).toThrow();
+        expect(readFileSync(join(old, 'config.json'), 'utf8')).toBe(
+            '{"theme":"dark"}'
+        );
+    });
+
+    it('merges into a folder that only holds start-up files', () => {
+        seed('iptvnator');
+        const current = join(root, 'D7my-TV');
+        mkdirSync(join(current, 'compile-cache'), { recursive: true });
+
+        expect(migrateRenamedProfile(root, current)).toBe(true);
+        expect(lstatSync(join(current, 'compile-cache')).isDirectory()).toBe(
+            true
+        );
+        expect(readFileSync(join(current, 'config.json'), 'utf8')).toBe(
+            '{"theme":"dark"}'
+        );
+    });
+
+    it('never touches a profile that already has data', () => {
+        seed('iptvnator');
+        const current = join(root, 'D7my-TV');
+        mkdirSync(current, { recursive: true });
+        writeFileSync(join(current, 'config.json'), '{"theme":"light"}');
+
+        expect(migrateRenamedProfile(root, current)).toBe(false);
+        expect(readFileSync(join(current, 'config.json'), 'utf8')).toBe(
+            '{"theme":"light"}'
+        );
+    });
+
+    it('does nothing for a fresh install', () => {
+        expect(migrateRenamedProfile(root, join(root, 'D7my-TV'))).toBe(false);
     });
 });

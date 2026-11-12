@@ -195,7 +195,7 @@ ipcMain.handle('RECORDINGS_STOP', async (_event, recordingId: number) => {
             row.ownerPid !== process.pid
         ) {
             return {
-                error: 'Recording belongs to another IPTVnator instance',
+                error: 'Recording belongs to another D7my-TV instance',
                 success: false,
             };
         }

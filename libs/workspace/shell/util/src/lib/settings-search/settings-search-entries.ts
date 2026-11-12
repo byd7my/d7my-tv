@@ -341,13 +341,6 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
         section: 'about',
         labelKey: 'SETTINGS.COMMUNITY',
         descriptionKey: 'SETTINGS.COMMUNITY_DESCRIPTION',
-        keywords: ['github', 'telegram', 'help', 'feedback', 'bug'],
-    },
-    {
-        id: 'support',
-        section: 'about',
-        labelKey: 'SETTINGS.SUPPORT_TITLE',
-        descriptionKey: 'SETTINGS.SUPPORT_DESCRIPTION',
-        keywords: ['donate', 'sponsor', 'support'],
+        keywords: ['github', 'help', 'feedback', 'bug'],
     },
 ];

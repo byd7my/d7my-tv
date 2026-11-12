@@ -1,7 +1,7 @@
 /**
  * Renderers turning grouped `.changes/*.md` notes into the GitHub release
  * body and the CHANGELOG.md section, plus the text helpers shared with the
- * website blog scaffold in `release-notes-blog.mjs`.
+ * website blog scaffold (removed with the website).
  */
 
 import { extractSection } from './extract-changelog-section.mjs';

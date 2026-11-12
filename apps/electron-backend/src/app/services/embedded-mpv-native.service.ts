@@ -1130,7 +1130,7 @@ export class EmbeddedMpvNativeService {
         mkdirSync(directory, { recursive: true });
 
         const fallbackChannelName =
-            options.title || session.title || 'IPTVnator recording';
+            options.title || session.title || 'D7my-TV recording';
         const targetPath = this.reserveRecordingTargetPath(
             directory,
             fallbackChannelName
@@ -1774,7 +1774,7 @@ export class EmbeddedMpvNativeService {
             .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_')
             .replace(/\s+/g, ' ')
             .trim();
-        return (normalized || 'IPTVnator recording').slice(0, 120);
+        return (normalized || 'D7my-TV recording').slice(0, 120);
     }
 
     private formatRecordingTimestamp(date: Date): string {

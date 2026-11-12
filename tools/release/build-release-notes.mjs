@@ -5,9 +5,6 @@
  *   node tools/release/build-release-notes.mjs --validate
  *   node tools/release/build-release-notes.mjs --version 0.24.0 --format github
  *   node tools/release/build-release-notes.mjs --version 0.24.0 --format changelog
- *   node tools/release/build-release-notes.mjs --version 0.24.0 --format blog
- *   node tools/release/build-release-notes.mjs --version 0.24.0 --format telegram
- *   node tools/release/build-release-notes.mjs --version 0.24.0 --format reddit
  *   node tools/release/build-release-notes.mjs --version 0.24.0 --consume
  *
  * Every mode except `--consume` is a safe dry run: nothing is deleted unless
@@ -20,13 +17,8 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
-import {
-    renderRedditPost,
-    renderTelegramPost,
-} from './release-announcements.mjs';
 import { loadNotes } from './release-notes.mjs';
 import { manifestSlugs } from './screenshot-guards.mjs';
-import { renderBlogScaffold } from './release-notes-blog.mjs';
 import {
     releaseSlug,
     renderChangelogSection,
@@ -39,12 +31,11 @@ const workspaceRoot = path.resolve(
     '../..'
 );
 const CHANGELOG_PATH = path.join(workspaceRoot, 'CHANGELOG.md');
-const BLOG_DIR = path.join(workspaceRoot, 'apps/website/src/content/blog');
 
 /** Generated sections are inserted directly below this marker. */
 const CHANGELOG_MARKER = '<!-- next-release -->';
 
-const FORMATS = new Set(['github', 'changelog', 'blog', 'telegram', 'reddit']);
+const FORMATS = new Set(['github', 'changelog']);
 
 function parseArgs(argv) {
     const options = {
@@ -219,49 +210,6 @@ function writeChangelog(section, version) {
     return CHANGELOG_PATH;
 }
 
-function writeBlogScaffold(content, version, force) {
-    const target = path.join(
-        BLOG_DIR,
-        `${releaseSlug(version)}-release-notes.mdx`
-    );
-
-    if (existsSync(target) && !force) {
-        throw new Error(
-            [
-                `${path.relative(workspaceRoot, target)} already exists.`,
-                'The website publishes one post per minor version, so a patch',
-                'release edits the existing post instead of creating a new one.',
-                'Pass --force only to regenerate it from scratch.',
-            ].join(' ')
-        );
-    }
-
-    writeFileSync(target, content, 'utf8');
-
-    return target;
-}
-
-/**
- * An internal-only release has nothing to announce publicly. That is a legal
- * release shape, so it prints an explanation on stderr and leaves stdout
- * empty — matching `extract-changelog-section.mjs --public`, which allows an
- * empty public body for exactly the same case — rather than failing.
- *
- * @param {string | null} post
- * @param {string} label
- */
-function writeAnnouncement(post, label) {
-    if (post === null) {
-        console.error(
-            `Internal-only release: no public ${label} announcement to render.`
-        );
-
-        return;
-    }
-
-    process.stdout.write(post.endsWith('\n') ? post : `${post}\n`);
-}
-
 function main() {
     const options = parseArgs(process.argv.slice(2));
     const notesDir = path.resolve(workspaceRoot, options.dir);
@@ -321,17 +269,6 @@ function main() {
             process.stdout.write(`${renderGithubBody(notes, { links })}\n`);
         }
 
-        // Announcements are dry runs to stdout, like `github`. They must be
-        // rendered before `--consume`: the CHANGELOG keeps the entries, but
-        // the `highlight:` metadata lives only in the note files.
-        if (options.format === 'telegram') {
-            writeAnnouncement(renderTelegramPost(notes, { version }), 'Telegram');
-        }
-
-        if (options.format === 'reddit') {
-            writeAnnouncement(renderRedditPost(notes, { version }), 'Reddit');
-        }
-
         if (options.format === 'changelog') {
             const section = renderChangelogSection(notes, {
                 version,
@@ -341,17 +278,6 @@ function main() {
             });
             const target = writeChangelog(section, version);
             console.log(`Updated ${path.relative(workspaceRoot, target)}`);
-        }
-
-        if (options.format === 'blog') {
-            const content = renderBlogScaffold(notes, {
-                version,
-                date: options.date,
-                previousVersion: options.previous ?? detectPreviousVersion(),
-                links,
-            });
-            const target = writeBlogScaffold(content, version, options.force);
-            console.log(`Wrote ${path.relative(workspaceRoot, target)}`);
         }
     }
 
@@ -365,7 +291,7 @@ function main() {
 
     if (!options.format && !options.validate && !options.consume) {
         throw new Error(
-            'nothing to do — pass --validate, --format <github|changelog|blog>, or --consume'
+            'nothing to do — pass --validate, --format <github|changelog>, or --consume'
         );
     }
 }

@@ -19,7 +19,7 @@ async function setSourceReadFailure(app: ElectronApplication, failed: boolean) {
             latestVersion: '0.25.0',
             status: 'not-available',
             supportedSelfUpdate: true,
-            manualDownloadUrl: 'https://github.com/4gray/iptvnator/releases',
+            manualDownloadUrl: 'https://github.com/byd7my/d7my-tv/releases',
             channel: 'stable',
             installedChannel: 'stable',
         };

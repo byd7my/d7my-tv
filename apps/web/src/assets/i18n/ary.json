@@ -17,7 +17,7 @@
         "EMPTY": "ما لقينا حتى عنوان",
         "SEARCH_HINT": "دخل جوج حروف على الأقل",
         "EMPTY_HELP": "جرب العنوان الأصلي ولا خلي معلومات المزوّد.",
-        "AUTO_HELP": "حيد التصحيح وخلي IPTVnator يقلب على المعلومات تلقائيًا من جديد.",
+        "AUTO_HELP": "حيد التصحيح وخلي D7my-TV يقلب على المعلومات تلقائيًا من جديد.",
         "PROVIDER_HELP": "خلي الصورة والوصف ومعلومات الحلقات الأصلية ديال هاد المصدر. معلومات TMDB غتبقى مطفية لهاد العنوان.",
         "SEARCH_ERROR": "البحث فـ TMDB ما خدامش. تأكد من الاتصال ومفتاح API، وعاود جرب.",
         "SAVE_ERROR": "ما قدرناش نطبقو هاد الاختيار. تأكد من الاتصال والمساحة المتوفرة فالمتصفح، وعاود جرب.",
@@ -37,7 +37,7 @@
     "SHOW_LESS": "وري قل",
     "PLAYLISTS": "قوائم التشغيل",
     "HOME": {
-        "TITLE": "IPTVnator",
+        "TITLE": "D7my-TV",
         "SUBTITLE": "عفاك اختار شي قائمة تشغيل من الليستا ولا زيد قائمة جديدة",
         "TABS": {
             "RECENTLY_ADDED": "قوائم التشغيل اللي تزادو مؤخراً",
@@ -53,7 +53,7 @@
             "UNTITLED_PLAYLIST": "قائمة تشغيل بلا عنوان",
             "PLAYLIST_ACTIONS": "إجراءات قائمة التشغيل",
             "ADD_FIRST": "عفاك زيد قائمة التشغيل الأولى ديالك",
-            "WELCOME_TITLE": "مرحبا بيك في IPTVnator",
+            "WELCOME_TITLE": "مرحبا بيك في D7my-TV",
             "WELCOME_DESCRIPTION": "بدا رحلة البث ديالك بزيادة قائمة التشغيل الأولى ديالك. ربط مع خدمة IPTV المفضلة عندك وتمتع ببث مباشر، أفلام، وسلاسل.",
             "ADD_YOUR_FIRST": "زيد قائمة التشغيل الأولى ديالك",
             "FEATURE_M3U": "ملفات M3U/M3U8",
@@ -228,7 +228,7 @@
             "ERROR_TLS_HOST_UNKNOWN": "ما قدرناش نحددو مضيف قائمة التشغيل. عفاك عاود جرّب يدوياً.",
             "TRUST_TLS_HOST": "وثق فالمضيف",
             "TRUST_TLS_HOST_TITLE": "توثق فشهادة ما صالحة؟",
-            "TRUST_TLS_HOST_WARNING": "كمل غير إلا كنتي كتوثق فهاد مضيف قائمة التشغيل. IPTVnator غادي يسمح بشهادات TLS ما صالحةش لهد المضيف، ولكن باقي المضيفين خاصهم شهادات صالحة."
+            "TRUST_TLS_HOST_WARNING": "كمل غير إلا كنتي كتوثق فهاد مضيف قائمة التشغيل. D7my-TV غادي يسمح بشهادات TLS ما صالحةش لهد المضيف، ولكن باقي المضيفين خاصهم شهادات صالحة."
         },
         "TEXT_IMPORT": {
             "LABEL": "دخل قائمة تشغيل m3u(8) على شكل نص"
@@ -374,7 +374,7 @@
         "NAV_SERVER": "السيرفر",
         "SERVER_DESCRIPTION": "لوائح التشغيل والمفضلة وفين وصلتي فالمشاهدة كيتحفظو فهاد السيرفر وكيتشاركو مع كاع الأجهزة اللي كتحلو.",
         "SERVER_CONNECTION": "الاتصال",
-        "SERVER_CONNECTION_DESCRIPTION": "سيرفر IPTVnator اللي كيحفظ فيه هاد التطبيق.",
+        "SERVER_CONNECTION_DESCRIPTION": "سيرفر D7my-TV اللي كيحفظ فيه هاد التطبيق.",
         "SERVER_CONNECTED": "متاصل",
         "SERVER_OFFLINE": "ماشي متوفر",
         "SERVER_STORAGE": "التخزين",
@@ -446,7 +446,7 @@
         "TMDB_ATTRIBUTION": "هاد المنتج كيستعمل TMDB API ولكن ماشي معتمد ولا مصادق عليه من طرف TMDB.",
         "APP_PREFERENCES": "تفضيلات التطبيق",
         "HERO_EYEBROW": "إعدادات مساحة العمل",
-        "HERO_TITLE": "شكّل كيفاش كيتحس IPTVnator",
+        "HERO_TITLE": "شكّل كيفاش كيتحس D7my-TV",
         "HERO_DESCRIPTION": "ضبط التشغيل، الأدلة، الوصول عن بعد، ومعالجة البيانات من بلاصة وحدة بدون ما تخسر ستايل مساحة العمل الحالية.",
         "SUBTITLE": "بدل إعدادات التطبيق",
         "DESCRIPTION": "عفاك بدل الخيارات من الليستا لتحت وأكد بضغط على زر حفظ التغييرات",
@@ -512,7 +512,7 @@
         "EPG_SOURCE_FORMATS_EXAMPLES": "أمثلة:",
         "VIDEO_PLAYER_DESCRIPTION": "اختار مشغل الفيديو الافتراضي",
         "WEB_PLAYER_SHARED_CONTROLS": "عناصر تحكم موحدة لمشغلات الويب",
-        "WEB_PLAYER_SHARED_CONTROLS_DESCRIPTION": "استعمل عناصر التحكم المشتركة ديال IPTVnator مع HTML5 وVideo.js وArtPlayer.",
+        "WEB_PLAYER_SHARED_CONTROLS_DESCRIPTION": "استعمل عناصر التحكم المشتركة ديال D7my-TV مع HTML5 وVideo.js وArtPlayer.",
         "PLAYER_AMBIENT_MODE": "خلفية محيطة",
         "PLAYER_AMBIENT_MODE_DESCRIPTION": "ملي المساحة حول المشغل بغلاف معتم وطابت بلاصة الشرائط السوداء.",
         "PLAY_TRAILERS_IN_BACKGROUND": "خدّم الإعلانات فخلفية التفاصيل",
@@ -543,7 +543,7 @@
         "EPG_VIEW_MODE_TIMELINE": "الخط الزمني",
         "EPG_VIEW_MODE_LIST": "لائحة",
         "STARTUP_BEHAVIOR": "العرض عند البدء",
-        "STARTUP_BEHAVIOR_DESCRIPTION": "اختار واش IPTVnator يحل أول عرض متوفر في مساحة العمل ولا يسترجع آخر عرض على مستوى القسم. أول عرض كيعني لوحة التحكم إلى كانت مفعلة، إلا فالا فهي Sources.",
+        "STARTUP_BEHAVIOR_DESCRIPTION": "اختار واش D7my-TV يحل أول عرض متوفر في مساحة العمل ولا يسترجع آخر عرض على مستوى القسم. أول عرض كيعني لوحة التحكم إلى كانت مفعلة، إلا فالا فهي Sources.",
         "STARTUP_BEHAVIOR_FIRST_VIEW": "أول عرض متوفر",
         "STARTUP_BEHAVIOR_RESTORE_LAST_VIEW": "استرجع آخر عرض",
         "STARTUP_WINDOW_MODE": "النافذة عند البدء",
@@ -557,20 +557,13 @@
         "STRIP_COUNTRY_PREFIX": "حيد بادئات البلد من أسماء القنوات",
         "STRIP_COUNTRY_PREFIX_DESCRIPTION": "كيحيد بادئات البلد/المجموعة بحال \"US | \" ولا \"UK - \" من أسماء قنوات البث المباشر فكامل التطبيق.",
         "VERSION_DESCRIPTION": "الإصدار الحالي ديال التطبيق",
-        "ABOUT_SUBTITLE": "الإصدار، روابط المشروع، وطرق دعم IPTVnator.",
+        "ABOUT_SUBTITLE": "Version and project link.",
         "EMBEDDED_MPV_NOTICE_TITLE": "وقت تشغيل MPV المدمج",
         "EMBEDDED_MPV_NOTICE_DESCRIPTION": "إصدارات سطح المكتب تقدر تتضمن مكتبات libmpv و FFmpeg المدمجة لمشغل MPV المدمج التجريبي. المستخدمين ما محتاجينش يثبتو تطبيق MPV بشكل منفصل؛ MPV الخارجي و VLC مازالو متوفرين كمشغلات احتياطية.",
         "COMMUNITY": "المشروع والمجتمع",
-        "COMMUNITY_DESCRIPTION": "حط نجمة على المستودع، قرا المدونة، ولا انضم لجروب Telegram للتحديثات والمساعدة.",
-        "LINK_BLOG": "المدونة",
+        "COMMUNITY_DESCRIPTION": "Star the repository or open an issue to report a problem.",
         "LINK_GITHUB_DESCRIPTION": "حط نجمة على المستودع، حل مشكل، ولا ساهم",
-        "LINK_BLOG_DESCRIPTION": "ملاحظات الإصدار، نصائح، وتحديثات المشروع",
-        "LINK_TELEGRAM_DESCRIPTION": "إعلانات، مجتمع، ودعم",
-        "SUPPORT_TITLE": "دعم المشروع",
-        "SUPPORT_DESCRIPTION": "IPTVnator مجاني ومفتوح المصدر، مبني بشكل مفتوح. إلى كان جزء من روتينك اليومي، مساهمة صغيرة كتعاون باش يبقى المشروع حي وتشكل اللي غادي يجي — شكرا.",
-        "SUPPORT_SPONSORS_HINT": "متكرر ولا مرة وحدة",
-        "SUPPORT_KOFI_HINT": "شري ليا قهوة",
-        "EPG_NOTE": "EPG متوفر حالياً غير فالإصدار المبني على Electron ديال IPTVnator.",
+        "EPG_NOTE": "EPG متوفر حالياً غير فالإصدار المبني على Electron ديال D7my-TV.",
         "EPG_NOTE_URL_TEXT": "شوف هنا",
         "IMPORT_EXPORT_DATA": "استورد/صدّر قوائم التشغيل",
         "IMPORT_EXPORT_DATA_DESCRIPTION": "صدّر ولا رجّع نسخ احتياطية ديال لوائح التشغيل، بما فيها لقطات M3U ومعطيات اتصال Xtream/Stalker وحالة المستخدم وروابط مصادر EPG.",
@@ -603,10 +596,10 @@
         "PLAYLISTS_REMOVED": "تحيدو جميع لوائح التشغيل والمعطيات ديالهم.",
         "MPV_PLAYER_PATH_LABEL": "مسار mpv",
         "MPV_PLAYER_PATH_DESCRIPTION": "حدد مسار MPV. فـ macOS تقدر تستعمل باقة تطبيق MPV بحال /Applications/mpv.app أو مسار الملف التنفيذي.",
-        "MPV_COMPATIBLE_PLAYER_TIP": "IINA يقدر يتفتح كمشغل متوافق مع MPV فـ macOS، ولكن استعمل مسار الملف التنفيذي بحال /Applications/IINA.app/Contents/MacOS/iina-cli أو /Applications/IINA.app/Contents/MacOS/IINA. تحكم IPTVnator وتتبع الموضع وإعادة استعمال النافذة مضمونين غير مع MPV IPC.",
+        "MPV_COMPATIBLE_PLAYER_TIP": "IINA يقدر يتفتح كمشغل متوافق مع MPV فـ macOS، ولكن استعمل مسار الملف التنفيذي بحال /Applications/IINA.app/Contents/MacOS/iina-cli أو /Applications/IINA.app/Contents/MacOS/IINA. تحكم D7my-TV وتتبع الموضع وإعادة استعمال النافذة مضمونين غير مع MPV IPC.",
         "MPV_PLAYER_PATH": "مسار مشغل mpv",
         "MPV_PLAYER_ARGUMENTS_LABEL": "وسائط سطر الأوامر ديال mpv",
-        "MPV_PLAYER_ARGUMENTS_DESCRIPTION": "وسائط اختيارية كتدوز لـ mpv ملي IPTVnator كيبدا عملية مشغل خارجي جديدة.",
+        "MPV_PLAYER_ARGUMENTS_DESCRIPTION": "وسائط اختيارية كتدوز لـ mpv ملي D7my-TV كيبدا عملية مشغل خارجي جديدة.",
         "MPV_PLAYER_ARGUMENTS": "وسائط mpv",
         "MPV_REUSE_INSTANCE_LABEL": "إعادة استخدام نسخة MPV",
         "MPV_REUSE_INSTANCE_DESCRIPTION": "إلى كانت مفعلة، نفس نافذة MPV غادي تستعمل لتشغيل بثوث مختلفة. إلى كانت معطلة، كل بث كيتحل في نافذة MPV جديدة.",
@@ -618,9 +611,9 @@
         "VLC_PLAYER_PATH_DESCRIPTION": "حدد مسار VLC. فـ macOS تقدر تستعمل باقة تطبيق VLC بحال /Applications/VLC.app أو مسار الملف التنفيذي.",
         "VLC_PLAYER_PATH": "مسار مشغل VLC",
         "VLC_PLAYER_ARGUMENTS_LABEL": "وسائط سطر الأوامر ديال VLC",
-        "VLC_PLAYER_ARGUMENTS_DESCRIPTION": "وسائط اختيارية كتدوز لـ VLC ملي IPTVnator كيبدا عملية مشغل خارجي جديدة.",
+        "VLC_PLAYER_ARGUMENTS_DESCRIPTION": "وسائط اختيارية كتدوز لـ VLC ملي D7my-TV كيبدا عملية مشغل خارجي جديدة.",
         "VLC_PLAYER_ARGUMENTS": "وسائط VLC",
-        "EXTERNAL_PLAYER_ARGUMENTS_HINT": "استعمل وسيطة وحدة فكل سطر. هاد القيم كتطبق قبل خيارات IPTVnator الخاصة بالبث.",
+        "EXTERNAL_PLAYER_ARGUMENTS_HINT": "استعمل وسيطة وحدة فكل سطر. هاد القيم كتطبق قبل خيارات D7my-TV الخاصة بالبث.",
         "VLC_REUSE_INSTANCE_LABEL": "إعادة استخدام نسخة VLC",
         "VLC_REUSE_INSTANCE_DESCRIPTION": "إلى كانت مفعلة، نفس نافذة VLC غادي تستعمل لتشغيل بثوث مختلفة. إلى كانت معطلة، كل بث كيتحل في نافذة VLC جديدة.",
         "REMOTE_CONTROL": "التحكم عن بعد",
@@ -749,12 +742,12 @@
         "MIGRATION_FAILED": "النقل فشل. لوائح التشغيل ديالك باقيين فهاد المتصفح؛ عاود جرب من الإعدادات ← السيرفر.",
         "MIGRATION_RELOAD": "عاود التحميل",
         "SIGN_IN_TITLE": "خاص رمز الدخول",
-        "SIGN_IN_DESCRIPTION": "هاد سيرفر IPTVnator كيطلب رمز الدخول قبل ما يوريك لوائح التشغيل ديالك.",
+        "SIGN_IN_DESCRIPTION": "هاد سيرفر D7my-TV كيطلب رمز الدخول قبل ما يوريك لوائح التشغيل ديالك.",
         "SIGN_IN_TOKEN_LABEL": "رمز الدخول",
         "SIGN_IN_HINT": "تلقاه فالإعداد IPTVNATOR_ACCESS_TOKEN ديال السيرفر.",
         "SIGN_IN_REJECTED": "الرمز ترفض. تأكد منو وعاود جرب.",
         "SIGN_IN_UNREACHABLE": "ما قدرناش نوصلو للسيرفر. شوف الاتصال وعاود جرب.",
-        "SIGN_IN_STORAGE": "هاد المتصفح ما كيخليش IPTVnator يحفظ الرمز. سمح بداتا ديال الموقع لهاد الصفحة وعاود جرب.",
+        "SIGN_IN_STORAGE": "هاد المتصفح ما كيخليش D7my-TV يحفظ الرمز. سمح بداتا ديال الموقع لهاد الصفحة وعاود جرب.",
         "SIGN_IN_CONTINUE": "كمّل",
         "STATUS_ONLINE": "السيرفر متاصل",
         "STATUS_OFFLINE": "السيرفر ماشي متوفر",
@@ -1322,10 +1315,10 @@
         "RETRY": "حاول مرة أخرى",
         "ALLOW_PRIVATE_SOURCE": "سمح للمصدر",
         "ALLOW_PRIVATE_SOURCE_TITLE": "نسمحو لمصدر EPG من شبكة خاصة؟",
-        "ALLOW_PRIVATE_SOURCE_WARNING": "سمح بهادشي غير إلا كنتي كتوثق فمصدر EPG. IPTVnator غادي يسمح غير لهد الرابط EPG بعينو يتاصل بعناوين شبكة خاصة ولا محلية.",
+        "ALLOW_PRIVATE_SOURCE_WARNING": "سمح بهادشي غير إلا كنتي كتوثق فمصدر EPG. D7my-TV غادي يسمح غير لهد الرابط EPG بعينو يتاصل بعناوين شبكة خاصة ولا محلية.",
         "TRUST_TLS_HOST": "وثق فالمضيف",
         "TRUST_TLS_HOST_TITLE": "توثق فشهادة ما صالحة؟",
-        "TRUST_TLS_HOST_WARNING": "كمل غير إلا كنتي كتوثق فهاد المضيف. IPTVnator غادي يسمح بشهادات TLS ما صالحةش لهد المضيف، ولكن باقي المضيفين خاصهم شهادات صالحة.",
+        "TRUST_TLS_HOST_WARNING": "كمل غير إلا كنتي كتوثق فهاد المضيف. D7my-TV غادي يسمح بشهادات TLS ما صالحةش لهد المضيف، ولكن باقي المضيفين خاصهم شهادات صالحة.",
         "CURRENT_PROGRAM": "البرنامج الحالي",
         "ARCHIVE_PLAYBACK": "تشغيل الأرشيف",
         "COLLAPSE_PANEL": "طوي لوحة EPG",
@@ -1444,7 +1437,6 @@
     "NO": "لا",
     "MENU": {
         "OPEN": "حل القائمة",
-        "SUPPORT_ARIA": "دعم IPTVnator على GitHub",
         "SETTINGS_ARIA": "حل الإعدادات",
         "BUG_REPORT": "بلغ على شي مشكل",
         "WHAT_IS_NEW": "شنو الجديد",
@@ -1453,12 +1445,10 @@
         "SUPPORT_PROJECT": "دعم المشروع"
     },
     "ABOUT": {
-        "TITLE": "حول IPTVnator",
+        "TITLE": "حول D7my-TV",
         "DESCRIPTION": "تطبيق مشغل IPTV متعدد المنصات فيه بزاف ديال الميزات، بحال دعم قوائم تشغيل m3u و m3u8، المفضلة، دليل التلفزيون، الأرشيف التلفزيوني/الإعادة والمزيد.",
         "VERSION": "الإصدار",
-        "GITHUB_TOOLTIP": "مستودع IPTVnator فـ GitHub",
-        "BUY_ME_A_COFFEE_TOOLTIP": "شري ليا قهوة",
-        "TWITTER_TOOLTIP": "شارك على تويتر"
+        "GITHUB_TOOLTIP": "مستودع D7my-TV فـ GitHub"
     },
     "UPDATE_AVAILABLE": "تحديث متوفر",
     "PWA_UPDATE_READY": "التحديث واجد. إعادة التحميل غادي توقف التشغيل.",
@@ -1913,7 +1903,7 @@
         "STOP_RECORDING": "وقّف التسجيل",
         "REMOVE_RECORDING_DIALOG": {
             "TITLE": "نحيدو التسجيل من مدير التحميلات؟",
-            "MESSAGE": "هاد العملية كتحيد هاد العنصر من IPTVnator. الملف المسجل كيبقى على القرص."
+            "MESSAGE": "هاد العملية كتحيد هاد العنصر من D7my-TV. الملف المسجل كيبقى على القرص."
         },
         "RECORDING_DETAIL": {
             "PROGRAMS": "البرامج المسجلة",
@@ -1924,7 +1914,7 @@
         "REMOVE_FROM_MANAGER": "حيد من مسير التحميلات",
         "REMOVE_COMPLETED_DIALOG": {
             "TITLE": "حيد من مسير التحميلات؟",
-            "MESSAGE": "هادشي كيحيد العنصر من IPTVnator. ملف الميديا المحمل كيبقى فالديسك."
+            "MESSAGE": "هادشي كيحيد العنصر من D7my-TV. ملف الميديا المحمل كيبقى فالديسك."
         },
         "REMOVE_PARTIAL_DIALOG": {
             "TITLE": "حيد التحميل الجزئي؟",
@@ -2012,8 +2002,8 @@
             "TOGGLE_MUTE": "ما قدرناش نبدلو كتم الصوت",
             "STATUS": "ما قدرناش نجيبو حالة التحكم عن بعد"
         },
-        "HEADER": "التحكم عن بعد ديال IPTVnator",
-        "FOOTER": "التحكم عن بعد ديال IPTVnator"
+        "HEADER": "التحكم عن بعد ديال D7my-TV",
+        "FOOTER": "التحكم عن بعد ديال D7my-TV"
     },
     "WORKSPACE": {
         "FAVORITES_ONLY": "المفضلة فقط",
@@ -2335,7 +2325,7 @@
         },
         "SHORTCUTS": {
             "TITLE": "اختصارات الكلافيي",
-            "SUBTITLE": "اختصارات متوفرة فـ IPTVnator لمساحة العمل والتنقل والتشغيل والنوافذ.",
+            "SUBTITLE": "اختصارات متوفرة فـ D7my-TV لمساحة العمل والتنقل والتشغيل والنوافذ.",
             "OPEN_TOOLTIP": "اختصارات الكلافيي (?)",
             "OPEN_ARIA": "حل اختصارات الكلافيي",
             "PLATFORM": {
@@ -2547,8 +2537,8 @@
     "SOURCE_SYNC": {
         "CONNECTION_RECOVERY": "الاتصال المحفوظ بالسيرفر ما متوفرش. تأكد من تخزين المتصفح أو عاود الاتصال من إعدادات السيرفر.",
         "TITLE": "السيرفر",
-        "DESCRIPTION": "تاصل بـ IPTVnator اللي خدام بـ Docker فالسيرفر ديال الدار ولا NAS باش تشارك المصادر بين الأجهزة.",
-        "URL": "عنوان سيرفر IPTVnator",
+        "DESCRIPTION": "تاصل بـ D7my-TV اللي خدام بـ Docker فالسيرفر ديال الدار ولا NAS باش تشارك المصادر بين الأجهزة.",
+        "URL": "عنوان سيرفر D7my-TV",
         "TOKEN": "رمز الدخول (اختياري)",
         "TOKEN_HINT": "دخل قيمة IPTVNATOR_ACCESS_TOKEN اللي مضبوطة فالسيرفر ولا طلبها من مولاه. خلي الخانة خاوية إلا ما كانش توكن مضبوط.",
         "RESTART_HINT": "تبديل مكتبة السيرفر ولا قطع الاتصال كيعاود يشعل التطبيق. المكتبة المحلية الأصلية كتبقى محفوظة.",
@@ -2575,9 +2565,9 @@
         "STATE_locked": "دخل رمز دخول صالح لهاد السيرفر.",
         "STATE_conflict": "تبدل المصدر فجهاز آخر. حدّث وعاود التعديل.",
         "SETUP_GUIDE": "كيفاش تجهز السيرفر ديالك",
-        "URL_HINT": "استعمل العنوان اللي كتفتح به IPTVnator فالمتصفح ({{example}}). المسار /api كيتزاد بوحدو.",
+        "URL_HINT": "استعمل العنوان اللي كتفتح به D7my-TV فالمتصفح ({{example}}). المسار /api كيتزاد بوحدو.",
         "URL_INVALID": "دخل عنوان كامل كيبدا بـ http:// ولا https:// بلا معلومات الدخول، بارامترات البحث ولا الجزء #.",
-        "CONNECTION_FAILED": "ما قدرناش نتاصلو. تأكد من عنوان السيرفر، ومن أن IPTVnator خدام ويمكن توصل ليه من هاد الجهاز، وعاود حاول."
+        "CONNECTION_FAILED": "ما قدرناش نتاصلو. تأكد من عنوان السيرفر، ومن أن D7my-TV خدام ويمكن توصل ليه من هاد الجهاز، وعاود حاول."
     },
     "ACTIVITY_SYNC": {
         "TITLE": "مزامنة المشاهدة",

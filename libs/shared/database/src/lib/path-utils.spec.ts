@@ -5,7 +5,15 @@ jest.mock('os', () => ({
     homedir: () => homedirMock(),
 }));
 
-import { existsSync, mkdtempSync, rmSync } from 'fs';
+import {
+    existsSync,
+    mkdirSync,
+    mkdtempSync,
+    readFileSync,
+    readdirSync,
+    rmSync,
+    writeFileSync,
+} from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import {
@@ -85,7 +93,7 @@ describe('path-utils', () => {
         process.env[IPTVNATOR_DATA_DIR_ENV] = '   ';
 
         expect(getIptvnatorDataRoot()).toBe(
-            join(tempRoot, 'home', '.iptvnator')
+            join(tempRoot, 'home', '.d7my-tv')
         );
     });
 
@@ -97,13 +105,81 @@ describe('path-utils', () => {
         expect(existsSync(e2eDataDir)).toBe(true);
     });
 
-    it('falls back to ~/.iptvnator when the env override is blank', () => {
+    it('falls back to ~/.d7my-tv when the env override is blank', () => {
         process.env[IPTVNATOR_E2E_DATA_DIR_ENV] = '   ';
 
-        const expectedRoot = join(tempRoot, 'home', '.iptvnator');
+        const expectedRoot = join(tempRoot, 'home', '.d7my-tv');
 
         expect(getIptvnatorDataRoot()).toBe(expectedRoot);
         expect(existsSync(expectedRoot)).toBe(true);
+    });
+
+    describe('data written under the former ~/.iptvnator folder', () => {
+        const legacyRoot = () => join(tempRoot, 'home', '.iptvnator');
+        const targetRoot = () => join(tempRoot, 'home', '.d7my-tv');
+
+        function seedLegacy(): void {
+            mkdirSync(join(legacyRoot(), 'databases'), { recursive: true });
+            writeFileSync(
+                join(legacyRoot(), 'databases', 'iptvnator.db'),
+                'playlists'
+            );
+        }
+
+        it('is copied to ~/.d7my-tv on first use and the old folder is kept', () => {
+            seedLegacy();
+
+            expect(getIptvnatorDataRoot()).toBe(targetRoot());
+            expect(
+                readFileSync(
+                    join(targetRoot(), 'databases', 'iptvnator.db'),
+                    'utf8'
+                )
+            ).toBe('playlists');
+            expect(
+                readFileSync(
+                    join(legacyRoot(), 'databases', 'iptvnator.db'),
+                    'utf8'
+                )
+            ).toBe('playlists');
+            expect(
+                readdirSync(join(tempRoot, 'home')).filter((name) =>
+                    name.includes('migrating')
+                )
+            ).toEqual([]);
+        });
+
+        it('never overwrites a ~/.d7my-tv that already exists', () => {
+            seedLegacy();
+            mkdirSync(join(targetRoot(), 'databases'), { recursive: true });
+            writeFileSync(
+                join(targetRoot(), 'databases', 'iptvnator.db'),
+                'newer'
+            );
+
+            expect(getIptvnatorDataRoot()).toBe(targetRoot());
+            expect(
+                readFileSync(
+                    join(targetRoot(), 'databases', 'iptvnator.db'),
+                    'utf8'
+                )
+            ).toBe('newer');
+        });
+
+        it('creates an empty ~/.d7my-tv when there is nothing to migrate', () => {
+            expect(getIptvnatorDataRoot()).toBe(targetRoot());
+            expect(readdirSync(targetRoot())).toEqual([]);
+            expect(existsSync(legacyRoot())).toBe(false);
+        });
+
+        it('leaves an explicit IPTVNATOR_DATA_DIR alone', () => {
+            seedLegacy();
+            const custom = join(tempRoot, 'custom');
+            process.env[IPTVNATOR_DATA_DIR_ENV] = custom;
+
+            expect(getIptvnatorDataRoot()).toBe(custom);
+            expect(existsSync(targetRoot())).toBe(false);
+        });
     });
 
     it('places the databases directory and database file under the data root', () => {

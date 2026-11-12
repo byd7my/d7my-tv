@@ -1,7 +1,7 @@
 ---
 services:
   iptvnator:
-    image: 4gray/iptvnator:latest
+    image: d7my-tv:latest
     build:
       context: ..
       dockerfile: docker/Dockerfile

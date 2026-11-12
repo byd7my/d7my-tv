@@ -18,7 +18,7 @@ body:
           options:
               - label: I'm on the latest release (or a nightly build) and the problem still happens there.
                 required: true
-              - label: I searched the [existing issues](https://github.com/4gray/iptvnator/issues?q=is%3Aissue) and this hasn't been reported yet.
+              - label: I searched the [existing issues](https://github.com/byd7my/d7my-tv/issues?q=is%3Aissue) and this hasn't been reported yet.
                 required: true
               - label: I removed usernames, passwords, MAC addresses, tokens and private URLs from everything I paste below.
                 required: true

@@ -228,7 +228,7 @@ interfaces. Inside the exact packaged Flatpak `/app` context, the helper
 reconstructs only Freedesktop Platform 24.08's immutable
 `__EGL_EXTERNAL_PLATFORM_CONFIG_DIRS` value; the GL extension's
 `add-ld-path` remains available through the sandbox loader cache. Flatpak CI
-therefore invokes `flatpak run com.fourgray.iptvnator
+therefore invokes `flatpak run com.d7my.tv
 --embedded-mpv-runtime-probe` instead of executing the helper around the
 application gate. In a genuine Snap mount, filtered `SNAP_LIBRARY_PATH` GL roots
 under `/var/lib/snapd/lib/gl` come next, then the fixed x64

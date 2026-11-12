@@ -12,7 +12,7 @@ body:
       attributes:
           label: Before you submit
           options:
-              - label: I searched the [existing issues](https://github.com/4gray/iptvnator/issues?q=is%3Aissue) and this hasn't been requested yet.
+              - label: I searched the [existing issues](https://github.com/byd7my/d7my-tv/issues?q=is%3Aissue) and this hasn't been requested yet.
                 required: true
               - label: I removed usernames, passwords, MAC addresses, tokens and private URLs from any examples or screenshots I share.
                 required: true

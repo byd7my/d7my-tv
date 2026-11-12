@@ -79,7 +79,7 @@ root is resolved in this order:
 1. `IPTVNATOR_E2E_DATA_DIR` (E2E runs only)
 2. `IPTVNATOR_DATA_DIR` (an operator-selected data root for deployments
    with a mounted volume, for example `/data`)
-3. `~/.iptvnator`
+3. `~/.d7my-tv` (copied from `~/.iptvnator` on first start after the rename)
 
 Electron selects a separate database when connected to a source server:
 `<data root>/server-profiles/<sha256(instanceId)>/databases/iptvnator.db`.

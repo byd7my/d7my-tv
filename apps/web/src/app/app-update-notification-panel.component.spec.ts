@@ -21,7 +21,7 @@ import { AppUpdateReleaseNotesDialogComponent } from './settings/app-update-rele
 const availableStatus: ElectronBridgeAppUpdateStatus = {
     currentVersion: '0.22.0',
     latestVersion: '0.23.0',
-    manualDownloadUrl: 'https://github.com/4gray/iptvnator/releases/latest',
+    manualDownloadUrl: 'https://github.com/byd7my/d7my-tv/releases/latest',
     status: ELECTRON_BRIDGE_APP_UPDATE_STATUSES.Available,
     supportedSelfUpdate: true,
     channel: 'stable',
