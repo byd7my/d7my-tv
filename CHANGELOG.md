@@ -11,6 +11,12 @@ this marker — see `.changes/README.md`.
 
 <!-- next-release -->
 
+# 0.26.14 (2026-11-12)
+
+### Fixes
+
+- **playback** — The stream info panel now matches the audio panel's glass look and is easier to read: grouped into picture, sound and connection, with plain names (Full HD, H.265, Hardware), a playing/buffering status and an "Explain these numbers" option. It shows the real coded size (anamorphic streams no longer show a wrong one) and the network download speed. Anything not measured is left out. ([7817d0d](https://github.com/4gray/iptvnator/commit/7817d0dfb1f90a468b6cef928786129d3ea1cc85))
+
 # 0.26.13 (2026-11-12)
 
 <details>
