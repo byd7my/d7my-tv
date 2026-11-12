@@ -158,6 +158,38 @@ export class SplitSyncBarComponent {
         };
     });
 
+    /** Which side is ahead and by how much (display only, from the same estimate as the difference line). */
+    protected readonly lead = computed<{
+        side: 'picture' | 'audio';
+        seconds: string;
+    } | null>(() => {
+        const side = this.side();
+        if (!side || side === 'inSync') return null;
+        // "Audio behind" means the picture is the side that is ahead.
+        return {
+            side: side === 'behind' ? 'picture' : 'audio',
+            seconds: this.latenessLabel(),
+        };
+    });
+
+    /** How far through the freeze the countdown is, 0 to 100 (display only). */
+    protected readonly freezeProgress = computed(() => {
+        const f = this.freeze();
+        if (!f || f.phase !== 'freezing' || f.freezeSeconds <= 0) return 0;
+        const done = (f.freezeSeconds - f.remainingSeconds) / f.freezeSeconds;
+        return Math.round(Math.min(1, Math.max(0, done)) * 100);
+    });
+
+    /** Colour of the state dot: working, finished well, or not synced. */
+    protected readonly tone = computed<'busy' | 'ok' | 'bad'>(() => {
+        const phase = this.status()?.sync?.phase;
+        if (this.isAuto() && phase === 'failed') return 'bad';
+        if (this.isAuto() && phase === 'done') return 'ok';
+        const state = this.status()?.state;
+        if (state === 'failed') return 'bad';
+        return state === 'synced' ? 'ok' : 'busy';
+    });
+
     protected readonly correctionLabel = computed(() => {
         const status = this.status();
         if (!status?.correcting) return '';

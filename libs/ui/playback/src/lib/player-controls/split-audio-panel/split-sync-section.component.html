@@ -58,17 +58,7 @@
         }}</span>
     </button>
 
-    @if (sync.mode() === 'auto') {
-        <button
-            type="button"
-            class="sync-section__link"
-            data-test-id="split-sync-regions"
-            (click)="sync.openRegionPicker()"
-        >
-            <mat-icon aria-hidden="true">crop_free</mat-icon>
-            {{ 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.PICK_REGIONS' | translate }}
-        </button>
-    } @else {
+    @if (sync.mode() === 'manual') {
         <div class="sync-section__manual" data-test-id="split-sync-manual">
             <label class="sync-section__field">
                 <span>{{
@@ -172,16 +162,32 @@
         </div>
     }
 
-    <button
-        type="button"
-        class="sync-section__link"
-        data-test-id="split-sync-quick"
-        [disabled]="!sync.started()"
-        (click)="sync.quickSync()"
+    <div
+        class="sync-section__tools"
+        [class.sync-section__tools--pair]="sync.mode() === 'auto'"
     >
-        <mat-icon aria-hidden="true">fast_rewind</mat-icon>
-        {{ 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.QUICK_SYNC' | translate }}
-    </button>
+        @if (sync.mode() === 'auto') {
+            <button
+                type="button"
+                class="sync-section__tool"
+                data-test-id="split-sync-regions"
+                (click)="sync.openRegionPicker()"
+            >
+                <mat-icon aria-hidden="true">crop_free</mat-icon>
+                {{ 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.PICK_REGIONS' | translate }}
+            </button>
+        }
+        <button
+            type="button"
+            class="sync-section__tool"
+            data-test-id="split-sync-quick"
+            [disabled]="!sync.started()"
+            (click)="sync.quickSync()"
+        >
+            <mat-icon aria-hidden="true">fast_rewind</mat-icon>
+            {{ 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.QUICK_SYNC' | translate }}
+        </button>
+    </div>
     <p class="sync-section__hint">
         {{ 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.QUICK_HINT' | translate }}
     </p>

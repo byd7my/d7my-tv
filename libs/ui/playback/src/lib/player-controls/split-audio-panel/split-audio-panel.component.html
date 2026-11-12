@@ -1,6 +1,12 @@
-<div class="split-audio" role="dialog" [attr.aria-label]="'CHANNELS.SPLIT_AUDIO.PANEL_TITLE' | translate">
+<div
+    class="split-audio"
+    role="dialog"
+    [attr.aria-label]="'CHANNELS.SPLIT_AUDIO.PANEL_TITLE' | translate"
+>
     <header class="split-audio__header">
-        <mat-icon class="split-audio__header-icon" aria-hidden="true">surround_sound</mat-icon>
+        <mat-icon class="split-audio__header-icon" aria-hidden="true"
+            >surround_sound</mat-icon
+        >
         <h2 class="split-audio__title">
             {{ 'CHANNELS.SPLIT_AUDIO.PANEL_TITLE' | translate }}
         </h2>
@@ -26,7 +32,11 @@
     </header>
 
     @if (controls().error()) {
-        <p class="split-audio__error" role="alert" data-test-id="split-audio-error">
+        <p
+            class="split-audio__error"
+            role="alert"
+            data-test-id="split-audio-error"
+        >
             {{
                 (controls().notice() === 'stalled'
                     ? 'CHANNELS.SPLIT_AUDIO.AUDIO_STALLED'
@@ -44,18 +54,28 @@
             data-test-id="split-audio-search"
             autocomplete="off"
             [value]="query()"
-            [placeholder]="'CHANNELS.SPLIT_AUDIO.SEARCH_PLACEHOLDER' | translate"
+            [placeholder]="
+                'CHANNELS.SPLIT_AUDIO.SEARCH_PLACEHOLDER' | translate
+            "
             (input)="onQuery($event)"
         />
     }
 
     @if (!controls().hasChannelList()) {
-        <p class="split-audio__error" role="status" data-test-id="split-audio-no-list">
+        <p
+            class="split-audio__error"
+            role="status"
+            data-test-id="split-audio-no-list"
+        >
             {{ 'CHANNELS.SPLIT_AUDIO.NO_CHANNEL_LIST' | translate }}
         </p>
     }
 
-    <ul class="split-audio__list" role="listbox" data-test-id="split-audio-list">
+    <ul
+        class="split-audio__list"
+        role="listbox"
+        data-test-id="split-audio-list"
+    >
         @for (channel of rows(); track channel.url) {
             <li
                 class="split-audio__row"
@@ -70,7 +90,9 @@
                     (click)="controls().select(channel)"
                 >
                     @if (isActive(channel)) {
-                        <mat-icon class="split-audio__wave" aria-hidden="true">graphic_eq</mat-icon>
+                        <mat-icon class="split-audio__wave" aria-hidden="true"
+                            >graphic_eq</mat-icon
+                        >
                     }
                     <span class="split-audio__name">{{ channel.name }}</span>
                 </button>
@@ -79,10 +101,14 @@
                     class="split-audio__star"
                     [class.split-audio__star--on]="isFavorite(channel)"
                     [attr.aria-pressed]="isFavorite(channel)"
-                    [attr.aria-label]="'CHANNELS.SPLIT_AUDIO.FAVORITE_AUDIO' | translate"
+                    [attr.aria-label]="
+                        'CHANNELS.SPLIT_AUDIO.FAVORITE_AUDIO' | translate
+                    "
                     (click)="controls().toggleFavorite(channel)"
                 >
-                    <mat-icon>{{ isFavorite(channel) ? 'star' : 'star_border' }}</mat-icon>
+                    <mat-icon>{{
+                        isFavorite(channel) ? 'star' : 'star_border'
+                    }}</mat-icon>
                 </button>
             </li>
         } @empty {
@@ -123,26 +149,35 @@
                 type="button"
                 class="split-audio__step-button"
                 data-test-id="split-audio-delay-minus"
-                [attr.aria-label]="'CHANNELS.SPLIT_AUDIO.PICTURE_LATER' | translate"
+                [attr.aria-label]="
+                    'CHANNELS.SPLIT_AUDIO.PICTURE_LATER' | translate
+                "
                 (click)="controls().adjustDelay(-step())"
             >
                 <mat-icon>remove</mat-icon>
             </button>
             <span class="split-audio__delay" data-test-id="split-audio-delay">
-                {{ delayLabel() }}{{ 'CHANNELS.SPLIT_AUDIO.SECONDS_SHORT' | translate }}
+                {{ delayLabel()
+                }}{{ 'CHANNELS.SPLIT_AUDIO.SECONDS_SHORT' | translate }}
             </span>
             <button
                 type="button"
                 class="split-audio__step-button"
                 data-test-id="split-audio-delay-plus"
-                [attr.aria-label]="'CHANNELS.SPLIT_AUDIO.COMMENTARY_LATER' | translate"
+                [attr.aria-label]="
+                    'CHANNELS.SPLIT_AUDIO.COMMENTARY_LATER' | translate
+                "
                 (click)="controls().adjustDelay(step())"
             >
                 <mat-icon>add</mat-icon>
             </button>
         </div>
 
-        <div class="split-audio__chips" role="radiogroup" [hidden]="controls().splitActive()">
+        <div
+            class="split-audio__chips"
+            role="radiogroup"
+            [hidden]="controls().splitActive()"
+        >
             @for (value of steps; track value) {
                 <button
                     type="button"
@@ -159,31 +194,34 @@
         </div>
         <div class="split-audio__hints" [hidden]="controls().splitActive()">
             <span>{{ 'CHANNELS.SPLIT_AUDIO.PICTURE_LATER' | translate }}</span>
-            <span>{{ 'CHANNELS.SPLIT_AUDIO.COMMENTARY_LATER' | translate }}</span>
+            <span>{{
+                'CHANNELS.SPLIT_AUDIO.COMMENTARY_LATER' | translate
+            }}</span>
         </div>
 
-        <button
-            type="button"
-            class="split-audio__save"
-            data-test-id="split-audio-save"
-            [disabled]="controls().isDelaySaved()"
-            (click)="controls().saveDelay()"
-        >
-            {{
-                (controls().isDelaySaved()
-                    ? 'CHANNELS.SPLIT_AUDIO.DELAY_SAVED'
-                    : 'CHANNELS.SPLIT_AUDIO.SAVE_DELAY'
-                ) | translate
-            }}
-        </button>
-
-        <button
-            type="button"
-            class="split-audio__original"
-            data-test-id="split-audio-original"
-            (click)="controls().clear()"
-        >
-            {{ 'CHANNELS.SPLIT_AUDIO.BACK_TO_ORIGINAL' | translate }}
-        </button>
+        <div class="split-audio__footer">
+            <button
+                type="button"
+                class="split-audio__save"
+                data-test-id="split-audio-save"
+                [disabled]="controls().isDelaySaved()"
+                (click)="controls().saveDelay()"
+            >
+                {{
+                    (controls().isDelaySaved()
+                        ? 'CHANNELS.SPLIT_AUDIO.DELAY_SAVED'
+                        : 'CHANNELS.SPLIT_AUDIO.SAVE_DELAY'
+                    ) | translate
+                }}
+            </button>
+            <button
+                type="button"
+                class="split-audio__original"
+                data-test-id="split-audio-original"
+                (click)="controls().clear()"
+            >
+                {{ 'CHANNELS.SPLIT_AUDIO.BACK_TO_ORIGINAL' | translate }}
+            </button>
+        </div>
     }
 </div>
