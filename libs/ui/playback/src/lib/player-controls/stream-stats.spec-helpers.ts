@@ -27,6 +27,12 @@ export function emptyStreamStats(
         bufferedAheadSeconds: null,
         droppedFrames: null,
         totalFrames: null,
+        displayWidth: null,
+        displayHeight: null,
+        networkBitrateBps: null,
+        status: null,
+        engine: null,
+        decoder: null,
         ...overrides,
     };
 }

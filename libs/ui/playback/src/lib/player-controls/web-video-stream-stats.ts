@@ -95,6 +95,18 @@ export class WebVideoStreamStatsSampler implements PlayerStreamStatsSource {
             bufferedAheadSeconds: readBufferedAhead(video),
             droppedFrames: quality?.droppedVideoFrames ?? null,
             totalFrames: quality?.totalVideoFrames ?? null,
+            displayWidth: null,
+            displayHeight: null,
+            networkBitrateBps: null,
+            status: video.ended
+                ? 'ended'
+                : video.paused
+                  ? 'paused'
+                  : video.readyState < 3
+                    ? 'buffering'
+                    : 'playing',
+            engine: 'HTML5 video',
+            decoder: null,
         };
     }
 

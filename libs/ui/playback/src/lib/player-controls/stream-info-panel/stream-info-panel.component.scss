@@ -1,0 +1,188 @@
+:host {
+    display: contents;
+}
+
+// Anchored under the corner button (the only popover that opens downward);
+// the label/value grid keeps the numbers on a common right edge. Liquid glass
+// like the audio panel (see split-audio-panel.component.scss): fixed colours on
+// purpose, as with every overlay painted over video.
+.player-controls__stats-popover {
+    --pc-text: #f5f5f7;
+    --pc-text-dim: rgba(235, 235, 245, 0.78);
+    --pc-text-secondary: rgba(235, 235, 245, 0.6);
+    --pc-accent-cyan: #6cb6ff;
+    --pc-glass-border: rgba(255, 255, 255, 0.12);
+
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    min-width: 280px;
+    max-width: min(360px, calc(100cqw - 24px), 80vw);
+    max-height: min(calc(100cqh - 120px), 70vh);
+    padding: 14px;
+    overflow-y: auto;
+    background:
+        linear-gradient(
+            165deg,
+            rgba(255, 255, 255, 0.14) 0%,
+            rgba(255, 255, 255, 0.03) 45%,
+            rgba(255, 255, 255, 0.07) 100%
+        ),
+        rgba(24, 24, 28, 0.52);
+    border: 0;
+    border-radius: 28px;
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4),
+        0 22px 50px rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(36px) saturate(180%);
+    font-family:
+        -apple-system, 'SF Pro Text', Inter, system-ui, 'Segoe UI', sans-serif;
+    scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+    scrollbar-width: thin;
+    z-index: 3;
+}
+
+.player-controls__stats-popover .player-controls__menu-title {
+    flex: 0 0 auto;
+    font-weight: 700;
+    white-space: nowrap;
+    padding: 2px 4px 8px;
+    color: var(--pc-text);
+    font-size: 1.05rem;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+.player-controls__stats-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 4px 4px;
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+
+.player-controls__stats-dot {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--pc-text-tertiary);
+}
+
+// The colour only repeats what the word beside it already says.
+.player-controls__stats-dot[data-tone='good'] {
+    background: #4cd98a;
+}
+
+.player-controls__stats-dot[data-tone='wait'] {
+    background: #ffb74d;
+}
+
+.player-controls__stats-dot[data-tone='bad'] {
+    background: var(--pc-danger);
+}
+
+.player-controls__stats-engine {
+    margin-inline-start: auto;
+    color: var(--pc-text-secondary);
+    font-size: 0.72rem;
+    font-weight: 400;
+}
+
+.player-controls__stats-section {
+    margin-top: 10px;
+    padding: 8px 12px 10px;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 18px;
+}
+
+.player-controls__stats-heading {
+    margin: 0 0 4px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid var(--pc-glass-border);
+    color: var(--pc-text-secondary);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.player-controls__stats-list {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+}
+
+.player-controls__stats-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 2px 16px;
+    align-items: baseline;
+}
+
+.player-controls__stats-row dt {
+    color: var(--pc-text-dim);
+    font-size: 0.76rem;
+    white-space: nowrap;
+}
+
+// Main value first, its qualifier beneath in a quieter tone.
+.player-controls__stats-row dd {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-size: 0.84rem;
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+}
+
+.player-controls__stats-detail {
+    color: var(--pc-text-secondary);
+    font-size: 0.72rem;
+}
+
+.player-controls__stats-row .player-controls__stats-hint {
+    grid-column: 1 / -1;
+    align-items: flex-start;
+    color: var(--pc-text-secondary);
+    font-size: 0.7rem;
+    line-height: 1.35;
+    text-align: start;
+}
+
+.player-controls__stats-explain {
+    align-self: stretch;
+    margin-top: 12px;
+    padding: 9px 14px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    color: var(--pc-text);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.player-controls__stats-explain:hover {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.player-controls__stats-note {
+    margin: 8px 4px 0;
+    color: var(--pc-text-secondary);
+    font-size: 0.68rem;
+    line-height: 1.35;
+}
+
+.player-controls__stats-empty {
+    padding: 2px;
+    color: var(--pc-text-dim);
+    font-size: 0.8rem;
+}

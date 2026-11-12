@@ -1,9 +1,9 @@
-import { computed, signal } from '@angular/core';
+import { computed, effect, signal, untracked } from '@angular/core';
 import type {
     PlayerStreamStats,
     PlayerStreamStatsSource,
 } from './player-stream-stats.model';
-import { buildStreamStatsRows } from './stream-stats-format.utils';
+import { buildStreamStatsView } from './stream-stats-view';
 
 /**
  * How often the open popover re-reads the engine. Fast enough that a bitrate
@@ -23,13 +23,34 @@ export class ControlsStreamStats {
     private readonly snapshot = signal<PlayerStreamStats | null>(null);
     private timer: ReturnType<typeof setInterval> | null = null;
 
-    readonly rows = computed(() => buildStreamStatsRows(this.snapshot()));
-    readonly hasRows = computed(() => this.rows().length > 0);
+    readonly view = computed(() => buildStreamStatsView(this.snapshot()));
+    readonly hasRows = computed(() => this.view().sections.length > 0);
+    /** Plain-language explanations under each row; off for people who know the terms. */
+    readonly showHints = signal(false);
 
     constructor(
         private readonly source: () =>
             PlayerStreamStatsSource | null | undefined
     ) {}
+
+    /**
+     * Samples only while `open()` is true. Every close path (toggle, Escape,
+     * capability loss, teardown) runs through that signal, so the sampler can
+     * never outlive the panel it feeds. Call it in an injection context.
+     */
+    bindTo(open: () => boolean): void {
+        effect((onCleanup) => {
+            if (!open()) {
+                return;
+            }
+            untracked(() => this.start());
+            onCleanup(() => this.stop());
+        });
+    }
+
+    toggleHints(): void {
+        this.showHints.update((on) => !on);
+    }
 
     start(): void {
         this.stop();

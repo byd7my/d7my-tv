@@ -1,19 +1,11 @@
 import { formatBitrate } from './controls-format.utils';
-import type { PlayerStreamStats } from './player-stream-stats.model';
 import { positiveOrNull } from './positive-number.util';
 
 /**
- * Turns raw {@link PlayerStreamStats} into the display rows of the stream-info
- * popover. Pure functions only — the component just translates `labelKey` and
- * prints `value`, so every formatting decision is unit-testable in isolation.
+ * Pure formatters for the stream-info popover. The rows themselves are put
+ * together in `stream-stats-view.ts`; every formatting decision lives here so
+ * it is unit-testable in isolation.
  */
-
-export interface StreamStatsRow {
-    /** Translation key of the row label. */
-    labelKey: string;
-    /** Display-ready value; rows without one are never emitted. */
-    value: string;
-}
 
 /**
  * Ratios worth naming. A raw greatest-common-divisor reduction is exact but
@@ -203,71 +195,12 @@ export function formatDroppedFrames(
     return `${count} (${percent < 0.01 && percent > 0 ? '<0.01' : percent.toFixed(2)}%)`;
 }
 
-/** Joins a codec with its bitrate: "h264 · 4.6 Mbps", or whichever is known. */
-function joinCodecAndBitrate(
-    codec: string | null,
-    bitrateBps: number | null
+/** Unlike an encoded bitrate, a transfer of zero is a real reading (a stalled download). */
+export function formatNetworkBitrate(
+    bitsPerSecond: number | null
 ): string | null {
-    const parts = [formatCodec(codec), formatBitrate(bitrateBps)].filter(
-        (part): part is string => part !== null
-    );
-    return parts.length > 0 ? parts.join(' · ') : null;
-}
-
-export function buildStreamStatsRows(
-    stats: PlayerStreamStats | null
-): StreamStatsRow[] {
-    if (!stats) {
-        return [];
+    if (typeof bitsPerSecond !== 'number' || !Number.isFinite(bitsPerSecond)) {
+        return null;
     }
-
-    const resolution = formatResolution(stats.width, stats.height);
-    const aspect = formatAspectRatio(stats.width, stats.height);
-    const candidates: ReadonlyArray<[string, string | null]> = [
-        [
-            'EMBEDDED_MPV.PLAYER.STATS_RESOLUTION',
-            resolution && aspect ? `${resolution} · ${aspect}` : resolution,
-        ],
-        ['EMBEDDED_MPV.PLAYER.STATS_FRAME_RATE', formatFrameRate(stats.fps)],
-        [
-            'EMBEDDED_MPV.PLAYER.STATS_NOMINAL_FRAME_RATE',
-            formatFrameRate(positiveOrNull(stats.nominalFps)),
-        ],
-        [
-            'EMBEDDED_MPV.PLAYER.STATS_STREAM_BITRATE',
-            formatBitrate(stats.streamBitrateBps),
-        ],
-        [
-            'EMBEDDED_MPV.PLAYER.STATS_VIDEO',
-            joinCodecAndBitrate(stats.videoCodec, stats.videoBitrateBps),
-        ],
-        [
-            'EMBEDDED_MPV.PLAYER.STATS_AUDIO',
-            joinCodecAndBitrate(stats.audioCodec, stats.audioBitrateBps),
-        ],
-        [
-            'EMBEDDED_MPV.PLAYER.STATS_AUDIO_CHANNELS',
-            formatAudioChannels(stats.audioChannels),
-        ],
-        [
-            'EMBEDDED_MPV.PLAYER.STATS_SAMPLE_RATE',
-            formatSampleRate(stats.audioSampleRateHz),
-        ],
-        [
-            'EMBEDDED_MPV.PLAYER.STATS_CONTAINER',
-            stats.container?.trim() || null,
-        ],
-        [
-            'EMBEDDED_MPV.PLAYER.STATS_BUFFER',
-            formatBufferedSeconds(stats.bufferedAheadSeconds),
-        ],
-        [
-            'EMBEDDED_MPV.PLAYER.STATS_DROPPED_FRAMES',
-            formatDroppedFrames(stats.droppedFrames, stats.totalFrames),
-        ],
-    ];
-
-    return candidates
-        .filter((entry): entry is [string, string] => entry[1] !== null)
-        .map(([labelKey, value]) => ({ labelKey, value }));
+    return bitsPerSecond <= 0 ? '0 kbps' : formatBitrate(bitsPerSecond);
 }

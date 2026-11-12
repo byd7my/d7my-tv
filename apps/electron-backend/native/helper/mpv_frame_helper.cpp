@@ -81,6 +81,15 @@ struct SnapshotState {
     double cacheDuration = -1;      /* demuxer-cache-duration; <0 = unknown */
     int64_t droppedFrames = -1;     /* frame-drop-count; <0 = unknown */
     int64_t decoderDroppedFrames = -1;
+    /* The coded picture size (video-params/w,h), as opposed to the displayed
+     * size above: an anamorphic 1440x1080 stream is displayed as 1920x1080. */
+    int64_t sourceWidth = 0;
+    int64_t sourceHeight = 0;
+    /* cache-speed: bytes/s mpv reads from the network over a 1 s window;
+     * <0 = unknown. This is transfer, not the encoded bitrate. */
+    int64_t networkBytesPerSec = -1;
+    int bufferingFlag = -1;      /* paused-for-cache; -1 = unknown */
+    std::string hwdec;           /* hwdec-current, "no" = software decoding */
 
     // MPV_FORMAT_NONE revokes just this observation, not unrelated values.
     bool clearUnavailableStreamProperty(const std::string& name) {
@@ -97,6 +106,11 @@ struct SnapshotState {
         else if (name == "decoder-frame-drop-count") { decoderDroppedFrames = -1; }
         else if (name == "dwidth") { videoWidth = 0; }
         else if (name == "dheight") { videoHeight = 0; }
+        else if (name == "video-params/w") { sourceWidth = 0; }
+        else if (name == "video-params/h") { sourceHeight = 0; }
+        else if (name == "cache-speed") { networkBytesPerSec = -1; }
+        else if (name == "paused-for-cache") { bufferingFlag = -1; }
+        else if (name == "hwdec-current") { hwdec.clear(); }
         else { return false; }
         return true;
     }
@@ -118,6 +132,11 @@ struct SnapshotState {
         cacheDuration = -1;
         droppedFrames = -1;
         decoderDroppedFrames = -1;
+        sourceWidth = 0;
+        sourceHeight = 0;
+        networkBytesPerSec = -1;
+        bufferingFlag = -1;
+        hwdec.clear();
     }
     std::string streamUrl;
     std::vector<TrackInfo> audioTracks;
@@ -273,6 +292,19 @@ std::string composeStatsJsonLocked() {
         const int64_t dropped = std::max<int64_t>(0, s.droppedFrames) +
                                 std::max<int64_t>(0, s.decoderDroppedFrames);
         stats.num("droppedFrames", (double)dropped);
+    }
+    if (s.sourceWidth > 0 && s.sourceHeight > 0) {
+        stats.num("sourceWidth", (double)s.sourceWidth);
+        stats.num("sourceHeight", (double)s.sourceHeight);
+    }
+    if (s.networkBytesPerSec >= 0) {
+        stats.num("networkBitrateBps", (double)s.networkBytesPerSec * 8.0);
+    }
+    if (s.bufferingFlag >= 0) {
+        stats.boolean("buffering", s.bufferingFlag == 1);
+    }
+    if (!s.hwdec.empty()) {
+        stats.str("hwdec", s.hwdec);
     }
     return stats.finish();
 }
@@ -592,6 +624,24 @@ void handlePropertyChange(const mpv_event_property& property) {
     } else if (name == "audio-params/samplerate" &&
                property.format == MPV_FORMAT_INT64 && property.data) {
         s.audioSampleRate = *static_cast<int64_t*>(property.data);
+    } else if ((name == "video-params/w" || name == "video-params/h") &&
+               property.format == MPV_FORMAT_INT64 && property.data) {
+        const int64_t value = *static_cast<int64_t*>(property.data);
+        if (name == "video-params/w") {
+            s.sourceWidth = value;
+        } else {
+            s.sourceHeight = value;
+        }
+    } else if (name == "cache-speed" && property.format == MPV_FORMAT_INT64 &&
+               property.data) {
+        s.networkBytesPerSec = *static_cast<int64_t*>(property.data);
+    } else if (name == "paused-for-cache" &&
+               property.format == MPV_FORMAT_FLAG && property.data) {
+        s.bufferingFlag = *static_cast<int*>(property.data) != 0 ? 1 : 0;
+    } else if (name == "hwdec-current" &&
+               property.format == MPV_FORMAT_STRING && property.data) {
+        const char* value = *static_cast<char**>(property.data);
+        s.hwdec = value ? value : "";
     } else if (name == "frame-drop-count" &&
                property.format == MPV_FORMAT_INT64 && property.data) {
         s.droppedFrames = *static_cast<int64_t*>(property.data);
@@ -1417,6 +1467,13 @@ int main(int argc, char** argv) {
                          MPV_FORMAT_STRING);
     mpv_observe_property(g_state.mpv, 24, "audio-params/samplerate",
                          MPV_FORMAT_INT64);
+    /* What the stream really is and how it arrives: coded size, network
+     * transfer, buffering and the decoder in use. */
+    mpv_observe_property(g_state.mpv, 26, "video-params/w", MPV_FORMAT_INT64);
+    mpv_observe_property(g_state.mpv, 27, "video-params/h", MPV_FORMAT_INT64);
+    mpv_observe_property(g_state.mpv, 28, "cache-speed", MPV_FORMAT_INT64);
+    mpv_observe_property(g_state.mpv, 29, "paused-for-cache", MPV_FORMAT_FLAG);
+    mpv_observe_property(g_state.mpv, 30, "hwdec-current", MPV_FORMAT_STRING);
     /* File chapters draw the timeline segments and mark closing credits. */
     mpv_observe_property(g_state.mpv, 25, "chapter-list", MPV_FORMAT_NODE);
 

@@ -1,0 +1,89 @@
+<div
+    class="player-controls__stats-popover"
+    role="dialog"
+    data-test-id="player-controls-stream-info-panel"
+    [attr.aria-label]="'EMBEDDED_MPV.PLAYER.STREAM_INFO' | translate"
+>
+    <div class="player-controls__menu-title">
+        {{ 'EMBEDDED_MPV.PLAYER.STREAM_INFO' | translate }}
+    </div>
+    @if (view().headline; as headline) {
+        <div
+            class="player-controls__stats-status"
+            data-test-id="player-controls-stream-info-status"
+        >
+            <span
+                class="player-controls__stats-dot"
+                aria-hidden="true"
+                [attr.data-tone]="headline.tone"
+            ></span>
+            <span class="player-controls__stats-state">
+                {{ headline.labelKey | translate }}
+            </span>
+            @if (view().engine) {
+                <span class="player-controls__stats-engine">
+                    {{ view().engine }}
+                </span>
+            }
+        </div>
+    }
+    @if (hasRows()) {
+        @for (section of view().sections; track section.titleKey) {
+            <section class="player-controls__stats-section">
+                <h3 class="player-controls__stats-heading">
+                    {{ section.titleKey | translate }}
+                </h3>
+                <dl class="player-controls__stats-list">
+                    @for (row of section.rows; track row.labelKey) {
+                        <div class="player-controls__stats-row">
+                            <dt>{{ row.labelKey | translate }}</dt>
+                            <dd>
+                                <span>
+                                    {{
+                                        row.valueKey
+                                            ? (row.valueKey | translate)
+                                            : row.value
+                                    }}
+                                </span>
+                                @if (row.detail) {
+                                    <span class="player-controls__stats-detail">
+                                        {{ row.detail }}
+                                    </span>
+                                }
+                            </dd>
+                            @if (showHints() && row.hintKey) {
+                                <dd class="player-controls__stats-hint">
+                                    {{ row.hintKey | translate }}
+                                </dd>
+                            }
+                        </div>
+                    }
+                </dl>
+            </section>
+        }
+        <button
+            type="button"
+            class="player-controls__stats-explain"
+            data-test-id="player-controls-stream-info-explain"
+            [attr.aria-pressed]="showHints()"
+            (click)="hintsToggled.emit()"
+        >
+            {{
+                (showHints()
+                    ? 'EMBEDDED_MPV.PLAYER.STATS_EXPLAIN_HIDE'
+                    : 'EMBEDDED_MPV.PLAYER.STATS_EXPLAIN_SHOW'
+                ) | translate
+            }}
+        </button>
+        <div
+            class="player-controls__stats-note"
+            data-test-id="player-controls-stream-info-note"
+        >
+            {{ 'EMBEDDED_MPV.PLAYER.STATS_NOTE' | translate }}
+        </div>
+    } @else {
+        <div class="player-controls__stats-empty">
+            {{ 'EMBEDDED_MPV.PLAYER.STATS_UNAVAILABLE' | translate }}
+        </div>
+    }
+</div>

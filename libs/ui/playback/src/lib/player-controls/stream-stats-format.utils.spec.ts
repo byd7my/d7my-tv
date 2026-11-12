@@ -1,6 +1,6 @@
 import { formatBitrate } from './controls-format.utils';
 import {
-    buildStreamStatsRows,
+    formatNetworkBitrate,
     formatAspectRatio,
     formatAudioChannels,
     formatSampleRate,
@@ -10,7 +10,6 @@ import {
     formatFrameRate,
     formatResolution,
 } from './stream-stats-format.utils';
-import { emptyStreamStats } from './stream-stats.spec-helpers';
 
 describe('stream stats formatting', () => {
     describe('formatResolution', () => {
@@ -170,117 +169,12 @@ describe('stream stats formatting', () => {
             expect(formatDroppedFrames(null, 1200)).toBeNull();
         });
     });
+});
 
-    describe('buildStreamStatsRows', () => {
-        it('emits one row per known value, in reading order', () => {
-            const rows = buildStreamStatsRows(
-                emptyStreamStats({
-                    width: 1920,
-                    height: 1080,
-                    fps: 50,
-                    videoCodec: 'h264',
-                    videoBitrateBps: 4_600_000,
-                    audioCodec: 'aac',
-                    audioBitrateBps: 128_000,
-                    audioChannels: 6,
-                    audioSampleRateHz: 48_000,
-                    container: 'mpegts',
-                    bufferedAheadSeconds: 8.2,
-                    droppedFrames: 2,
-                    totalFrames: 4000,
-                })
-            );
-
-            expect(rows).toEqual([
-                {
-                    labelKey: 'EMBEDDED_MPV.PLAYER.STATS_RESOLUTION',
-                    value: '1920 × 1080 · 16:9',
-                },
-                {
-                    labelKey: 'EMBEDDED_MPV.PLAYER.STATS_FRAME_RATE',
-                    value: '50 fps',
-                },
-                {
-                    labelKey: 'EMBEDDED_MPV.PLAYER.STATS_VIDEO',
-                    value: 'h264 · 4.6 Mbps',
-                },
-                {
-                    labelKey: 'EMBEDDED_MPV.PLAYER.STATS_AUDIO',
-                    value: 'aac · 128 kbps',
-                },
-                {
-                    labelKey: 'EMBEDDED_MPV.PLAYER.STATS_AUDIO_CHANNELS',
-                    value: '5.1',
-                },
-                {
-                    labelKey: 'EMBEDDED_MPV.PLAYER.STATS_SAMPLE_RATE',
-                    value: '48 kHz',
-                },
-                {
-                    labelKey: 'EMBEDDED_MPV.PLAYER.STATS_CONTAINER',
-                    value: 'mpegts',
-                },
-                {
-                    labelKey: 'EMBEDDED_MPV.PLAYER.STATS_BUFFER',
-                    value: '8.2 s',
-                },
-                {
-                    labelKey: 'EMBEDDED_MPV.PLAYER.STATS_DROPPED_FRAMES',
-                    value: '2 (0.05%)',
-                },
-            ]);
-        });
-
-        it('omits the aspect suffix when only one dimension is known', () => {
-            const rows = buildStreamStatsRows(
-                emptyStreamStats({ width: 1920, height: null })
-            );
-
-            expect(rows).toEqual([]);
-        });
-
-        it('keeps a codec row without its bitrate and vice versa', () => {
-            const rows = buildStreamStatsRows(
-                emptyStreamStats({
-                    videoCodec: 'hevc',
-                    audioBitrateBps: 96_000,
-                })
-            );
-
-            expect(rows).toEqual([
-                { labelKey: 'EMBEDDED_MPV.PLAYER.STATS_VIDEO', value: 'hevc' },
-                {
-                    labelKey: 'EMBEDDED_MPV.PLAYER.STATS_AUDIO',
-                    value: '96 kbps',
-                },
-            ]);
-        });
-
-        it('labels nominal FPS and aggregate bitrate separately from measured FPS and video', () => {
-            const rows = buildStreamStatsRows({
-                ...emptyStreamStats({ fps: 0, videoCodec: 'h264' }),
-                nominalFps: 30,
-                streamBitrateBps: 3_000_000,
-            });
-            expect(rows).toEqual([
-                {
-                    labelKey: 'EMBEDDED_MPV.PLAYER.STATS_FRAME_RATE',
-                    value: '0 fps',
-                },
-                {
-                    labelKey: 'EMBEDDED_MPV.PLAYER.STATS_NOMINAL_FRAME_RATE',
-                    value: '30 fps',
-                },
-                {
-                    labelKey: 'EMBEDDED_MPV.PLAYER.STATS_STREAM_BITRATE',
-                    value: '3.0 Mbps',
-                },
-                { labelKey: 'EMBEDDED_MPV.PLAYER.STATS_VIDEO', value: 'h264' },
-            ]);
-        });
-
-        it('returns nothing for an absent snapshot', () => {
-            expect(buildStreamStatsRows(null)).toEqual([]);
-        });
+describe('formatNetworkBitrate', () => {
+    it('shows a stalled download as a real zero and an unknown one as nothing', () => {
+        expect(formatNetworkBitrate(0)).toBe('0 kbps');
+        expect(formatNetworkBitrate(null)).toBeNull();
+        expect(formatNetworkBitrate(2_198_808)).toBe('2.2 Mbps');
     });
 });

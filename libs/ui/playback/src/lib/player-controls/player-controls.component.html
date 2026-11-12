@@ -70,38 +70,11 @@
                 <mat-icon>info_outline</mat-icon>
             </button>
             @if (menus.statsOpen()) {
-                <div
-                    class="player-controls__panel player-controls__stats-popover"
-                    role="dialog"
-                    data-test-id="player-controls-stream-info-panel"
-                    [attr.aria-label]="
-                        'EMBEDDED_MPV.PLAYER.STREAM_INFO' | translate
-                    "
-                >
-                    <div class="player-controls__menu-title">
-                        {{ 'EMBEDDED_MPV.PLAYER.STREAM_INFO' | translate }}
-                    </div>
-                    @if (streamStats.hasRows()) {
-                        <dl class="player-controls__stats-list">
-                            @for (
-                                row of streamStats.rows();
-                                track row.labelKey
-                            ) {
-                                <div class="player-controls__stats-row">
-                                    <dt>{{ row.labelKey | translate }}</dt>
-                                    <dd>{{ row.value }}</dd>
-                                </div>
-                            }
-                        </dl>
-                    } @else {
-                        <div class="player-controls__stats-empty">
-                            {{
-                                'EMBEDDED_MPV.PLAYER.STATS_UNAVAILABLE'
-                                    | translate
-                            }}
-                        </div>
-                    }
-                </div>
+                <app-stream-info-panel
+                    [view]="streamStats.view()"
+                    [showHints]="streamStats.showHints()"
+                    (hintsToggled)="streamStats.toggleHints()"
+                />
             }
         </div>
     </div>

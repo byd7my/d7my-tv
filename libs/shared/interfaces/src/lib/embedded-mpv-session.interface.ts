@@ -159,6 +159,15 @@ export interface EmbeddedMpvStreamStats {
     bufferedAheadSeconds?: number;
     /** mpv `frame-drop-count` plus `decoder-frame-drop-count`. */
     droppedFrames?: number;
+    /** mpv `video-params/w` / `h`: the coded picture size (not the displayed one). */
+    sourceWidth?: number;
+    sourceHeight?: number;
+    /** mpv `cache-speed` x 8: what is downloaded per second, in bits (not the encoded bitrate). */
+    networkBitrateBps?: number;
+    /** mpv `paused-for-cache`: playback is waiting for data. */
+    buffering?: boolean;
+    /** mpv `hwdec-current`: the decoder in use, `no` for software. */
+    hwdec?: string;
 }
 
 export interface EmbeddedMpvRecordingStartOptions {
