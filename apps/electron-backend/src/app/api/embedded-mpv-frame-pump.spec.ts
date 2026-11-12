@@ -47,7 +47,9 @@ describe('embedded MPV frame pump', () => {
 });
 
 describe('extractRegion', () => {
-    // 4x2 frame, BGRA: pixel n has B=n, G=n+100, R=n+200.
+    // 4x2 frame, BGRA: pixel n has B=n, G=n+100, R=n+200. Like the helper's
+    // buffer it is in texture order: the FIRST row (pixels 0-3) is the bottom
+    // of the picture, the second row (pixels 4-7) its top.
     const frame = new Uint8Array(4 * 2 * 4);
     for (let n = 0; n < 8; n++) {
         frame.set([n, n + 100, n + 200, 255], n * 4);
@@ -57,11 +59,13 @@ describe('extractRegion', () => {
         const result = extractRegion(frame, 4, 2, undefined, undefined, 5, 9);
 
         expect(result).toMatchObject({ width: 4, height: 2, ageMs: 5, seq: 9 });
-        expect(Array.from(result!.data.slice(0, 4))).toEqual([200, 100, 0, 255]);
+        // the result is top-down: its first pixel is the top-left one (pixel 4)
+        expect(Array.from(result!.data.slice(0, 4))).toEqual([204, 104, 4, 255]);
+        expect(Array.from(result!.data.slice(16, 20))).toEqual([200, 100, 0, 255]);
     });
 
     it('crops a normalised region', () => {
-        // Right half, bottom row → pixels 6 and 7.
+        // Right half, bottom of the picture (y 0.5..1) → buffer row 0: pixels 2 and 3.
         const result = extractRegion(
             frame,
             4,
@@ -74,7 +78,23 @@ describe('extractRegion', () => {
 
         expect(result).toMatchObject({ width: 2, height: 1 });
         expect(Array.from(result!.data)).toEqual([
-            206, 106, 6, 255, 207, 107, 7, 255,
+            202, 102, 2, 255, 203, 103, 3, 255,
+        ]);
+    });
+
+    it('crops the top of the picture from the end of the buffer', () => {
+        const result = extractRegion(
+            frame,
+            4,
+            2,
+            { x: 0, y: 0, width: 0.5, height: 0.5 },
+            undefined,
+            0,
+            1
+        );
+
+        expect(Array.from(result!.data)).toEqual([
+            204, 104, 4, 255, 205, 105, 5, 255,
         ]);
     });
 

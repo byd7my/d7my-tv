@@ -7,6 +7,7 @@ import {
     EMBEDDED_MPV_GET_FRAME_SOURCE,
     EMBEDDED_MPV_LOAD_PLAYBACK,
     EMBEDDED_MPV_PREPARE,
+    EMBEDDED_MPV_REPORT_SPLIT_AUDIO_LATENESS,
     EMBEDDED_MPV_SEEK,
     EMBEDDED_MPV_SEEK_BY,
     EMBEDDED_MPV_SELECT_SUBTITLE_FILE,
@@ -17,6 +18,9 @@ import {
     EMBEDDED_MPV_SET_BOUNDS,
     EMBEDDED_MPV_SET_PAUSED,
     EMBEDDED_MPV_SET_SPEED,
+    EMBEDDED_MPV_SET_SPLIT_AUDIO_AUTO,
+    EMBEDDED_MPV_SET_SPLIT_AUDIO_SYNC_MODE,
+    EMBEDDED_MPV_SPLIT_AUDIO_SYNC_ACTION,
     EMBEDDED_MPV_SET_SUBTITLE_DELAY,
     EMBEDDED_MPV_SET_SUBTITLE_STYLE,
     EMBEDDED_MPV_SET_SUBTITLE_TRACK,
@@ -178,6 +182,35 @@ handleEmbeddedMpv(
     EMBEDDED_MPV_SET_EXTERNAL_AUDIO_DELAY,
     (sessionId: string, seconds: number) =>
         getService().setExternalAudioDelay(sessionId, seconds)
+);
+
+handleEmbeddedMpv(
+    EMBEDDED_MPV_REPORT_SPLIT_AUDIO_LATENESS,
+    (sessionId: string, lateness: number, manual?: boolean) =>
+        getService().reportSplitAudioLateness(
+            sessionId,
+            Number(lateness),
+            manual === true
+        )
+);
+handleEmbeddedMpv(
+    EMBEDDED_MPV_SET_SPLIT_AUDIO_AUTO,
+    (sessionId: string, on: boolean) =>
+        getService().setSplitAudioAuto(sessionId, on !== false)
+);
+handleEmbeddedMpv(
+    EMBEDDED_MPV_SET_SPLIT_AUDIO_SYNC_MODE,
+    (sessionId: string, mode: string) =>
+        getService().setSplitAudioSyncMode(
+            sessionId,
+            mode === 'manual' ? 'manual' : 'auto'
+        )
+);
+
+handleEmbeddedMpv(
+    EMBEDDED_MPV_SPLIT_AUDIO_SYNC_ACTION,
+    (sessionId: string, action: string) =>
+        getService().splitAudioSyncAction(sessionId, action)
 );
 
 handleEmbeddedMpv(

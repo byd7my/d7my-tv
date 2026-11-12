@@ -22,6 +22,7 @@ import {
     EmbeddedMpvSession,
     EmbeddedMpvSubtitleStyle,
     EmbeddedMpvSupport,
+    SplitAudioSyncAction,
 } from './embedded-mpv-session.interface';
 import { ContentMetadataPatch } from './content-metadata.interface';
 import { DownloadMetadataSnapshot } from './download-metadata.interface';
@@ -1442,6 +1443,38 @@ export interface ElectronBridgeApi {
         sessionId: string,
         seconds: number
     ) => Promise<EmbeddedMpvSession | null>;
+    /**
+     * Two-session audio: how late the heard sound is behind the picture
+     * (seconds, positive: behind), read off the two pictures. `manual` marks
+     * a value the user typed. Resolves false when the session has no pair.
+     */
+    reportEmbeddedMpvSplitAudioLateness?: (
+        sessionId: string,
+        latenessSeconds: number,
+        manual?: boolean
+    ) => Promise<boolean>;
+    /** Switches the automatic correction of a two-session pair on or off. */
+    setEmbeddedMpvSplitAudioAuto?: (
+        sessionId: string,
+        on: boolean
+    ) => Promise<boolean>;
+    /**
+     * Chooses the one decision source of a two-session pair: 'auto' listens to
+     * the clock readings only, 'manual' to the typed offset only.
+     */
+    setEmbeddedMpvSplitAudioSyncMode?: (
+        sessionId: string,
+        mode: 'auto' | 'manual'
+    ) => Promise<boolean>;
+    /**
+     * The sync buttons of a two-session pair: start or cancel the automatic
+     * run, the quick jump back, and the choice of the picture's own audio
+     * while the sound is frozen.
+     */
+    splitEmbeddedMpvAudioSyncAction?: (
+        sessionId: string,
+        action: SplitAudioSyncAction
+    ) => Promise<boolean>;
     setEmbeddedMpvSubtitleTrack?: (
         sessionId: string,
         trackId: number

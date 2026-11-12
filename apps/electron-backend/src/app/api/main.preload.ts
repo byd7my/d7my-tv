@@ -688,6 +688,40 @@ const electronApi: ElectronBridgeApi = {
             sessionId,
             seconds
         ),
+    reportEmbeddedMpvSplitAudioLateness: (
+        sessionId: string,
+        latenessSeconds: number,
+        manual = false
+    ): Promise<boolean> =>
+        ipcRenderer.invoke(
+            'EMBEDDED_MPV_REPORT_SPLIT_AUDIO_LATENESS',
+            sessionId,
+            latenessSeconds,
+            manual
+        ),
+    setEmbeddedMpvSplitAudioAuto: (
+        sessionId: string,
+        on: boolean
+    ): Promise<boolean> =>
+        ipcRenderer.invoke('EMBEDDED_MPV_SET_SPLIT_AUDIO_AUTO', sessionId, on),
+    setEmbeddedMpvSplitAudioSyncMode: (
+        sessionId: string,
+        mode: 'auto' | 'manual'
+    ): Promise<boolean> =>
+        ipcRenderer.invoke(
+            'EMBEDDED_MPV_SET_SPLIT_AUDIO_SYNC_MODE',
+            sessionId,
+            mode
+        ),
+    splitEmbeddedMpvAudioSyncAction: (
+        sessionId: string,
+        action: string
+    ): Promise<boolean> =>
+        ipcRenderer.invoke(
+            'EMBEDDED_MPV_SPLIT_AUDIO_SYNC_ACTION',
+            sessionId,
+            action
+        ),
     setEmbeddedMpvSubtitleTrack: (
         sessionId: string,
         trackId: number
@@ -759,8 +793,7 @@ const electronApi: ElectronBridgeApi = {
         role: FramePumpRole,
         region?: FrameRegion,
         maxWidth?: number
-    ): CapturedFrame | null =>
-        captureEmbeddedMpvFrame(role, region, maxWidth),
+    ): CapturedFrame | null => captureEmbeddedMpvFrame(role, region, maxWidth),
     autoUpdatePlaylists: (
         playlists: Playlist[],
         options?: ElectronBridgeTrustOptions

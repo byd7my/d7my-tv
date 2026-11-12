@@ -225,6 +225,21 @@ describe('settings form utils — embedded MPV session options', () => {
         expect(settings.embeddedMpvAutoReconnect).toBe(false);
     });
 
+    it('keeps the two-session audio switch off by default and carries it into the settings', () => {
+        const form = createSettingsForm(formBuilder, true);
+        expect(form.getRawValue().embeddedMpvSplitAudio).toBe(false);
+        expect(
+            createSettingsFromFormValue(form, {} as Settings)
+                .embeddedMpvSplitAudio
+        ).toBe(false);
+
+        form.patchValue({ embeddedMpvSplitAudio: true });
+        expect(
+            createSettingsFromFormValue(form, {} as Settings)
+                .embeddedMpvSplitAudio
+        ).toBe(true);
+    });
+
     it('falls back to auto-reconnect on when the form value is missing', () => {
         const form = createSettingsForm(formBuilder, true);
         form.patchValue({

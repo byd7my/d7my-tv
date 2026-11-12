@@ -1,16 +1,23 @@
-import { computed, effect, signal, untracked, WritableSignal } from '@angular/core';
+import { computed, signal, WritableSignal } from '@angular/core';
 import type {
     EmbeddedMpvFrameCapture,
     EmbeddedMpvFrameRegion,
 } from '@iptvnator/shared/interfaces';
 import { parseManualClock } from '../match-clock/match-clock.util';
-import { OffsetSmoother, residualSeconds, suggestCorrection } from './audio-sync-math';
+import {
+    OffsetSmoother,
+    residualSeconds,
+    suggestCorrection,
+} from './audio-sync-math';
 import { loadRegions, saveRegion } from './audio-sync-regions';
 import { AudioSyncReadings } from './audio-sync-readings';
 import { AudioSyncCompare } from './audio-sync-compare';
 import { AudioSyncMeasure } from './audio-sync-measure';
 import { AudioSyncPreview } from './audio-sync-preview';
 import { AudioSyncSlot } from './audio-sync-slot';
+import { AudioSyncSplit } from './audio-sync-split';
+import { AudioSyncTicker } from './audio-sync-ticker';
+import { watchAudioChannel } from './audio-sync-watch';
 import {
     AudioSyncOptions,
     loadViewMode,
@@ -18,24 +25,9 @@ import {
     EMPTY_READOUT,
     AUTO_MEASURE_DELAY_MS,
     DEFAULT_CLOCK_REGION,
-    FIRST_FRAME_TIMEOUT_MS,
-    MAIN_CAPTURE_WIDTH,
     NO_STORAGE,
-    OCR_EVERY,
-    PICK_CAPTURE_WIDTH,
     PreviewStatus,
     safeLocalStorage,
-    SourceReadout,
-    SyncMode,
-    SyncSourceKey,
-    TICK_MS,
-    ViewMode,
-} from './audio-sync.model';
-
-export type {
-    AudioSyncOptions,
-    PreviewStatus,
-    SourceProblem,
     SourceReadout,
     SyncMode,
     SyncSourceKey,
@@ -58,6 +50,12 @@ export class AudioSyncController {
             this.viewMode() === 'measure' && !this.measure.running(),
     });
     readonly isOpen = signal(false);
+    /**
+     * Auto sync is on: the clocks keep being read and the sound corrected after
+     * the window is closed. The window is only where the clock regions are
+     * picked and checked.
+     */
+    readonly autoRunning = signal(false);
     readonly mode = signal<SyncMode>('live');
     /** Which picture the region picker is on. */
     readonly pickSource = signal<SyncSourceKey>('audio');
@@ -102,14 +100,12 @@ export class AudioSyncController {
     });
 
     /** Receives the cropped main-clock picture each tick (drawn by the view). */
-    mainFrameListener: ((frame: EmbeddedMpvFrameCapture | null) => void) | null =
-        null;
+    mainFrameListener:
+        ((frame: EmbeddedMpvFrameCapture | null) => void) | null = null;
     /** Receives a full main frame while the region picker is on `main`. */
-    pickFrameListener: ((frame: EmbeddedMpvFrameCapture | null) => void) | null =
-        null;
+    pickFrameListener:
+        ((frame: EmbeddedMpvFrameCapture | null) => void) | null = null;
 
-    private timer: ReturnType<typeof setInterval> | null = null;
-    private ticks = 0;
     /** Bumped by open/close/restart; stale async work checks it. */
     private epoch = 0;
     private previewStartedAt = 0;
@@ -126,6 +122,30 @@ export class AudioSyncController {
         suspend: () => this.options.suspendAudio(),
         resume: () => this.options.resumeAudio(),
         settleMs: () => this.options.settleMs,
+    });
+    /** Two-session audio: reads the hidden sound session instead of a preview. */
+    private readonly split = new AudioSyncSplit(
+        () => this.options.split?.() ?? null,
+        () => this.options.api()
+    );
+    /** The capture loop; keeps running while Auto sync runs without the window. */
+    private readonly ticker = new AudioSyncTicker({
+        api: () => this.options.api(),
+        mode: () => this.mode(),
+        pickSource: () => this.pickSource(),
+        viewMode: () => this.viewMode(),
+        mainRegion: () => this.mainRegion(),
+        previewStatus: () => this.previewStatus(),
+        setPreviewLive: () => this.previewStatus.set('live'),
+        previewStartedAt: () => this.previewStartedAt,
+        now: () => this.now(),
+        readings: this.readings,
+        compare: this.compare,
+        split: this.split,
+        offset: () => this.offset(),
+        pickFrame: (frame) => this.pickFrameListener?.(frame),
+        mainFrame: (frame) => this.mainFrameListener?.(frame),
+        failPreview: () => this.failPreview(),
     });
     private autoMeasureTimer: ReturnType<typeof setTimeout> | null = null;
     private autoFallbackUsed = false;
@@ -156,17 +176,10 @@ export class AudioSyncController {
                 : options.storage;
         this.viewMode.set(loadViewMode(this.storage));
 
-        // A different audio channel needs its own picture and region.
-        let lastUrl: string | null = null;
-        effect(() => {
-            const url = this.options.audio()?.streamUrl ?? null;
-            untracked(() => {
-                if (url === lastUrl) return;
-                lastUrl = url;
-                if (!this.isOpen()) return;
-                if (url) void this.begin();
-                else this.close();
-            });
+        watchAudioChannel(this.options.audio, (url) => {
+            if (!this.isOpen() && !this.autoRunning()) return;
+            if (url) void this.begin();
+            else this.shutdown();
         });
     }
 
@@ -200,15 +213,62 @@ export class AudioSyncController {
         void this.begin();
     }
 
+    /** The window is closed. Auto sync, if on, goes on without it. */
     close(): void {
         if (!this.isOpen()) return;
         this.isOpen.set(false);
+        if (this.autoRunning()) {
+            this.mainFrameListener = null;
+            this.pickFrameListener = null;
+            // The picture the clocks are read from needs a canvas again.
+            this.split.rebind();
+            return;
+        }
+        this.teardown();
+    }
+
+    /**
+     * The clocks smoothed so far no longer describe the pictures (a sync
+     * freeze moved one of them): read them again from scratch.
+     */
+    dropReadings(): void {
+        this.readings.reset();
+    }
+
+    /** Everything stops: the window, the reading and the picture of the sound. */
+    shutdown(): void {
+        this.autoRunning.set(false);
+        this.isOpen.set(false);
+        this.teardown();
+    }
+
+    /**
+     * Starts Auto sync (two-session audio): reads both clocks in the
+     * background. Without both clock regions the window opens to pick them.
+     * Returns false when it cannot run here.
+     */
+    startAuto(): boolean {
+        if (!this.split.active || !this.available()) return false;
+        this.autoRunning.set(true);
+        this.autoFallbackUsed = true;
+        // `begin` opens the window itself when a clock region is missing.
+        if (!this.isOpen()) void this.begin();
+        return true;
+    }
+
+    stopAuto(): void {
+        if (!this.autoRunning()) return;
+        if (this.isOpen()) this.autoRunning.set(false);
+        else this.shutdown();
+    }
+
+    private teardown(): void {
         this.epoch++;
         this.preview.cancel();
         this.measure.cancel();
         if (this.autoMeasureTimer !== null) clearTimeout(this.autoMeasureTimer);
         this.autoMeasureTimer = null;
-        this.stopTimer();
+        this.ticker.stop();
         void this.stopPreview();
         this.readings.reset();
         this.previewStatus.set('idle');
@@ -216,7 +276,8 @@ export class AudioSyncController {
     }
 
     toggle(): void {
-        if (this.isOpen()) this.close(); else this.open();
+        if (this.isOpen()) this.close();
+        else this.open();
     }
 
     /** Back to picking the scoreboard region(s). */
@@ -226,7 +287,7 @@ export class AudioSyncController {
         this.pickSource.set(source);
         this.readings.reset();
         void this.startPreview(null);
-        this.startTimer();
+        this.ticker.start();
     }
 
     selectPickSource(source: SyncSourceKey): void {
@@ -298,6 +359,7 @@ export class AudioSyncController {
         this.readings.resetKeepMain();
         this.audioReadout.set({ ...EMPTY_READOUT, problem: 'noFrame' });
         await this.measure.run();
+        this.split.reportMeasured(this.measure.last()?.offset ?? null);
         this.readings.resetKeepMain();
         this.showMeasureIdle();
     }
@@ -313,6 +375,8 @@ export class AudioSyncController {
     }
 
     applySuggestion(): void {
+        // Two-session audio closes the gap itself; there is no delay to add.
+        if (this.split.active) return;
         const suggestion = this.suggestion();
         if (!suggestion || suggestion.direction === 'inSync') return;
         this.options.setDelay(suggestion.targetDelay);
@@ -325,6 +389,9 @@ export class AudioSyncController {
         this.readings.reset();
         const audio = this.options.audio();
         if (!audio) return;
+        // Two-session audio reads both clocks all the time: the window is for
+        // picking and checking the regions, never for comparing by eye.
+        if (this.split.active) this.viewMode.set('live');
 
         const regions = this.storage ? loadRegions(this.storage) : {};
         this.mainRegion.set(regions[this.options.videoUrl()] ?? null);
@@ -340,6 +407,8 @@ export class AudioSyncController {
             this.mode.set('live');
             await this.startComparePreview();
         } else if (!this.audioRegion() || !this.mainRegion()) {
+            // The picker is the window: show it even when it was closed.
+            this.isOpen.set(true);
             this.mode.set('pick');
             this.pickSource.set(this.audioRegion() ? 'main' : 'audio');
             await this.startPreview(null);
@@ -361,14 +430,14 @@ export class AudioSyncController {
                 }
             }, AUTO_MEASURE_DELAY_MS);
         }
-        if (epoch === this.epoch) this.startTimer();
+        if (epoch === this.epoch) this.ticker.start();
     }
 
     /** The audio channel's scoreboard corner, kept on screen to compare. */
-    private async startComparePreview(): Promise<void> {
-        if (!this.isOpen()) return;
+    private startComparePreview(): Promise<void> {
+        if (!this.isOpen()) return Promise.resolve();
         this.audioRegion.update((r) => r ?? { ...DEFAULT_CLOCK_REGION });
-        await this.startPreview(this.audioRegion());
+        return this.startPreview(this.audioRegion());
     }
 
     private async startPreview(
@@ -377,6 +446,10 @@ export class AudioSyncController {
         this.previewStatus.set('starting');
         this.previewStartedAt = this.now();
         this.audioReadout.set({ ...EMPTY_READOUT, problem: 'noFrame' });
+        if (this.split.active) {
+            this.split.rebind();
+            return this.split.start(region);
+        }
         // Measuring and comparing: the picture takes the sound's connection slot.
         if (this.viewMode() !== 'live') {
             this.slot.take();
@@ -387,6 +460,7 @@ export class AudioSyncController {
     }
 
     private async stopPreview(): Promise<void> {
+        if (this.split.active) return this.split.stop();
         await this.preview.stop();
         await this.slot.give();
     }
@@ -404,7 +478,8 @@ export class AudioSyncController {
             this.viewMode() === 'live' &&
             this.isOpen() &&
             this.mode() === 'live' &&
-            !this.autoFallbackUsed
+            !this.autoFallbackUsed &&
+            !this.split.active
         ) {
             this.autoFallbackUsed = true;
             this.fallbackNotice.set(true);
@@ -418,62 +493,14 @@ export class AudioSyncController {
         const last = this.measure.last();
         this.audioReadout.set(
             last
-                ? { ...EMPTY_READOUT, text: last.audioText, problem: 'measured' }
+                ? {
+                      ...EMPTY_READOUT,
+                      text: last.audioText,
+                      problem: 'measured',
+                  }
                 : { ...EMPTY_READOUT, problem: 'idle' }
         );
         this.previewStatus.set('idle');
-    }
-
-    // ----------------------------------------------------------------- tick
-
-    private startTimer(): void {
-        this.stopTimer();
-        this.ticks = 0;
-        this.timer = setInterval(() => this.tick(), TICK_MS);
-    }
-
-    private stopTimer(): void {
-        if (this.timer !== null) clearInterval(this.timer);
-        this.timer = null;
-    }
-
-    private tick(): void {
-        const api = this.options.api();
-        if (!api?.captureEmbeddedMpvFrame) return;
-
-        if (this.mode() === 'pick') {
-            if (this.pickSource() === 'main') {
-                this.pickFrameListener?.(
-                    api.captureEmbeddedMpvFrame('main', undefined, PICK_CAPTURE_WIDTH)
-                );
-            }
-            return;
-        }
-
-        if (this.viewMode() === 'compare') {
-            // Nothing to read: the user compares the two clocks by eye.
-            this.checkFirstFrameTimeout(api.captureEmbeddedMpvFrame('preview'));
-            return;
-        }
-
-        const mainRegion = this.mainRegion();
-        const mainFrame = mainRegion && api.captureEmbeddedMpvFrame('main', mainRegion, MAIN_CAPTURE_WIDTH);
-        const audioFrame = api.captureEmbeddedMpvFrame('preview');
-        this.mainFrameListener?.(mainFrame && this.readings.isFresh(mainFrame) ? mainFrame : null);
-
-        if (++this.ticks % OCR_EVERY === 0 && !this.readings.busy) {
-            void this.readings.readClocks(mainFrame, audioFrame);
-        }
-        this.readings.refresh(mainFrame, audioFrame);
-        this.checkFirstFrameTimeout(audioFrame);
-    }
-
-    private checkFirstFrameTimeout(audioFrame: EmbeddedMpvFrameCapture | null): void {
-        if (this.previewStatus() !== 'starting') return;
-        if (audioFrame) this.previewStatus.set('live');
-        else if (this.now() - this.previewStartedAt > FIRST_FRAME_TIMEOUT_MS) {
-            this.failPreview();
-        }
     }
 
     private keyFor(source: SyncSourceKey): string {

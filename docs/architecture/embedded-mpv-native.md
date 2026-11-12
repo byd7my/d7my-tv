@@ -704,6 +704,95 @@ touches the config store — it is constructed at module load, and importing it
 would drag electron-conf into every consumer of the service, its unit tests
 included.
 
+## Two-Session "Audio From Another Channel" (Experimental)
+
+By default the audio of another channel is attached to the main session with
+mpv's `audio-add`. The opt-in two-session mode (frame-copy engine only) plays
+it in a second, hidden session instead, so the sound can be kept in step with
+the picture by tiny speed changes. Off by default; the `audio-add` path is
+untouched and is also the fallback whenever the mode is off, the engine is not
+frame-copy, or the sound session cannot be created (for example a refused
+connection).
+
+Enable it for a run with `IPTVNATOR_EMBEDDED_MPV_SPLIT_AUDIO=1`, or with the
+`embeddedMpvSplitAudio` setting (Settings > Playback, shown only while the
+frame-copy engine is selected; mirrored to the `EMBEDDED_MPV_SPLIT_AUDIO`
+store key, captured per session, so a change applies from the next playback
+session). `embeddedMpvSplitAudioDBaseMs` overrides the
+picture-path delay `D_base` (default 80 ms, an unmeasured estimate).
+
+Pieces (all in `apps/electron-backend/src/app/services/`):
+
+| File | Role |
+| --- | --- |
+| `embedded-mpv-split-audio-manager.ts` | The only place `EmbeddedMpvNativeService` talks to. Owns the pairs, decides whether a command belongs to one, creates and replaces the sound session. |
+| `embedded-mpv-split-audio.ts` | `SplitAudioPair`: one main + one sound session behaving as one player. |
+| `split-audio-corrector.ts` | Pure closed-loop corrector: which session to slow, by how much. |
+| `split-audio-health.ts` | Pure watcher of the sound session while it is slowed. |
+| `embedded-mpv-split-audio-addon.ts` | The hidden session's recipe and the narrow addon view. |
+
+Rules the pair keeps:
+
+- **Two numbers, never one.** The speed a session really gets is
+  `userSpeed x factor`. The factor is 1 or a slowdown from the corrector; the
+  user's speed is never changed by a correction and never cancels one.
+- **Slow the one that is ahead, never speed up** (a live stream cannot run past
+  its live edge): sound late -> slow the muted picture (up to 6 %); sound early
+  -> slow the sound session (up to 3 %, pitch kept).
+- **Target = `D_base + trim`.** `trim` is the user's fine delay (the existing
+  external-audio delay). The sound session's own `audio-delay` is not used: it
+  would move the hidden picture, not what is heard.
+- **Pause, seek, reload and reconnect void the measurement:** factors go back
+  to 1, readings are dropped and nothing is decided for a settle time.
+- **Controls go to both sessions:** pause, seek, volume (the picture session is
+  muted; the user's volume is applied to the sound), speed. `session.volume`
+  and `session.playbackSpeed` of the picture session report the user's values.
+- **keep-open:** a reload of the sound session unpauses it (the reload hook in
+  the service clears the keep-open pause) unless the user is paused.
+- **No third session, enforced in the backend.** The hidden session is created
+  with the other channel's clock region (`ResolvedPortalPlayback.clockRegion`,
+  a crop at 4 fps). `EmbeddedMpvNativeService.createPreviewSession` throws
+  while `splitAudio.previewAllowed()` is false (any sound permit or pair
+  exists), so the renderer can never open a third connection; the manager
+  also refuses a second sound session for one main session and is the only
+  place that creates and closes the sound session. The sync reader attaches
+  the sound session to a `preview` canvas instead (`reportEmbeddedMpvSplitAudioLateness`,
+  lateness = -(audio clock - picture clock)).
+- **One decision source (`syncMode`).** `setEmbeddedMpvSplitAudioSyncMode`
+  switches the pair between `auto` (only `reportLateness`, the OCR readings,
+  is accepted) and `manual` (only `reportManualLateness`, the typed offset, is
+  accepted); the other source is ignored, and switching resets the
+  measurement. The fine delay (trim) only moves the target; the corrector is
+  the only thing that changes speeds.
+- **Replacing** the sound (another channel, another clock region) closes the
+  old connection, keeps the picture muted and opens the new one after 2.5 s.
+- **Stall policy (both modes).** The sound session's own position, buffer and
+  drops are checked while it is slowed. One long freeze is one incident
+  (counted once until the sound moved on again for 3 s). The first incident in
+  5 minutes releases the correction and puts both speeds back to the user's
+  speed (shown as `splitAudio.issue` for 30 s). A second incident within 5
+  minutes turns automatic correction off, closes the sound session and gives
+  the picture its own sound back, with `splitAudioNotice: 'stalled'`
+  (`SplitAudioHooks.giveUp` -> manager `fail`). In manual mode a real fault
+  voids the typed value: nothing is sent again silently, the user applies it
+  again. No speed changes are made once the measurement is not trusted. A
+  sound session that ends for good gives the picture its own sound back
+  (`externalAudioError`; notices `stalled`, `channel-lost`, `open-failed`).
+
+Renderer side (`libs/ui/playback`): the audio-channel panel embeds
+`SplitSyncSectionComponent` (Auto / Manual switch, start-sync button, typed
+offset in seconds with the leading side and 0.1 s / 1 s buttons).
+`ControlsSplitSync` chooses which source the backend listens to. In Auto,
+`AudioSyncController.startAuto` keeps the reading loop (`AudioSyncTicker`)
+running with the clock window closed (the window only picks and checks the
+clock regions; closing it minimizes it while auto runs); in Manual the reader
+is stopped. `SplitSyncBarComponent` is a small bar over the video (state,
+offset, both clocks) that does not resize or stop the picture.
+
+`EmbeddedMpvSession.splitAudio` carries the pair's state (speeds, factor,
+lateness estimate, target, measured audio rate, last issue) for display;
+`splitAudioEnabled` marks sessions that may use the mode.
+
 ## Network Auto-Reconnect
 
 `EmbeddedMpvReconnectCoordinator`

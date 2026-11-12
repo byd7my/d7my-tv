@@ -56,6 +56,21 @@ export const PLAYBACK_SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] =
             requires: ['embedded-mpv-frame-copy'],
         },
         {
+            id: 'embedded-mpv-split-audio',
+            section: 'playback',
+            labelKey: 'SETTINGS.EMBEDDED_MPV_SPLIT_AUDIO',
+            descriptionKey: 'SETTINGS.EMBEDDED_MPV_SPLIT_AUDIO_DESCRIPTION',
+            keywords: [
+                'audio',
+                'commentary',
+                'sync',
+                'two sessions',
+                'channel',
+            ],
+            requires: ['embedded-mpv-frame-copy'],
+            fallbackId: 'embedded-mpv-frame-copy',
+        },
+        {
             id: 'embedded-mpv-extra-options',
             section: 'playback',
             labelKey: 'SETTINGS.EMBEDDED_MPV_EXTRA_OPTIONS',

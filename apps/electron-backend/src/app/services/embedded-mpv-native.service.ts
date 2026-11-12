@@ -30,6 +30,7 @@ import {
     EMBEDDED_MPV_FRAME_SOURCE_CHANGED,
     EMBEDDED_MPV_SESSION_UPDATE,
     ResolvedPortalPlayback,
+    SplitAudioSyncAction,
     clampSubtitleDelay,
     normalizeSubtitleStyle,
 } from '@iptvnator/shared/interfaces';
@@ -43,6 +44,10 @@ import {
     EmbeddedMpvReconnectState,
 } from './embedded-mpv-reconnect';
 import type { EmbeddedMpvSessionOptions } from './embedded-mpv-session-options';
+import {
+    EmbeddedMpvSplitAudioManager,
+    toSplitAudioAddon,
+} from './embedded-mpv-split-audio-manager';
 import {
     removeSessionOptionsDirectory,
     removeSessionOptionsFile,
@@ -174,7 +179,10 @@ interface EmbeddedMpvRuntimeSession {
      * subtitle it dies with the file it was added to, so an automatic reload
      * of the video puts it back; a user-driven load drops it.
      */
-    externalAudio: { playback: ResolvedPortalPlayback; delaySeconds: number } | null;
+    externalAudio: {
+        playback: ResolvedPortalPlayback;
+        delaySeconds: number;
+    } | null;
     restoreExternalAudioAfterReconnect: boolean;
 }
 
@@ -238,7 +246,10 @@ export class EmbeddedMpvNativeService {
             // inherits that pause: the reload then buffers, reports
             // `paused` and never plays. Unpausing is part of the reload.
             try {
-                addon.setPaused(sessionId, false);
+                addon.setPaused(
+                    sessionId,
+                    this.splitAudio.pausedAfterReload(sessionId)
+                );
             } catch (error) {
                 console.warn(
                     `[Embedded MPV][reconnect] session ${sessionId}: could not clear the keep-open pause after the reload:`,
@@ -256,6 +267,23 @@ export class EmbeddedMpvNativeService {
                 );
             }
         },
+    });
+
+    /** Two-session "audio from another channel" (see embedded-mpv-split-audio.ts). */
+    private readonly splitAudio = new EmbeddedMpvSplitAudioManager({
+        addon: () => toSplitAudioAddon(this.getAddon()),
+        usesFrameCopy: () =>
+            this.frameCopyAdapter !== null &&
+            this.getAddon() === this.frameCopyAdapter,
+        now: () => Date.now(),
+        createSession: (bounds, title, volume, options) =>
+            this.createSession(bounds, title, volume, options).id,
+        loadPlayback: (id, playback) => this.loadPlayback(id, playback),
+        setPaused: (id, paused) => void this.setPaused(id, paused),
+        seekBy: (id, delta) => void this.seekBy(id, delta),
+        disposeSession: (id) => void this.disposeSession(id),
+        warn: (message, error) =>
+            console.warn(`[Embedded MPV][split-audio] ${message}`, error),
     });
 
     /**
@@ -690,6 +718,13 @@ export class EmbeddedMpvNativeService {
             externalAudio: null,
             restoreExternalAudioAfterReconnect: false,
         });
+        if (options?.splitAudio && usesFrameCopyAddon) {
+            this.splitAudio.allow(
+                sessionId,
+                options,
+                options.splitAudioDBaseSeconds
+            );
+        }
 
         this.ensurePolling();
         this.ensureRendererLifecycleWatch();
@@ -735,9 +770,19 @@ export class EmbeddedMpvNativeService {
                 'The clock preview needs the frame-copy embedded MPV engine.'
             );
         }
+        // Backend guard (not only the UI): with the two-session mode on, a
+        // preview would be a third connection next to the picture and sound.
+        if (!this.splitAudio.previewAllowed()) {
+            throw new Error(
+                'The clock preview is not available while the two-session audio mode is on.'
+            );
+        }
         const plan = buildEmbeddedMpvPreviewPlan(request);
         return this.createSession(plan.bounds, '', 0, {
-            extraOptions: [...(baseOptions?.extraOptions ?? []), ...plan.options],
+            extraOptions: [
+                ...(baseOptions?.extraOptions ?? []),
+                ...plan.options,
+            ],
             autoReconnect: baseOptions?.autoReconnect ?? true,
         });
     }
@@ -746,6 +791,8 @@ export class EmbeddedMpvNativeService {
         this.assertEmbeddedMpvEnabled();
         const addon = this.getAddon();
         const session = this.getRuntimeSession(sessionId);
+        // A new picture ends the audio channel that belonged to the old one.
+        this.splitAudio.onUserLoad(sessionId);
         session.title = playback.title ?? session.title;
         session.streamUrl = playback.streamUrl ?? session.streamUrl;
         session.updatedAt = new Date().toISOString();
@@ -787,12 +834,14 @@ export class EmbeddedMpvNativeService {
             }
         }
         this.getAddon().setPaused(sessionId, paused);
+        this.splitAudio.onSetPaused(sessionId, paused);
         return this.refreshSession(sessionId);
     }
 
     seek(sessionId: string, seconds: number): EmbeddedMpvSession | null {
         this.assertEmbeddedMpvEnabled();
         this.onUserSeek(sessionId);
+        this.splitAudio.onSeekTo(sessionId, seconds);
         this.getAddon().seek(sessionId, seconds);
         return this.refreshSession(sessionId);
     }
@@ -813,6 +862,7 @@ export class EmbeddedMpvNativeService {
             return this.refreshSession(sessionId);
         }
         this.onUserSeek(sessionId);
+        this.splitAudio.onSeekBy(sessionId, deltaSeconds);
         if (typeof addon.seekBy === 'function') {
             addon.seekBy(sessionId, deltaSeconds);
         } else {
@@ -833,7 +883,9 @@ export class EmbeddedMpvNativeService {
 
     setVolume(sessionId: string, volume: number): EmbeddedMpvSession | null {
         this.assertEmbeddedMpvEnabled();
-        this.getAddon().setVolume(sessionId, volume);
+        if (!this.splitAudio.onSetVolume(sessionId, volume)) {
+            this.getAddon().setVolume(sessionId, volume);
+        }
         return this.refreshSession(sessionId);
     }
 
@@ -852,6 +904,11 @@ export class EmbeddedMpvNativeService {
         delaySeconds = 0
     ): EmbeddedMpvSession | null {
         this.assertEmbeddedMpvEnabled();
+        if (
+            this.splitAudio.setExternalAudio(sessionId, playback, delaySeconds)
+        ) {
+            return this.refreshSession(sessionId);
+        }
         const addon = this.getAddon();
         if (typeof addon.setExternalAudio !== 'function') {
             throw new Error(
@@ -881,6 +938,9 @@ export class EmbeddedMpvNativeService {
             );
         }
         const delay = Math.max(-60, Math.min(60, delaySeconds));
+        if (this.splitAudio.setExternalAudioDelay(sessionId, delay)) {
+            return this.refreshSession(sessionId);
+        }
         addon.setExternalAudioDelay(sessionId, delay);
         const session = this.sessions.get(sessionId);
         if (session?.externalAudio) {
@@ -994,8 +1054,47 @@ export class EmbeddedMpvNativeService {
                 'Embedded MPV addon does not support playback speed. Rebuild the native addon to enable this feature.'
             );
         }
-        addon.setSpeed(sessionId, speed);
+        if (!this.splitAudio.onSetSpeed(sessionId, speed)) {
+            addon.setSpeed(sessionId, speed);
+        }
         return this.refreshSession(sessionId);
+    }
+
+    /** A lateness read off the pictures (positive: the sound is behind). */
+    reportSplitAudioLateness(
+        sessionId: string,
+        lateness: number,
+        manual = false
+    ): boolean {
+        return this.splitAudio.report(sessionId, lateness, manual);
+    }
+
+    setSplitAudioAuto(sessionId: string, on: boolean): boolean {
+        return this.splitAudio.setAuto(sessionId, on);
+    }
+
+    setSplitAudioSyncMode(sessionId: string, mode: 'auto' | 'manual'): boolean {
+        const done = this.splitAudio.setSyncMode(sessionId, mode);
+        if (done) this.refreshSession(sessionId);
+        return done;
+    }
+
+    /** Sync buttons of the two-session pair (unknown actions are refused). */
+    splitAudioSyncAction(sessionId: string, action: string): boolean {
+        const known = [
+            'start',
+            'cancel',
+            'quick',
+            'original-audio-on',
+            'original-audio-off',
+        ];
+        if (!known.includes(action)) return false;
+        const done = this.splitAudio.syncAction(
+            sessionId,
+            action as SplitAudioSyncAction
+        );
+        if (done) this.refreshSession(sessionId);
+        return done;
     }
 
     setAspect(sessionId: string, aspect: string): EmbeddedMpvSession | null {
@@ -1151,6 +1250,7 @@ export class EmbeddedMpvNativeService {
         if (!session) {
             return null;
         }
+        this.splitAudio.onDispose(sessionId);
         this.reconnect.cancel(session.reconnect);
         session.lastRecordingStart = null;
         session.recordingRunningAtLoss = false;
@@ -1220,6 +1320,7 @@ export class EmbeddedMpvNativeService {
         }
 
         this.pollingTimer = setInterval(() => {
+            this.splitAudio.tick();
             [...this.sessions.keys()].forEach((sessionId) => {
                 // An addon-side throw must not escape the interval callback:
                 // it would surface as an uncaughtException in the main
@@ -1468,6 +1569,13 @@ export class EmbeddedMpvNativeService {
         if (reconnect) {
             payload.reconnect = reconnect;
         }
+        this.splitAudio.onStatus(
+            sessionId,
+            payload.status,
+            previousStatus,
+            !!reconnect
+        );
+        this.splitAudio.decorate(payload);
         if (
             reconnect &&
             session.lastRecordingStart &&

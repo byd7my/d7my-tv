@@ -14,11 +14,16 @@ import {
 } from '@iptvnator/services';
 import type {
     Channel,
+    EmbeddedMpvFrameRegion,
     ExternalAudioOverride,
     ResolvedPortalPlayback,
 } from '@iptvnator/shared/interfaces';
 import { AudioSyncController } from '../audio-sync/audio-sync.controller';
+import type { SplitAudioBridge } from '../audio-sync/audio-sync-split';
+import { loadRegions } from '../audio-sync/audio-sync-regions';
+import { DEFAULT_CLOCK_REGION } from '../audio-sync/audio-sync.model';
 import { MatchClockOcrService } from '../match-clock/match-clock-ocr.service';
+import { ControlsSplitSync } from './controls-split-sync';
 import type {
     PlayerControlsCommands,
     PlayerControlsState,
@@ -51,7 +56,7 @@ export class ControlsSplitAudio {
         private readonly onPanelOpened?: () => void
     ) {
         // The silent preview session must never outlive the player.
-        inject(DestroyRef).onDestroy(() => this.sync.close());
+        inject(DestroyRef).onDestroy(() => this.sync.shutdown());
         // The audio channel failed to open: it is not playing, so it must not
         // stay marked as the selected one. The picture keeps playing.
         effect(() => {
@@ -96,6 +101,20 @@ export class ControlsSplitAudio {
     );
 
     /**
+     * Two-session audio: the sound plays in a hidden session, so the sync
+     * window reads that session's picture instead of opening a third one.
+     */
+    private readonly splitBridge: SplitAudioBridge = {
+        enabled: () =>
+            this.state().splitAudioEnabled === true &&
+            this.activeAudio() !== null,
+        status: () => this.state().splitAudio ?? null,
+        report: (seconds, manual) =>
+            this.commands?.().reportSplitAudioLateness?.(seconds, manual),
+        reopen: (region) => this.replayAudio(region),
+    };
+
+    /**
      * The "sync by match clock" window: reads the scoreboard clock of the
      * picture and of the audio channel and suggests the delay.
      */
@@ -109,7 +128,25 @@ export class ControlsSplitAudio {
         clampDelay: (seconds) => this.splitAudio.clampDelay(seconds),
         toPlayback: (audio) => this.toPlayback(audio),
         ocr: this.ocr,
+        split: () => this.splitBridge,
     });
+
+    /** Two-session audio is on and a channel is chosen. */
+    splitActive(): boolean {
+        return this.splitBridge.enabled();
+    }
+
+    /** Why the external sound ended by itself, if it did. */
+    readonly notice = computed(() => this.state().splitAudioNotice ?? null);
+
+    /** Auto / Manual, the start button and the typed offset. */
+    readonly syncCtl = new ControlsSplitSync(
+        this.state,
+        () => this.commands?.(),
+        this.sync,
+        () => this.splitBridge.enabled(),
+        computed(() => this.activeAudio()?.streamUrl ?? null)
+    );
 
     /** Needs the frame-copy engine and a chosen audio channel. */
     syncAvailable(): boolean {
@@ -175,7 +212,7 @@ export class ControlsSplitAudio {
         // so connecting the sound first only to drop it again would open and
         // close a provider connection for nothing (and stall the picture).
         // The window hands the sound back when it closes.
-        if (this.syncAvailable()) {
+        if (this.syncAvailable() && !this.splitBridge.enabled()) {
             this.sync.open();
         } else {
             setExternalAudio(this.toPlayback(audio), delay);
@@ -232,19 +269,47 @@ export class ControlsSplitAudio {
     }
 
     /** Plays the chosen audio channel again after a measure; keeps its delay. */
-    private replayAudio(): void {
+    private replayAudio(region?: EmbeddedMpvFrameRegion | null): void {
         const audio = this.activeAudio();
         const setExternalAudio = this.commands?.().setExternalAudio;
         if (!audio || !setExternalAudio) return;
-        setExternalAudio(this.toPlayback(audio), audio.delaySeconds ?? 0);
+        setExternalAudio(
+            this.toPlayback(audio, region),
+            audio.delaySeconds ?? 0
+        );
+    }
+
+    /** Where the channel's clock is: the saved region, else the usual corner. */
+    private clockRegionFor(url: string): EmbeddedMpvFrameRegion {
+        let saved: EmbeddedMpvFrameRegion | undefined;
+        try {
+            saved = loadRegions(localStorage)[url];
+        } catch {
+            saved = undefined; // no storage: the usual corner
+        }
+        return saved ?? { ...DEFAULT_CLOCK_REGION };
     }
 
     private roundDelay(value: number): number {
         return Math.round(value * 100) / 100;
     }
 
-    private toPlayback(audio: ExternalAudioOverride): ResolvedPortalPlayback {
+    /**
+     * `region` undefined: the clock's usual place (two-session audio crops
+     * the hidden picture to it); null: the whole frame (the region picker).
+     */
+    private toPlayback(
+        audio: ExternalAudioOverride,
+        region?: EmbeddedMpvFrameRegion | null
+    ): ResolvedPortalPlayback {
+        const clockRegion =
+            region === undefined
+                ? this.state().splitAudioEnabled
+                    ? this.clockRegionFor(audio.streamUrl)
+                    : null
+                : region;
         return {
+            ...(clockRegion ? { clockRegion } : {}),
             streamUrl: audio.streamUrl,
             title: audio.title ?? '',
             isLive: true,

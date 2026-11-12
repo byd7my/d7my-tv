@@ -158,9 +158,10 @@ describe('SettingsSearchService', () => {
         // Embedded MPV rows wait for the support probe.
         expect(entries).not.toContain('embedded-mpv-extra-options');
         expect(entries).not.toContain('embedded-mpv-frame-copy');
+        expect(entries).not.toContain('embedded-mpv-split-audio');
         // Connecting a server is available before any connection exists.
         expect(entries).toContain('source-server');
-        expect(entries.length).toBe(SETTINGS_SEARCH_ENTRIES.length - 4);
+        expect(entries.length).toBe(SETTINGS_SEARCH_ENTRIES.length - 5);
     });
 
     it('offers the server section and rows with server storage', () => {

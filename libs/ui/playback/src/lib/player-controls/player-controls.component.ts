@@ -24,6 +24,7 @@ import { bindCursorHiding } from './controls-cursor';
 import { ControlsSettings, ControlsSplitAudio } from './controls-settings';
 import { AudioSyncWindowComponent } from '../audio-sync/audio-sync-window.component';
 import { SplitAudioPanelComponent } from './split-audio-panel/split-audio-panel.component';
+import { SplitSyncBarComponent } from './split-audio-panel/split-sync-bar.component';
 import { ControlsShortcuts } from './controls-shortcuts';
 import { ControlsStreamStats } from './controls-stream-stats';
 import { ControlsSurface } from './controls-surface';
@@ -57,6 +58,7 @@ import { PlayerUpNextCardComponent } from './player-up-next-card.component';
         TranslatePipe,
         PlayerSettingsPanelComponent,
         SplitAudioPanelComponent,
+        SplitSyncBarComponent,
         AudioSyncWindowComponent,
         PlayerTimelineComponent,
         PlayerUpNextCardComponent,
