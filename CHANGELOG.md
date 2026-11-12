@@ -11,6 +11,13 @@ this marker — see `.changes/README.md`.
 
 <!-- next-release -->
 
+# 0.26.15 (2026-11-12)
+
+### Features
+
+- **app** — The app is now named D7my-TV, with its own app id and data folders. On first start your playlists and settings are copied over automatically from the old IPTVnator folders, which stay untouched as a backup. Support and donation links and the old project's community links are gone. ([a8a33af](https://github.com/byd7my/d7my-tv/commit/a8a33afe37d0712d6990367582c8e63a00b762e5))
+- **app** — New Glass theme in Settings → Appearance: a dark, Apple-style look with frosted translucent panels, a soft ambient backdrop and blue accents. It sits next to the existing themes and changes nothing for anyone who keeps theirs. ([a8a33af](https://github.com/byd7my/d7my-tv/commit/a8a33afe37d0712d6990367582c8e63a00b762e5))
+
 # 0.26.14 (2026-11-12)
 
 ### Fixes
