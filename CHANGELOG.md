@@ -11,6 +11,13 @@ this marker — see `.changes/README.md`.
 
 <!-- next-release -->
 
+# 0.26.16 (2026-11-12)
+
+### Features
+
+- **app** — Syncing the audio now confirms itself: after you apply the suggested delay in the sync window, or when Auto Sync finishes, a small notice says it was set for you and fades away after a few seconds. ([67e157b](https://github.com/byd7my/d7my-tv/commit/67e157b392c425049197bdb4cc73834fb36d8708))
+- **playback** — The split-audio picker now shows how many simultaneous connections your Xtream subscription allows and how many are in use, and warns before the picture or the sound would exceed it. Playlists that are not Xtream, or panels that do not report a limit, show nothing. ([67e157b](https://github.com/byd7my/d7my-tv/commit/67e157b392c425049197bdb4cc73834fb36d8708))
+
 # 0.26.15 (2026-11-12)
 
 ### Features
