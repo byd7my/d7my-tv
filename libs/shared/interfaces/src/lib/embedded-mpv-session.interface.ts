@@ -202,6 +202,19 @@ export interface EmbeddedMpvSession {
      * is unaffected; absent while the audio works.
      */
     externalAudioError?: string;
+    /**
+     * Present while the audio taken from another channel is played by a second
+     * (hidden) session instead of mpv's audio-add. Absent on the audio-add path.
+     */
+    splitAudio?: EmbeddedMpvSplitAudioStatus;
+    /**
+     * The two-session audio mode is switched on for this session: choosing an
+     * audio channel creates the hidden sound session (no third session is
+     * needed to read the clocks). Absent when the mode is off.
+     */
+    splitAudioEnabled?: boolean;
+    /** Why the external sound was given up (the picture has its own audio back). */
+    splitAudioNotice?: EmbeddedMpvSplitAudioNotice;
     startedAt: string;
     updatedAt: string;
     error?: string;
@@ -211,6 +224,118 @@ export interface EmbeddedMpvSession {
      * attempts are exhausted. Display only — the renderer never schedules.
      */
     reconnect?: EmbeddedMpvReconnectInfo;
+}
+
+/** Why the two-session sound ended without the user asking. */
+export type EmbeddedMpvSplitAudioNotice =
+    'stalled' | 'channel-lost' | 'open-failed';
+
+/** Two-session "audio from another channel": the sync state, for display. */
+export interface EmbeddedMpvSplitAudioStatus {
+    mode: 'dual-session';
+    /** The one decision source: clock readings (auto) or the typed offset (manual). */
+    syncMode: 'auto' | 'manual';
+    soundSessionId: string;
+    state:
+        | 'measuring'
+        | 'settling'
+        | 'synced'
+        | 'correcting'
+        | 'noisy'
+        | 'locked'
+        | 'paused'
+        | 'off'
+        // Auto sync (one run the user starts): see `sync` for the details.
+        | 'idle'
+        | 'announcing'
+        | 'freezing'
+        | 'resuming'
+        | 'failed';
+    /** The speed the user chose, before any sync factor. */
+    userSpeed: number;
+    /** Speed really sent to the picture / sound session (user x factor). */
+    mainSpeed: number;
+    soundSpeed: number;
+    /** Which session is slowed right now. */
+    correcting: 'main' | 'sound' | null;
+    /** Slowdown of the corrected session (0.03 = 3 %). */
+    rate: number;
+    /** Estimated lateness of the sound, seconds (positive: behind). */
+    lateness: number | null;
+    /** D_base + trim: the lateness the correction aims at. */
+    targetSeconds: number;
+    dBaseSeconds: number;
+    trimSeconds: number;
+    /** Measured advance of the sound session per wall second. */
+    audioRate: number | null;
+    /** Last sound-quality issue seen while slowing, if any. */
+    issue: 'stall' | 'starving' | 'rate' | 'drops' | null;
+    /** Set when automatic correction gave itself up (the issue that caused it). */
+    autoDisabledReason?: string;
+    /** Crop of the hidden picture (the other channel's clock); null: whole frame. */
+    clockRegion?: EmbeddedMpvFrameRegion | null;
+    /** The automatic sync run (auto mode). */
+    sync?: EmbeddedMpvSplitAudioSync;
+    /**
+     * Manual mode: a correction under way was cancelled by a pause, a seek, a
+     * reload or a fault. It is NOT applied again until the user says so.
+     */
+    manualVoided?: 'pause' | 'seek' | 'reload' | 'fault' | null;
+    /** The user's choice: the picture's own audio plays while the sound is frozen. */
+    originalAudioDuringFreeze?: boolean;
+    /** Outcome of the last "quick sync" jump. */
+    quickSync?: EmbeddedMpvSplitAudioQuickResult | null;
+}
+
+/** The sync buttons of a two-session pair. */
+export type SplitAudioSyncAction =
+    'start' | 'cancel' | 'quick' | 'original-audio-on' | 'original-audio-off';
+
+export type EmbeddedMpvSplitAudioQuickResult =
+    | { kind: 'jumped'; side: 'picture' | 'sound'; seconds: number }
+    | { kind: 'nothing' }
+    | {
+          kind: 'unavailable';
+          why: 'no-reading' | 'too-far' | 'no-history' | 'cache';
+      };
+
+/** One automatic sync run: measure, one freeze at most, fine correction, done. */
+export interface EmbeddedMpvSplitAudioSync {
+    phase:
+        | 'idle'
+        | 'measuring'
+        | 'announcing'
+        | 'freezing'
+        | 'resuming'
+        | 'settling'
+        | 'fine'
+        | 'done'
+        | 'failed';
+    /** Which side is frozen (or about to be): the one that is ahead. */
+    side: 'picture' | 'sound' | null;
+    freezeSeconds: number;
+    remainingSeconds: number;
+    announceSeconds: number;
+    /** The gap was bigger than the freeze may be; the rest is gradual. */
+    capped: boolean;
+    freezeCut:
+        | 'cache-insufficient'
+        | 'cache-stalled'
+        | 'cache-full'
+        | 'stream-lost'
+        | null;
+    failure:
+        | 'no-clock'
+        | 'unstable'
+        | 'timeout'
+        | 'interrupted'
+        | 'resume-failed'
+        | 'faulted'
+        | null;
+    /** The difference that is left (sound behind: positive), seconds. */
+    residualSeconds: number | null;
+    /** Grows with every end of a freeze: readers drop their smoothed clocks. */
+    epoch: number;
 }
 
 /** Progress of the main-process automatic reconnect for one session. */

@@ -1,4 +1,5 @@
 import { ChannelDrm } from './channel-drm.interface';
+import type { EmbeddedMpvFrameRegion } from './embedded-mpv-session.interface';
 import { PlaybackPositionData } from './playback-position.interface';
 
 export interface PlayerContentInfo extends Omit<
@@ -22,6 +23,12 @@ export interface ResolvedPortalPlayback {
     referer?: string;
     origin?: string;
     drm?: ChannelDrm;
+    /**
+     * Audio taken from another channel only: where that channel's match
+     * clock is (fractions of the frame). The two-session mode crops its hidden
+     * picture to it so the clock can be read without a third session.
+     */
+    clockRegion?: EmbeddedMpvFrameRegion;
 }
 
 /**

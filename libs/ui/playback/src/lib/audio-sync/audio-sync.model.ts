@@ -5,6 +5,7 @@ import type {
 } from '@iptvnator/shared/interfaces';
 import type { Signal } from '@angular/core';
 import type { MatchClockOcrService } from '../match-clock/match-clock-ocr.service';
+import type { SplitAudioBridge } from './audio-sync-split';
 
 export type SyncSourceKey = 'main' | 'audio';
 export type SyncMode = 'live' | 'pick';
@@ -87,6 +88,12 @@ export interface AudioSyncOptions {
     now?: () => number;
     /** Pause after a connection is released, before the next one opens. */
     settleMs?: number;
+    /**
+     * The two-session audio mode: the sound plays in a hidden session whose
+     * picture is read instead of opening a third session. Absent or inactive:
+     * the window works as before.
+     */
+    split?: () => SplitAudioBridge | null;
 }
 
 /** Capture cadence; the clock is read every `OCR_EVERY` ticks (once a second). */

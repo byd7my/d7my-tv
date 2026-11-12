@@ -13,6 +13,8 @@ type SettingsUpdatePayload = Omit<
     language?: string;
     mpvPlayerArguments?: ExternalPlayerArgumentsSetting;
     startupWindowMode?: string;
+    embeddedMpvSplitAudio?: boolean;
+    embeddedMpvSplitAudioDBaseMs?: number;
     vlcPlayerArguments?: ExternalPlayerArgumentsSetting;
 };
 type SettingsUpdateHandler = (
@@ -26,6 +28,8 @@ const STORE_KEYS = {
     EMBEDDED_MPV_AUTO_RECONNECT: 'EMBEDDED_MPV_AUTO_RECONNECT',
     EMBEDDED_MPV_EXTRA_OPTIONS: 'EMBEDDED_MPV_EXTRA_OPTIONS',
     EMBEDDED_MPV_FRAME_COPY: 'EMBEDDED_MPV_FRAME_COPY',
+    EMBEDDED_MPV_SPLIT_AUDIO: 'EMBEDDED_MPV_SPLIT_AUDIO',
+    EMBEDDED_MPV_SPLIT_AUDIO_D_BASE: 'EMBEDDED_MPV_SPLIT_AUDIO_D_BASE',
     MPV_PLAYER_ARGUMENTS: 'MPV_PLAYER_ARGUMENTS',
     MPV_REUSE_INSTANCE: 'MPV_REUSE_INSTANCE',
     STARTUP_WINDOW_MODE: 'STARTUP_WINDOW_MODE',
@@ -56,6 +60,8 @@ jest.mock('../services/store.service', () => ({
     EMBEDDED_MPV_AUTO_RECONNECT: STORE_KEYS.EMBEDDED_MPV_AUTO_RECONNECT,
     EMBEDDED_MPV_EXTRA_OPTIONS: STORE_KEYS.EMBEDDED_MPV_EXTRA_OPTIONS,
     EMBEDDED_MPV_FRAME_COPY: STORE_KEYS.EMBEDDED_MPV_FRAME_COPY,
+    EMBEDDED_MPV_SPLIT_AUDIO: STORE_KEYS.EMBEDDED_MPV_SPLIT_AUDIO,
+    EMBEDDED_MPV_SPLIT_AUDIO_D_BASE: STORE_KEYS.EMBEDDED_MPV_SPLIT_AUDIO_D_BASE,
     MPV_PLAYER_ARGUMENTS: STORE_KEYS.MPV_PLAYER_ARGUMENTS,
     MPV_REUSE_INSTANCE: STORE_KEYS.MPV_REUSE_INSTANCE,
     STARTUP_WINDOW_MODE: STORE_KEYS.STARTUP_WINDOW_MODE,
@@ -238,6 +244,26 @@ describe('SETTINGS_UPDATE', () => {
         settingsUpdateHandler({}, { embeddedMpvAutoReconnect: true });
         expect(mockStoreSet.mock.calls).toEqual([
             [STORE_KEYS.EMBEDDED_MPV_AUTO_RECONNECT, true],
+        ]);
+    });
+
+    it('mirrors the two-session audio toggle, on only for an explicit true', () => {
+        settingsUpdateHandler({}, { embeddedMpvSplitAudio: true });
+        settingsUpdateHandler({}, { embeddedMpvSplitAudio: false });
+        expect(mockStoreSet.mock.calls).toEqual([
+            [STORE_KEYS.EMBEDDED_MPV_SPLIT_AUDIO, true],
+            [STORE_KEYS.EMBEDDED_MPV_SPLIT_AUDIO, false],
+        ]);
+    });
+
+    it('mirrors the picture delay of two-session audio in seconds, clamped', () => {
+        settingsUpdateHandler({}, { embeddedMpvSplitAudioDBaseMs: 120 });
+        settingsUpdateHandler({}, { embeddedMpvSplitAudioDBaseMs: 99999 });
+        settingsUpdateHandler({}, { embeddedMpvSplitAudioDBaseMs: -5 });
+        expect(mockStoreSet.mock.calls).toEqual([
+            [STORE_KEYS.EMBEDDED_MPV_SPLIT_AUDIO_D_BASE, 0.12],
+            [STORE_KEYS.EMBEDDED_MPV_SPLIT_AUDIO_D_BASE, 0.5],
+            [STORE_KEYS.EMBEDDED_MPV_SPLIT_AUDIO_D_BASE, 0],
         ]);
     });
 

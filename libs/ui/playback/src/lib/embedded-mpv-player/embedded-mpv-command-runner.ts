@@ -4,6 +4,7 @@ import {
     EmbeddedMpvSubtitleStyle,
     RecordingStartMetadata,
     ResolvedPortalPlayback,
+    SplitAudioSyncAction,
 } from '@iptvnator/shared/interfaces';
 
 type ElectronBridge = Window['electron'];
@@ -116,6 +117,45 @@ export class EmbeddedMpvCommandRunner {
         const setDelay = electron?.setEmbeddedMpvExternalAudioDelay;
         if (!id || !setDelay) return;
         await this.run(id, () => setDelay(id, seconds));
+    }
+
+    /** Feeds a measured lateness to the two-session sound correction. */
+    async reportSplitAudioLateness(
+        seconds: number,
+        manual = false
+    ): Promise<void> {
+        const id = this.ctx.sessionId();
+        const report = this.bridge()?.reportEmbeddedMpvSplitAudioLateness;
+        if (!id || !report) return;
+        try {
+            await report(id, seconds, manual);
+        } catch {
+            // the session was torn down mid-call; the next reading resyncs
+        }
+    }
+
+    /** Chooses the pair's one decision source: clock readings or typed offset. */
+    async setSplitAudioSyncMode(mode: 'auto' | 'manual'): Promise<void> {
+        const id = this.ctx.sessionId();
+        const setMode = this.bridge()?.setEmbeddedMpvSplitAudioSyncMode;
+        if (!id || !setMode) return;
+        try {
+            await setMode(id, mode);
+        } catch {
+            // the session was torn down mid-call
+        }
+    }
+
+    /** The pair's sync buttons: start/cancel Auto Sync, quick jump, freeze audio. */
+    async splitAudioSyncAction(action: SplitAudioSyncAction): Promise<void> {
+        const id = this.ctx.sessionId();
+        const act = this.bridge()?.splitEmbeddedMpvAudioSyncAction;
+        if (!id || !act) return;
+        try {
+            await act(id, action);
+        } catch {
+            // the session was torn down mid-call
+        }
     }
 
     async setSubtitleTrack(trackId: number): Promise<void> {

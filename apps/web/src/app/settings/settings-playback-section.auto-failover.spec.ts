@@ -82,6 +82,7 @@ function createForm(player: VideoPlayer): FormGroup {
         openStreamOnDoubleClick: new FormControl(false),
         showExternalPlaybackBar: new FormControl(true),
         embeddedMpvFrameCopy: new FormControl(false),
+        embeddedMpvSplitAudio: new FormControl(false),
         mpvPlayerPath: new FormControl(''),
         mpvPlayerArguments: new FormControl(''),
         mpvReuseInstance: new FormControl(false),

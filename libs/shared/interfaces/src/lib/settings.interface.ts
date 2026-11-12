@@ -259,6 +259,15 @@ export interface Settings {
      * Captured per session, so a change applies to the next session.
      */
     embeddedMpvAutoReconnect?: boolean;
+    /**
+     * Play "audio from another channel" in a second hidden embedded session
+     * kept in step with the picture by small speed nudges, instead of mpv's
+     * audio-add. Experimental, frame-copy engine only. Default off; captured
+     * per session.
+     */
+    embeddedMpvSplitAudio?: boolean;
+    /** Fixed delay of the frame-copy picture path for the above, in ms (default 80). */
+    embeddedMpvSplitAudioDBaseMs?: number;
     /** Desktop Xtream/Stalker request cooldown. Default on; applies on Save. */
     portalConnectivityGuard?: boolean;
     /** Cover/poster sizing preset applied across grids and rails */

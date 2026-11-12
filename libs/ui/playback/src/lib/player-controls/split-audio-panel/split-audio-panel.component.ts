@@ -12,6 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Channel, foldSearchText } from '@iptvnator/shared/interfaces';
 import type { ControlsSplitAudio } from '../controls-split-audio';
+import { SplitSyncSectionComponent } from './split-sync-section.component';
 
 /** Search results beyond this are cut: refine the search instead of scrolling. */
 const MAX_SEARCH_RESULTS = 40;
@@ -28,7 +29,7 @@ const DELAY_STEPS = [0.5, 1, 5, 10] as const;
     templateUrl: './split-audio-panel.component.html',
     styleUrl: './split-audio-panel.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatIconModule, TranslatePipe],
+    imports: [MatIconModule, SplitSyncSectionComponent, TranslatePipe],
     host: {
         '(keydown)': 'onKeydown($event)',
         '(click)': '$event.stopPropagation()',

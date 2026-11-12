@@ -15,6 +15,7 @@ import {
     RecordingStartMetadata,
     ResolvedPortalPlayback,
     watchEmbeddedMpvSupport,
+    SplitAudioSyncAction,
 } from '@iptvnator/shared/interfaces';
 import { TranslateService } from '@ngx-translate/core';
 import { EmbeddedMpvCommandRunner } from './embedded-mpv-command-runner';
@@ -358,6 +359,16 @@ export class EmbeddedMpvSessionController {
     ): Promise<void> => this.commands.setExternalAudio(playback, delaySeconds);
     readonly setExternalAudioDelay = (seconds: number): Promise<void> =>
         this.commands.setExternalAudioDelay(seconds);
+    readonly reportSplitAudioLateness = (
+        seconds: number,
+        manual = false
+    ): Promise<void> => this.commands.reportSplitAudioLateness(seconds, manual);
+    readonly splitAudioSyncAction = (
+        action: SplitAudioSyncAction
+    ): Promise<void> => this.commands.splitAudioSyncAction(action);
+
+    readonly setSplitAudioSyncMode = (mode: 'auto' | 'manual'): Promise<void> =>
+        this.commands.setSplitAudioSyncMode(mode);
     readonly setSubtitleTrack = (trackId: number): Promise<void> =>
         this.commands.setSubtitleTrack(trackId);
     readonly addExternalSubtitle = (): Promise<boolean> =>

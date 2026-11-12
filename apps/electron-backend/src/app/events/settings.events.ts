@@ -9,6 +9,8 @@ import {
     EMBEDDED_MPV_AUTO_RECONNECT,
     EMBEDDED_MPV_EXTRA_OPTIONS,
     EMBEDDED_MPV_FRAME_COPY,
+    EMBEDDED_MPV_SPLIT_AUDIO,
+    EMBEDDED_MPV_SPLIT_AUDIO_D_BASE,
     MPV_PLAYER_ARGUMENTS,
     MPV_REUSE_INSTANCE,
     PARENTAL_LOCK_ENABLED,
@@ -93,6 +95,15 @@ ipcMain.handle('SETTINGS_UPDATE', (_event, arg) => {
         store.set(
             EMBEDDED_MPV_AUTO_RECONNECT,
             arg.embeddedMpvAutoReconnect !== false
+        );
+    }
+    if (arg.embeddedMpvSplitAudio !== undefined) {
+        store.set(EMBEDDED_MPV_SPLIT_AUDIO, arg.embeddedMpvSplitAudio === true);
+    }
+    if (typeof arg.embeddedMpvSplitAudioDBaseMs === 'number') {
+        store.set(
+            EMBEDDED_MPV_SPLIT_AUDIO_D_BASE,
+            Math.min(500, Math.max(0, arg.embeddedMpvSplitAudioDBaseMs)) / 1000
         );
     }
 

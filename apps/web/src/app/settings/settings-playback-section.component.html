@@ -305,6 +305,33 @@
                     </div>
                 }
 
+                @if (form().value.embeddedMpvFrameCopy) {
+                    <div
+                        class="setting-item"
+                        data-setting-id="embedded-mpv-split-audio"
+                        data-test-id="embedded-mpv-split-audio-setting"
+                    >
+                        <div class="setting-item__meta">
+                            <h4 id="embedded-mpv-split-audio-label">
+                                {{ 'SETTINGS.EMBEDDED_MPV_SPLIT_AUDIO' | translate }}
+                            </h4>
+                            <p>
+                                {{
+                                    'SETTINGS.EMBEDDED_MPV_SPLIT_AUDIO_DESCRIPTION'
+                                        | translate
+                                }}
+                            </p>
+                        </div>
+                        <div class="setting-item__control setting-item__toggle">
+                            <mat-slide-toggle
+                                formControlName="embeddedMpvSplitAudio"
+                                aria-labelledby="embedded-mpv-split-audio-label"
+                                data-test-id="embedded-mpv-split-audio-toggle"
+                            ></mat-slide-toggle>
+                        </div>
+                    </div>
+                }
+
                 @if (isEmbeddedMpvSelected()) {
                     <div
                         class="setting-item setting-item--full-control"

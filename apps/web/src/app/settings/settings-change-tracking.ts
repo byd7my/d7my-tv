@@ -26,6 +26,7 @@ export const SETTINGS_CONTROL_SECTIONS: Readonly<Record<string, string>> = {
     embeddedMpvFrameCopy: 'playback',
     embeddedMpvExtraOptions: 'playback',
     embeddedMpvAutoReconnect: 'playback',
+    embeddedMpvSplitAudio: 'playback',
     recordingFolder: 'playback',
     mpvPlayerPath: 'playback',
     mpvPlayerArguments: 'playback',

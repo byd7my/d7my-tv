@@ -1,7 +1,10 @@
 import type { Signal } from '@angular/core';
 import type {
+    EmbeddedMpvSplitAudioNotice,
+    EmbeddedMpvSplitAudioStatus,
     PlayerSubtitleStyle,
     ResolvedPortalPlayback,
+    SplitAudioSyncAction,
 } from '@iptvnator/shared/interfaces';
 import type { PlayerStreamStatsSource } from './player-stream-stats.model';
 
@@ -106,6 +109,12 @@ export interface PlayerControlsState {
     statusMessage: string;
     /** Why the audio from another channel failed; the picture is unaffected. */
     externalAudioError?: string;
+    /** Two-session audio is switched on: the sound plays in a hidden session. */
+    splitAudioEnabled?: boolean;
+    /** Why the external sound was given up (the picture has its own audio back). */
+    splitAudioNotice?: EmbeddedMpvSplitAudioNotice;
+    /** Sync state of the running two-session pair; absent without one. */
+    splitAudio?: EmbeddedMpvSplitAudioStatus;
     stalled: boolean;
     positionSeconds: number;
     durationSeconds: number | null;
@@ -150,6 +159,15 @@ export interface PlayerControlsCommands {
         delaySeconds?: number
     ): void;
     setExternalAudioDelay?(seconds: number): void;
+    /**
+     * Two-session audio: how far the sound is behind the picture (seconds,
+     * positive: behind), read off the pictures. `manual`: typed by the user.
+     */
+    reportSplitAudioLateness?(seconds: number, manual?: boolean): void;
+    /** Two-session audio: auto listens to the clocks only, manual to the typed offset only. */
+    setSplitAudioSyncMode?(mode: 'auto' | 'manual'): void;
+    /** Two-session audio: start/cancel Auto Sync, quick jump back, freeze-audio choice. */
+    splitAudioSyncAction?(action: SplitAudioSyncAction): void;
     setSubtitleTrack(id: number): void; // -1 = off
     /** Opens the engine's subtitle file picker; loads + selects the file. */
     addExternalSubtitleFile(): void;

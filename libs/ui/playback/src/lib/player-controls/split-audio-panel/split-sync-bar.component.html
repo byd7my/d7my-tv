@@ -1,0 +1,177 @@
+<div
+    class="sync-bar"
+    role="status"
+    aria-live="polite"
+    data-test-id="split-sync-bar"
+>
+    @if (sync().notice(); as notice) {
+        <span class="sync-bar__notice" data-test-id="split-sync-notice">
+            <mat-icon aria-hidden="true">warning</mat-icon>
+            {{
+                (notice === 'stalled'
+                    ? 'CHANNELS.SPLIT_AUDIO.AUDIO_STALLED'
+                    : 'CHANNELS.SPLIT_AUDIO.AUDIO_FAILED'
+                ) | translate
+            }}
+        </span>
+        <button
+            type="button"
+            class="sync-bar__close"
+            [attr.aria-label]="'CLOSE' | translate"
+            (click)="sync().dismissNotice()"
+        >
+            <mat-icon>close</mat-icon>
+        </button>
+    } @else {
+        <span class="sync-bar__mode" data-test-id="split-sync-bar-mode">
+            {{
+                (isAuto()
+                    ? 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.AUTO'
+                    : 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.MANUAL'
+                ) | translate
+            }}
+        </span>
+        <span class="sync-bar__state" data-test-id="split-sync-bar-state">
+            {{
+                'CHANNELS.SPLIT_AUDIO.SYNC_BAR.STATE.' + stateKey() | translate
+            }}
+            @if (correctionLabel()) {
+                <span class="sync-bar__dim">· {{ correctionLabel() }}</span>
+            }
+        </span>
+        <span class="sync-bar__diff" data-test-id="split-sync-bar-diff">
+            @if (side(); as s) {
+                @if (s === 'inSync') {
+                    {{ 'CHANNELS.SPLIT_AUDIO.SYNC_BAR.IN_SYNC' | translate }}
+                } @else {
+                    {{
+                        (s === 'behind'
+                            ? 'CHANNELS.SPLIT_AUDIO.SYNC_BAR.AUDIO_BEHIND'
+                            : 'CHANNELS.SPLIT_AUDIO.SYNC_BAR.AUDIO_AHEAD'
+                        ) | translate: { seconds: latenessLabel() }
+                    }}
+                }
+            } @else {
+                --
+            }
+        </span>
+        @if (isAuto()) {
+            <span class="sync-bar__clock" data-test-id="split-sync-bar-picture">
+                <span class="sync-bar__dim">{{
+                    'CHANNELS.SPLIT_AUDIO.SYNC_BAR.PICTURE_CLOCK' | translate
+                }}</span>
+                {{ pictureClock() ?? '--:--' }}
+            </span>
+            <span class="sync-bar__clock" data-test-id="split-sync-bar-audio">
+                <span class="sync-bar__dim">{{
+                    'CHANNELS.SPLIT_AUDIO.SYNC_BAR.AUDIO_CLOCK' | translate
+                }}</span>
+                {{ audioClock() ?? '--:--' }}
+            </span>
+            @if (!controls().sync.isOpen()) {
+                <!-- Where the reader paints the audio channel's clock while the window is closed. -->
+                <canvas
+                    class="sync-bar__canvas"
+                    data-embedded-mpv-preview
+                    aria-hidden="true"
+                ></canvas>
+            }
+        }
+        @if (freeze(); as f) {
+            <span
+                class="sync-bar__freeze"
+                data-test-id="split-sync-bar-freeze"
+                [class.sync-bar__freeze--picture]="f.side === 'picture'"
+            >
+                <mat-icon aria-hidden="true">{{
+                    f.side === 'picture' ? 'pause_circle' : 'volume_off'
+                }}</mat-icon>
+                @if (f.phase === 'announcing') {
+                    <span data-test-id="split-sync-bar-announce">{{
+                        'CHANNELS.SPLIT_AUDIO.SYNC_BAR.FREEZE_SOON'
+                            | translate
+                                : {
+                                      in: f.announceSeconds,
+                                      seconds: f.freezeSeconds,
+                                  }
+                    }}</span>
+                } @else {
+                    <span>{{
+                        (f.side === 'picture'
+                            ? 'CHANNELS.SPLIT_AUDIO.SYNC_BAR.PICTURE_FROZEN'
+                            : 'CHANNELS.SPLIT_AUDIO.SYNC_BAR.SOUND_FROZEN'
+                        ) | translate
+                    }}</span>
+                    <strong
+                        class="sync-bar__count"
+                        data-test-id="split-sync-bar-count"
+                        >{{ f.remainingSeconds }}</strong
+                    >
+                }
+                @if (f.capped) {
+                    <span class="sync-bar__dim">{{
+                        'CHANNELS.SPLIT_AUDIO.SYNC_BAR.FREEZE_CAPPED'
+                            | translate
+                    }}</span>
+                }
+            </span>
+        }
+        @if (outcome(); as o) {
+            <span
+                class="sync-bar__outcome"
+                data-test-id="split-sync-bar-outcome"
+                [class.sync-bar__outcome--failed]="o.failed"
+            >
+                {{ o.text | translate: o.params }}
+            </span>
+        }
+        @if (cutKey(); as cut) {
+            <span class="sync-bar__dim" data-test-id="split-sync-bar-cut">{{
+                cut | translate
+            }}</span>
+        }
+        @if (voidedKey(); as voided) {
+            <span
+                class="sync-bar__outcome sync-bar__outcome--failed"
+                data-test-id="split-sync-bar-voided"
+                >{{ voided | translate }}</span
+            >
+        }
+        @if (quickKey(); as quick) {
+            <span class="sync-bar__dim" data-test-id="split-sync-bar-quick">{{
+                quick.key | translate: quick.params
+            }}</span>
+        }
+        @if (isAuto() && sync().ended()) {
+            <button
+                type="button"
+                class="sync-bar__action"
+                data-test-id="split-sync-bar-again"
+                (click)="sync().runAgain()"
+            >
+                {{ 'CHANNELS.SPLIT_AUDIO.SYNC_BAR.SYNC_AGAIN' | translate }}
+            </button>
+        }
+        @if (isAuto() && sync().running()) {
+            <button
+                type="button"
+                class="sync-bar__action"
+                data-test-id="split-sync-bar-cancel"
+                (click)="sync().stop()"
+            >
+                {{ 'CHANNELS.SPLIT_AUDIO.SYNC_BAR.CANCEL' | translate }}
+            </button>
+        }
+        <button
+            type="button"
+            class="sync-bar__close"
+            data-test-id="split-sync-bar-stop"
+            [attr.aria-label]="
+                'CHANNELS.SPLIT_AUDIO.SYNC_MODE.STOP' | translate
+            "
+            (click)="sync().stop()"
+        >
+            <mat-icon>close</mat-icon>
+        </button>
+    }
+</div>

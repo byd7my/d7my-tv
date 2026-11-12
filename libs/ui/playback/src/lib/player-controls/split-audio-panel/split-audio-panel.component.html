@@ -27,7 +27,12 @@
 
     @if (controls().error()) {
         <p class="split-audio__error" role="alert" data-test-id="split-audio-error">
-            {{ 'CHANNELS.SPLIT_AUDIO.AUDIO_FAILED' | translate }}
+            {{
+                (controls().notice() === 'stalled'
+                    ? 'CHANNELS.SPLIT_AUDIO.AUDIO_STALLED'
+                    : 'CHANNELS.SPLIT_AUDIO.AUDIO_FAILED'
+                ) | translate
+            }}
         </p>
     }
 
@@ -95,7 +100,11 @@
     @if (active(); as audio) {
         <div class="split-audio__divider"></div>
 
-        @if (controls().syncAvailable()) {
+        @if (controls().splitActive()) {
+            <app-split-sync-section [controls]="controls()" />
+        }
+
+        @if (!controls().splitActive() && controls().syncAvailable()) {
             <button
                 type="button"
                 class="split-audio__sync"
@@ -109,7 +118,7 @@
             </button>
         }
 
-        <div class="split-audio__stepper">
+        <div class="split-audio__stepper" [hidden]="controls().splitActive()">
             <button
                 type="button"
                 class="split-audio__step-button"
@@ -133,7 +142,7 @@
             </button>
         </div>
 
-        <div class="split-audio__chips" role="radiogroup">
+        <div class="split-audio__chips" role="radiogroup" [hidden]="controls().splitActive()">
             @for (value of steps; track value) {
                 <button
                     type="button"
@@ -148,7 +157,7 @@
                 </button>
             }
         </div>
-        <div class="split-audio__hints">
+        <div class="split-audio__hints" [hidden]="controls().splitActive()">
             <span>{{ 'CHANNELS.SPLIT_AUDIO.PICTURE_LATER' | translate }}</span>
             <span>{{ 'CHANNELS.SPLIT_AUDIO.COMMENTARY_LATER' | translate }}</span>
         </div>

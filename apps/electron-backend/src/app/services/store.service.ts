@@ -72,6 +72,14 @@ export const EMBEDDED_MPV_EXTRA_OPTIONS = 'EMBEDDED_MPV_EXTRA_OPTIONS';
  */
 export const EMBEDDED_MPV_AUTO_RECONNECT = 'EMBEDDED_MPV_AUTO_RECONNECT';
 
+/**
+ * Two-session "audio from another channel" (hidden sound session kept in
+ * step by speed nudges). Absent means off; captured per session.
+ */
+export const EMBEDDED_MPV_SPLIT_AUDIO = 'EMBEDDED_MPV_SPLIT_AUDIO';
+/** Fixed delay of the frame-copy picture path, seconds (estimate, tunable). */
+export const EMBEDDED_MPV_SPLIT_AUDIO_D_BASE = 'EMBEDDED_MPV_SPLIT_AUDIO_D_BASE';
+
 export type StoreType = {
     [WINDOW_BOUNDS]: Electron.Rectangle;
     [ZOOM_LEVEL]: number;
@@ -84,6 +92,8 @@ export type StoreType = {
     [EMBEDDED_MPV_FRAME_COPY]: boolean;
     [EMBEDDED_MPV_EXTRA_OPTIONS]: string;
     [EMBEDDED_MPV_AUTO_RECONNECT]: boolean;
+    [EMBEDDED_MPV_SPLIT_AUDIO]: boolean;
+    [EMBEDDED_MPV_SPLIT_AUDIO_D_BASE]: number;
     [STARTUP_WINDOW_MODE]: StartupWindowMode;
     [PORTAL_CONNECTIVITY_GUARD]: boolean;
     [PARENTAL_LOCK_ENABLED]: boolean;

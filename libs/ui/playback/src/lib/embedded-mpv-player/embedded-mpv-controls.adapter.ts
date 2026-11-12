@@ -159,6 +159,9 @@ export class EmbeddedMpvControlsAdapter implements PlayerController {
         return {
             ...mappedStatus,
             externalAudioError: session?.externalAudioError,
+            splitAudioEnabled: session?.splitAudioEnabled,
+            splitAudioNotice: session?.splitAudioNotice,
+            splitAudio: session?.splitAudio,
             stalled: this.controller.stalled(),
             positionSeconds: Math.max(0, session?.positionSeconds ?? 0),
             durationSeconds,
@@ -233,6 +236,12 @@ export class EmbeddedMpvControlsAdapter implements PlayerController {
             void this.controller.setExternalAudio(playback, delaySeconds),
         setExternalAudioDelay: (seconds) =>
             void this.controller.setExternalAudioDelay(seconds),
+        reportSplitAudioLateness: (seconds, manual) =>
+            void this.controller.reportSplitAudioLateness(seconds, manual),
+        splitAudioSyncAction: (action) =>
+            void this.controller.splitAudioSyncAction(action),
+        setSplitAudioSyncMode: (mode) =>
+            void this.controller.setSplitAudioSyncMode(mode),
         setSubtitleTrack: (id) => void this.controller.setSubtitleTrack(id),
         addExternalSubtitleFile: () =>
             this.subtitleSettings.addExternalSubtitle(),

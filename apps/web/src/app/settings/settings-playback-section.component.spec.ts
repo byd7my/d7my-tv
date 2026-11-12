@@ -455,6 +455,27 @@ describe('SettingsPlaybackSectionComponent', () => {
         }
     );
 
+    it.each<[boolean, boolean]>([
+        [true, true],
+        [false, false],
+    ])(
+        'offers the two-session audio switch only with the frame-copy engine (frame-copy %s -> %s)',
+        (frameCopy, expected) => {
+            const form = createForm();
+            form.controls['embeddedMpvFrameCopy'].setValue(frameCopy);
+            fixture.componentRef.setInput('form', form);
+            fixture.componentRef.setInput('isDesktop', true);
+            fixture.componentRef.setInput('frameCopyAvailable', true);
+            fixture.detectChanges();
+
+            expect(
+                Boolean(queryByTestId('embedded-mpv-split-audio-setting'))
+            ).toBe(expected);
+            // off by default
+            expect(form.controls['embeddedMpvSplitAudio'].value).toBe(false);
+        }
+    );
+
     it('shows the recording folder setting only in desktop builds', () => {
         fixture.componentRef.setInput('isDesktop', true);
         fixture.detectChanges();
@@ -684,6 +705,7 @@ function createForm(player = VideoPlayer.VideoJs): FormGroup {
         openStreamOnDoubleClick: new FormControl(false),
         showExternalPlaybackBar: new FormControl(true),
         embeddedMpvFrameCopy: new FormControl(false),
+        embeddedMpvSplitAudio: new FormControl(false),
         mpvPlayerPath: new FormControl(''),
         mpvPlayerArguments: new FormControl(''),
         mpvReuseInstance: new FormControl(false),

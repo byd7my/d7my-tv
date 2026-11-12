@@ -353,6 +353,14 @@
     unicode-bidi: plaintext;
 }
 
+// Thin sync strip over the top of the video; never resizes or stops the picture.
+.player-controls__sync-bar {
+    position: absolute;
+    inset-block-start: 12px;
+    inset-inline-start: 12px;
+    z-index: 4;
+}
+
 // Over the video, above the dock, at the end side like the other popovers.
 .player-controls__split-audio-panel {
     position: absolute;

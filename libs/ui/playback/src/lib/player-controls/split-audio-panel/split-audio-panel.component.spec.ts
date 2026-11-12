@@ -31,6 +31,9 @@ describe('SplitAudioPanelComponent', () => {
     ];
     const setExternalAudio = jest.fn();
     const setExternalAudioDelay = jest.fn();
+    const setSplitAudioSyncMode = jest.fn();
+    const reportSplitAudioLateness = jest.fn();
+    const splitAudioSyncAction = jest.fn();
     let fixture: ComponentFixture<SplitAudioPanelComponent>;
     let controls: ControlsSplitAudio;
     let service: SplitAudioService;
@@ -50,6 +53,8 @@ describe('SplitAudioPanelComponent', () => {
         localStorage.clear();
         setExternalAudio.mockClear();
         setExternalAudioDelay.mockClear();
+        setSplitAudioSyncMode.mockClear();
+        reportSplitAudioLateness.mockClear();
         TestBed.configureTestingModule({
             imports: [SplitAudioPanelComponent, TranslateModule.forRoot()],
             providers: [
@@ -73,6 +78,9 @@ describe('SplitAudioPanelComponent', () => {
                     ({
                         setExternalAudio,
                         setExternalAudioDelay,
+                        setSplitAudioSyncMode,
+                        reportSplitAudioLateness,
+                        splitAudioSyncAction,
                     }) as unknown as PlayerControlsCommands
             )
         );
@@ -158,5 +166,97 @@ describe('SplitAudioPanelComponent', () => {
         state.update((value) => ({ ...value, externalAudioError: 'failed' }));
         fixture.detectChanges();
         expect(root().querySelector('[data-test-id="split-audio-error"]')).not.toBeNull();
+    });
+
+    describe('two-session sync controls', () => {
+        beforeEach(() => {
+            state.update((value) => ({ ...value, splitAudioEnabled: true }));
+            service.toggleFavorite(channels[3].url, 'audio');
+            fixture.detectChanges();
+            click('[data-test-id="split-audio-channel"]');
+        });
+
+        it('replaces the old sync button and delay chips with Auto / Manual and a start button', () => {
+            expect(root().querySelector('[data-test-id="split-sync"]')).not.toBeNull();
+            expect(root().querySelector('[data-test-id="split-audio-sync"]')).toBeNull();
+            expect(
+                root().querySelector('[data-test-id="split-sync-mode-auto"]')?.getAttribute(
+                    'aria-checked'
+                )
+            ).toBe('true');
+            expect(root().querySelector('[data-test-id="split-sync-start"]')).not.toBeNull();
+        });
+
+        it('manual mode takes the offset in seconds and the side that is ahead', () => {
+            click('[data-test-id="split-sync-mode-manual"]');
+            expect(setSplitAudioSyncMode).toHaveBeenLastCalledWith('manual');
+            click('[data-test-id="split-sync-start"]');
+            const input = root().querySelector(
+                '[data-test-id="split-sync-seconds"]'
+            ) as HTMLInputElement;
+            input.value = '10';
+            input.dispatchEvent(new Event('change'));
+            fixture.detectChanges();
+            expect(reportSplitAudioLateness).toHaveBeenLastCalledWith(10, true);
+            click('[data-test-id="split-sync-lead-audio"]');
+            expect(reportSplitAudioLateness).toHaveBeenLastCalledWith(-10, true);
+            click('[data-test-id="split-sync-nudge-plus-0.1"]');
+            expect(reportSplitAudioLateness).toHaveBeenLastCalledWith(-9.9, true);
+        });
+
+        it('quick sync is its own button and needs the sync to be started', () => {
+            const quick = () =>
+                root().querySelector(
+                    '[data-test-id="split-sync-quick"]'
+                ) as HTMLButtonElement;
+            expect(quick().disabled).toBe(true);
+            click('[data-test-id="split-sync-start"]');
+            expect(quick().disabled).toBe(false);
+            splitAudioSyncAction.mockClear();
+            click('[data-test-id="split-sync-quick"]');
+            expect(splitAudioSyncAction).toHaveBeenCalledWith('quick');
+        });
+
+        it('the picture-audio option while the sound is frozen is off until chosen', () => {
+            const box = root().querySelector(
+                '[data-test-id="split-sync-original-audio"]'
+            ) as HTMLInputElement;
+            expect(box.checked).toBe(false);
+            box.checked = true;
+            box.dispatchEvent(new Event('change'));
+            expect(splitAudioSyncAction).toHaveBeenCalledWith('original-audio-on');
+        });
+
+        it('manual: states the amount and which side is ahead before it is applied', () => {
+            click('[data-test-id="split-sync-mode-manual"]');
+            const input = root().querySelector(
+                '[data-test-id="split-sync-seconds"]'
+            ) as HTMLInputElement;
+            input.value = '4';
+            input.dispatchEvent(new Event('change'));
+            fixture.detectChanges();
+            const summary = () =>
+                root().querySelector('[data-test-id="split-sync-summary"]')
+                    ?.textContent ?? '';
+            expect(summary()).toContain('SUMMARY_PICTURE');
+            click('[data-test-id="split-sync-lead-audio"]');
+            expect(summary()).toContain('SUMMARY_AUDIO');
+        });
+
+        it('the target offset changes the target only: no speed or reading is sent', () => {
+            click('[data-test-id="split-sync-target-plus"]');
+            expect(setExternalAudioDelay).toHaveBeenLastCalledWith(0.1);
+            expect(reportSplitAudioLateness).not.toHaveBeenCalled();
+        });
+
+        it('says why the external sound ended when the backend gave it up', () => {
+            state.update((value) => ({
+                ...value,
+                externalAudioError: 'x',
+                splitAudioNotice: 'stalled',
+            }));
+            fixture.detectChanges();
+            expect(root().querySelector('[data-test-id="split-audio-error"]')).not.toBeNull();
+        });
     });
 });

@@ -1,0 +1,236 @@
+@let sync = controls().syncCtl;
+<section class="sync-section" data-test-id="split-sync">
+    <div
+        class="sync-section__modes"
+        role="radiogroup"
+        [attr.aria-label]="'CHANNELS.SPLIT_AUDIO.SYNC_MODE.LABEL' | translate"
+    >
+        <button
+            type="button"
+            role="radio"
+            class="sync-section__mode"
+            data-test-id="split-sync-mode-auto"
+            [class.sync-section__mode--on]="sync.mode() === 'auto'"
+            [attr.aria-checked]="sync.mode() === 'auto'"
+            (click)="sync.setMode('auto')"
+        >
+            {{ 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.AUTO' | translate }}
+        </button>
+        <button
+            type="button"
+            role="radio"
+            class="sync-section__mode"
+            data-test-id="split-sync-mode-manual"
+            [class.sync-section__mode--on]="sync.mode() === 'manual'"
+            [attr.aria-checked]="sync.mode() === 'manual'"
+            (click)="sync.setMode('manual')"
+        >
+            {{ 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.MANUAL' | translate }}
+        </button>
+    </div>
+    <p class="sync-section__hint">
+        {{
+            (sync.mode() === 'auto'
+                ? 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.AUTO_HINT'
+                : 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.MANUAL_HINT'
+            ) | translate
+        }}
+    </p>
+
+    <button
+        type="button"
+        class="sync-section__start"
+        data-test-id="split-sync-start"
+        [class.sync-section__start--on]="sync.stopShown()"
+        [attr.aria-pressed]="sync.stopShown()"
+        (click)="sync.press()"
+    >
+        <mat-icon aria-hidden="true">{{
+            sync.stopShown() ? 'stop' : 'play_arrow'
+        }}</mat-icon>
+        <span>{{
+            (sync.stopShown()
+                ? 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.STOP'
+                : sync.mode() === 'auto'
+                  ? 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.SYNC_NOW'
+                  : 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.START'
+            ) | translate
+        }}</span>
+    </button>
+
+    @if (sync.mode() === 'auto') {
+        <button
+            type="button"
+            class="sync-section__link"
+            data-test-id="split-sync-regions"
+            (click)="sync.openRegionPicker()"
+        >
+            <mat-icon aria-hidden="true">crop_free</mat-icon>
+            {{ 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.PICK_REGIONS' | translate }}
+        </button>
+    } @else {
+        <div class="sync-section__manual" data-test-id="split-sync-manual">
+            <label class="sync-section__field">
+                <span>{{
+                    'CHANNELS.SPLIT_AUDIO.SYNC_MODE.OFFSET_SECONDS' | translate
+                }}</span>
+                <input
+                    type="text"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    data-test-id="split-sync-seconds"
+                    [value]="sync.manualSeconds()"
+                    (change)="onSeconds($event)"
+                    (keydown.enter)="onSeconds($event)"
+                />
+            </label>
+            <div
+                class="sync-section__lead"
+                role="radiogroup"
+                [attr.aria-label]="
+                    'CHANNELS.SPLIT_AUDIO.SYNC_MODE.AHEAD' | translate
+                "
+            >
+                <button
+                    type="button"
+                    role="radio"
+                    class="sync-section__mode"
+                    data-test-id="split-sync-lead-picture"
+                    [class.sync-section__mode--on]="
+                        sync.manualLead() === 'picture'
+                    "
+                    [attr.aria-checked]="sync.manualLead() === 'picture'"
+                    (click)="sync.setManualLead('picture')"
+                >
+                    {{
+                        'CHANNELS.SPLIT_AUDIO.SYNC_MODE.PICTURE_AHEAD'
+                            | translate
+                    }}
+                </button>
+                <button
+                    type="button"
+                    role="radio"
+                    class="sync-section__mode"
+                    data-test-id="split-sync-lead-audio"
+                    [class.sync-section__mode--on]="
+                        sync.manualLead() === 'audio'
+                    "
+                    [attr.aria-checked]="sync.manualLead() === 'audio'"
+                    (click)="sync.setManualLead('audio')"
+                >
+                    {{
+                        'CHANNELS.SPLIT_AUDIO.SYNC_MODE.AUDIO_AHEAD' | translate
+                    }}
+                </button>
+            </div>
+            @if (sync.manualSeconds() > 0) {
+                <p
+                    class="sync-section__summary"
+                    data-test-id="split-sync-summary"
+                >
+                    {{
+                        (sync.manualLead() === 'picture'
+                            ? 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.SUMMARY_PICTURE'
+                            : 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.SUMMARY_AUDIO'
+                        ) | translate: { seconds: sync.manualSeconds() }
+                    }}
+                </p>
+            }
+            <div class="sync-section__nudges">
+                @for (step of steps; track step) {
+                    <button
+                        type="button"
+                        class="sync-section__nudge"
+                        [attr.data-test-id]="'split-sync-nudge-minus-' + step"
+                        (click)="sync.nudgeManual(-step)"
+                    >
+                        −{{ step }}
+                    </button>
+                }
+                @for (step of steps; track step) {
+                    <button
+                        type="button"
+                        class="sync-section__nudge"
+                        [attr.data-test-id]="'split-sync-nudge-plus-' + step"
+                        (click)="sync.nudgeManual(step)"
+                    >
+                        +{{ step }}
+                    </button>
+                }
+            </div>
+            @if (sync.started()) {
+                <button
+                    type="button"
+                    class="sync-section__link"
+                    data-test-id="split-sync-apply"
+                    (click)="sync.applyManual()"
+                >
+                    <mat-icon aria-hidden="true">sync</mat-icon>
+                    {{ 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.APPLY' | translate }}
+                </button>
+            }
+        </div>
+    }
+
+    <button
+        type="button"
+        class="sync-section__link"
+        data-test-id="split-sync-quick"
+        [disabled]="!sync.started()"
+        (click)="sync.quickSync()"
+    >
+        <mat-icon aria-hidden="true">fast_rewind</mat-icon>
+        {{ 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.QUICK_SYNC' | translate }}
+    </button>
+    <p class="sync-section__hint">
+        {{ 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.QUICK_HINT' | translate }}
+    </p>
+    <label class="sync-section__check">
+        <input
+            type="checkbox"
+            data-test-id="split-sync-original-audio"
+            [checked]="sync.originalAudio()"
+            (change)="onOriginalAudio($event)"
+        />
+        <span>{{
+            'CHANNELS.SPLIT_AUDIO.SYNC_MODE.ORIGINAL_AUDIO_FREEZE' | translate
+        }}</span>
+    </label>
+
+    <div class="sync-section__target">
+        <span class="sync-section__label">
+            {{ 'CHANNELS.SPLIT_AUDIO.SYNC_MODE.TARGET' | translate }}
+        </span>
+        <div class="sync-section__target-row">
+            <button
+                type="button"
+                class="sync-section__nudge"
+                data-test-id="split-sync-target-minus"
+                [attr.aria-label]="
+                    'CHANNELS.SPLIT_AUDIO.PICTURE_LATER' | translate
+                "
+                (click)="controls().adjustDelay(-0.1)"
+            >
+                −0.1
+            </button>
+            <span
+                class="sync-section__target-value"
+                data-test-id="split-sync-target"
+            >
+                {{ controls().activeAudio()?.delaySeconds ?? 0
+                }}{{ 'CHANNELS.SPLIT_AUDIO.SECONDS_SHORT' | translate }}
+            </span>
+            <button
+                type="button"
+                class="sync-section__nudge"
+                data-test-id="split-sync-target-plus"
+                [attr.aria-label]="
+                    'CHANNELS.SPLIT_AUDIO.COMMENTARY_LATER' | translate
+                "
+                (click)="controls().adjustDelay(0.1)"
+            >
+                +0.1
+            </button>
+        </div>
+    </div>
+</section>

@@ -444,7 +444,12 @@ export function extractRegion(
     const data = new Uint8ClampedArray(outWidth * outHeight * 4);
     let out = 0;
     for (let y = 0; y < outHeight; y++) {
-        const rowStart = ((top + y * step) * width + left) * 4;
+        // The buffer is in texture order: its first row is the BOTTOM of the
+        // picture (see the orientation note above). Rows are read from the
+        // far end so the result, like `region`, is top-down: an upright
+        // picture that OCR and the region picker can use as it looks.
+        const rowStart =
+            ((height - 1 - (top + y * step)) * width + left) * 4;
         for (let x = 0; x < outWidth; x++) {
             const index = rowStart + x * step * 4;
             data[out++] = bgra[index + 2];

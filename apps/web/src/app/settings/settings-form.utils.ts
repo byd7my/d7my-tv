@@ -122,6 +122,7 @@ export function createSettingsForm(
         embeddedMpvFrameCopy: false,
         embeddedMpvExtraOptions: ['', [embeddedMpvExtraOptionsValidator]],
         embeddedMpvAutoReconnect: true,
+        embeddedMpvSplitAudio: false,
         portalConnectivityGuard: true,
         coverSize: 'medium' as CoverSize,
         showCoverTitles: true,
@@ -237,6 +238,7 @@ export function createSettingsFromFormValue(
             value.embeddedMpvExtraOptions
         ),
         embeddedMpvAutoReconnect: value.embeddedMpvAutoReconnect ?? true,
+        embeddedMpvSplitAudio: value.embeddedMpvSplitAudio === true,
         portalConnectivityGuard: value.portalConnectivityGuard !== false,
         coverSize: value.coverSize ?? 'medium',
         showCoverTitles: value.showCoverTitles !== false,
