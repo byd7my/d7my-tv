@@ -112,6 +112,24 @@ app-settings-about-section {
     }
 }
 
+// Screenshots: three previews of the app, side by side when there is room.
+.screenshot-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    padding: 12px;
+
+    img {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 10;
+        object-fit: cover;
+        border: 1px solid var(--app-line-strong);
+        border-radius: 12px;
+    }
+}
+
 // Project & community: the project link in its own card.
 .link-cards {
     display: grid;

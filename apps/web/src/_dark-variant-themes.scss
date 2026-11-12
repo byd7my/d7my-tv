@@ -60,6 +60,37 @@ $oled-neutral: (
     100: #ffffff,
 );
 
+// Cool graphite ramp for the Glass preset: neutral surfaces with a faint blue
+// cast, so translucent panels read as frosted glass rather than tinted plastic.
+$glass-neutral: (
+    0: #000000,
+    4: #0b0c10,
+    6: #0e0f13,
+    10: #121317,
+    12: #17181d,
+    17: #1d1f25,
+    20: #22242b,
+    22: #272a31,
+    24: #2b2e36,
+    25: #2e313a,
+    30: #3a3d47,
+    35: #464a55,
+    40: #535763,
+    50: #6e7380,
+    60: #8a8f9c,
+    70: #a5aab6,
+    80: #c1c5cf,
+    87: #d6d9e0,
+    90: #e2e4ea,
+    92: #e8eaee,
+    94: #eceef2,
+    95: #f0f1f5,
+    96: #f3f4f7,
+    98: #f9fafb,
+    99: #fcfcfd,
+    100: #ffffff,
+);
+
 @function palette($neutral, $secondary) {
     $variant: map.get(mat.$azure-palette, neutral-variant);
     @each $tone, $color in $variant {
@@ -95,6 +126,16 @@ $black-oled: mat.define-theme(
         ),
     )
 );
+$glass: mat.define-theme(
+    (
+        color: (
+            theme-type: dark,
+            use-system-variables: true,
+            primary: palette($glass-neutral, mat.$azure-palette),
+            tertiary: mat.$azure-palette,
+        ),
+    )
+);
 
 @mixin night-owl {
     @include mat.system-level-colors(
@@ -117,6 +158,18 @@ $black-oled: mat.define-theme(
             background: #000000,
             surface: #000000,
             surface-dim: #000000,
+        )
+    );
+}
+
+@mixin glass {
+    @include mat.system-level-colors(
+        $glass,
+        (
+            primary: #4da3ff,
+            on-primary: #00142e,
+            secondary: #a5aab6,
+            on-secondary: #0e0f13,
         )
     );
 }

@@ -2,74 +2,31 @@
 
 [Back to README](../README.md)
 
-IPTVnator is a player and does not supply channels or media. Images show demonstration content. Screenshots can include features from the development version.
+D7my-TV is a player and does not supply channels or media. The images show
+demonstration content only, in the Glass theme (Settings → Appearance).
 
 [Full feature list](features.md)
 
-## Dashboard in light and dark themes
-
-![Dashboard with continue watching and live favorites, split diagonally between light and dark themes](../apps/website/public/screenshots/dashboard-themes.webp)
-
 ## Dashboard
 
-![Dashboard with continue watching, live favorites and favorite movies and series](../apps/website/public/screenshots/dashboard-cinematic.webp)
-
-## Live TV and EPG
-
-![Live channels with the inline player and program timeline](../apps/website/public/screenshots/screenshot-player.webp)
+![Dashboard with a rotating featured title, continue watching and favorites](../apps/web/src/assets/screenshots/dashboard.webp)
 
 ## Movies
 
-![Movie details with synopsis, cast, resume position and download actions](../apps/website/public/screenshots/movie-details-cinematic.webp)
+![Movie details with synopsis, cast and play, favorite and download actions](../apps/web/src/assets/screenshots/movie-details.webp)
 
 ## Series and episodes
 
-![Series details with season selection and episode stills](../apps/website/public/screenshots/series-details-cinematic.webp)
+![Series details with season selection and episode list](../apps/web/src/assets/screenshots/series-details.webp)
 
-## Program guide
+## Live TV
 
-![Multi-channel electronic program guide](../apps/website/public/screenshots/multi-epg-view.webp)
+![Live categories and channel list with the current program and its progress](screenshots/live-tv.webp)
 
-## Add a source
+## Themes
 
-![Add playlist dialog for M3U, Xtream Codes and Stalker sources](../apps/website/public/screenshots/add-playlist.webp)
+![Theme picker in Settings with Light, Dark, Cream, Mocha, Night Owl, Black OLED and Glass](screenshots/appearance.webp)
 
-## Channel categories
+## About
 
-![Live category channel list](../apps/website/public/screenshots/channels-view.webp)
-
-## Search
-
-![Global search across live TV, movies and series](../apps/website/public/screenshots/global-search.webp)
-
-## Manage categories
-
-![Manage visible live categories](../apps/website/public/screenshots/manage-categories.webp)
-
-## Movie library
-
-![Movie category grid with sorting and pagination](../apps/website/public/screenshots/xtream-category-view.webp)
-
-## Recently added
-
-![Recently added movies and series](../apps/website/public/screenshots/xtream-recently-added.webp)
-
-## Downloads
-
-![Download manager](../apps/website/public/screenshots/download-manager.webp)
-
-## External players
-
-![External MPV player support](../apps/website/public/screenshots/external-player-support-mpv.webp)
-
-## Radio
-
-![Dedicated radio player](../apps/website/public/screenshots/radio-feature.webp)
-
-## Light theme
-
-![Dashboard in the light theme](../apps/website/public/screenshots/dashboard-light-cinematic.webp)
-
-## Settings
-
-![Application settings](../apps/website/public/screenshots/settings.webp)
+![About page with version, update channel and screenshots](screenshots/about.webp)

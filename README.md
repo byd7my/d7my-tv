@@ -38,7 +38,7 @@ install options and nightly builds, see [Installation](docs/installation.md).
   controls on desktop.
 - **Watch later:** desktop downloads for movies and episodes, plus
   continue-watching and favorites across sources.
-- **Make it yours:** light and dark themes, 21 language options, keyboard
+- **Make it yours:** seven themes (Light, Dark, Cream, Mocha, Night Owl, Black OLED and Glass), 21 language options, keyboard
   shortcuts and a command palette (`Ctrl/Cmd+K`).
 - **Use your screen:** desktop apps, a self-hosted PWA and a phone remote for
   the desktop player.
@@ -46,6 +46,19 @@ install options and nightly builds, see [Installation](docs/installation.md).
 [Full feature list and platform limits](docs/features.md) ·
 [Keyboard shortcuts](docs/keyboard-shortcuts.md) ·
 [All screenshots](docs/screenshots.md)
+
+## Screenshots
+
+<p align="center">
+  <img src="./apps/web/src/assets/screenshots/dashboard.webp" width="49%" alt="Dashboard with a featured title, continue watching and favorites" />
+  <img src="./apps/web/src/assets/screenshots/movie-details.webp" width="49%" alt="Movie details with synopsis, cast and playback actions" />
+</p>
+<p align="center">
+  <img src="./apps/web/src/assets/screenshots/series-details.webp" width="49%" alt="Series details with seasons and episodes" />
+  <img src="./docs/screenshots/live-tv.webp" width="49%" alt="Live categories and channel list with current program progress" />
+</p>
+
+Shown in the Glass theme with demonstration content. [More screenshots](docs/screenshots.md)
 
 ## Self-hosted PWA
 

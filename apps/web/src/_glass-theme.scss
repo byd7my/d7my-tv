@@ -1,0 +1,156 @@
+// Glass preset: Apple-style frosted dark.
+//
+// `_theme-palettes.scss` owns the colour tokens (opaque hex, so contrast stays
+// checkable). This file adds only what tokens cannot: the ambient backdrop and
+// translucent, blurred panels. Everything is scoped to the preset, so no other
+// theme is affected.
+//
+// Rendering cost (see the theme/style rules): `backdrop-filter` is used on a
+// handful of large panels only, never nested, and never on a scroller or an
+// ancestor of another blurred element. Corners are painted by the panel itself.
+
+html body[data-app-theme='glass'] {
+    --glass-fill:
+        linear-gradient(
+            165deg,
+            rgba(255, 255, 255, 0.16) 0%,
+            rgba(255, 255, 255, 0.03) 45%,
+            rgba(255, 255, 255, 0.08) 100%
+        ),
+        rgba(40, 40, 46, 0.4);
+    --glass-rim:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 22px 50px rgba(0, 0, 0, 0.42);
+    --glass-blur: blur(36px) saturate(180%);
+    --glass-scrim: rgba(11, 12, 16, 0.9);
+
+    background:
+        radial-gradient(
+            1100px 760px at 8% -8%,
+            rgba(120, 132, 160, 0.62),
+            transparent 62%
+        ),
+        radial-gradient(
+            900px 700px at 98% 6%,
+            rgba(72, 92, 140, 0.5),
+            transparent 60%
+        ),
+        radial-gradient(
+            1100px 760px at 92% 112%,
+            rgba(70, 86, 128, 0.55),
+            transparent 62%
+        ),
+        radial-gradient(
+            800px 600px at 0% 100%,
+            rgba(58, 64, 80, 0.5),
+            transparent 60%
+        ),
+        radial-gradient(
+            900px 700px at 50% 62%,
+            rgba(60, 70, 98, 0.28),
+            transparent 65%
+        ),
+        linear-gradient(180deg, #1c1e24 0%, #0b0c10 100%) !important;
+    background-attachment: fixed !important;
+
+    // Structural surfaces let the backdrop through.
+    --app-rail-bg: transparent;
+    --app-header-bg: transparent;
+    --app-content-bg: transparent;
+    --app-content-shadow: none;
+    --app-search-bg: rgba(255, 255, 255, 0.1);
+    --app-search-border: rgba(255, 255, 255, 0.14);
+    --app-hover-overlay: rgba(255, 255, 255, 0.12);
+    --app-card-hover-bg: rgba(255, 255, 255, 0.14);
+    --app-widget-bg: rgba(255, 255, 255, 0.07);
+    --app-widget-header-bg: rgba(255, 255, 255, 0.06);
+
+    // The shell is painted from `--app-shell-bg` (kept opaque for the overlays
+    // that mix it); here it just lets the backdrop through.
+    .workspace-shell {
+        background: transparent;
+    }
+
+    // Floating glass panels.
+    aside.context-panel,
+    .groups-nav-shell,
+    section.groups-content-panel,
+    .settings-card {
+        background: var(--glass-fill);
+        box-shadow: var(--glass-rim);
+        backdrop-filter: var(--glass-blur);
+        -webkit-backdrop-filter: var(--glass-blur);
+        border: 0;
+    }
+
+    aside.context-panel {
+        margin: 8px 0 8px 8px;
+        height: calc(100% - 16px);
+        border-radius: 28px;
+    }
+
+    .groups-nav-shell,
+    section.groups-content-panel {
+        border-radius: 24px;
+    }
+
+    .settings-card {
+        border-radius: 28px;
+    }
+
+    // Heroes fade into the ambient backdrop instead of a flat surface colour.
+    .hero__backdrop {
+        mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+        -webkit-mask-image: linear-gradient(
+            to bottom,
+            #000 72%,
+            transparent 100%
+        );
+    }
+
+    // The backdrop image fades out through its mask, so the scrims must reach
+    // zero at the bottom edge too, or a dark band marks where the hero ends.
+    .hero__vignette {
+        background:
+            linear-gradient(
+                90deg,
+                rgba(11, 12, 16, 0.82) 0%,
+                rgba(11, 12, 16, 0.35) 45%,
+                transparent 75%
+            ),
+            linear-gradient(
+                to top,
+                transparent 0%,
+                rgba(11, 12, 16, 0.6) 22%,
+                transparent 55%
+            );
+    }
+
+    .hero__scrim {
+        background:
+            linear-gradient(
+                90deg,
+                rgba(11, 12, 16, 0.78) 0%,
+                rgba(11, 12, 16, 0.3) 50%,
+                transparent 80%
+            ),
+            linear-gradient(
+                to top,
+                transparent 0%,
+                rgba(11, 12, 16, 0.55) 24%,
+                transparent 60%
+            );
+    }
+
+    // Pill controls, like the audio panel.
+    .mat-mdc-button,
+    .mat-mdc-unelevated-button:not(.mat-mdc-button-disabled) {
+        border-radius: 999px;
+    }
+
+    .mat-mdc-unelevated-button:not(.mat-mdc-button-disabled) {
+        background: rgba(255, 255, 255, 0.16);
+        color: #f5f5f7;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+}

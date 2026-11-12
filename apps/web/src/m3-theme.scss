@@ -115,7 +115,8 @@ html .dark-theme,
 html [data-app-theme='cream'],
 html [data-app-theme='mocha'],
 html [data-app-theme='night-owl'],
-html [data-app-theme='black-oled'] {
+html [data-app-theme='black-oled'],
+html [data-app-theme='glass'] {
     @include component-tokens($light-theme, (color));
 }
 
@@ -169,6 +170,11 @@ html {
         @include palettes.black-oled;
     }
 
+    [data-app-theme='glass'] {
+        @include dark-variants.glass;
+        @include palettes.glass;
+    }
+
     // Samples use the same declarations as the app, independent of its theme.
     [data-theme-preview='light'] {
         @include palettes.light($preview: true);
@@ -187,6 +193,9 @@ html {
     }
     [data-theme-preview='black-oled'] {
         @include palettes.black-oled($preview: true);
+    }
+    [data-theme-preview='glass'] {
+        @include palettes.glass($preview: true);
     }
 }
 

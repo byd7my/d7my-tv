@@ -70,7 +70,13 @@ describe('theme context extraction', () => {
             false,
             THEME.replace('@include palettes.dark;', '')
         );
-        for (const name of ['dark', 'mocha', 'night-owl', 'black-oled']) {
+        for (const name of [
+            'dark',
+            'mocha',
+            'night-owl',
+            'black-oled',
+            'glass',
+        ]) {
             expect(contexts[name]).not.toContain('--app-progress-color:');
             expect(contexts[name]).not.toContain('--app-success-color:');
         }
@@ -195,7 +201,10 @@ describe('theme preset text palettes', () => {
 
     it('keeps new dark preset text readable over the strongest composited selection tint', () => {
         for (const [name, context] of Object.entries(themeContexts()).filter(
-            ([name]) => name === 'night-owl' || name === 'black-oled'
+            ([name]) =>
+                name === 'night-owl' ||
+                name === 'black-oled' ||
+                name === 'glass'
         )) {
             const selection = hexToken(context, '--app-selection-color');
             const text = hexToken(context, '--app-selection-text-color');

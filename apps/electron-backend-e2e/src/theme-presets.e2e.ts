@@ -18,6 +18,7 @@ const presets = [
     'mocha',
     'night-owl',
     'black-oled',
+    'glass',
 ] as const;
 type Preset = (typeof presets)[number];
 
@@ -72,6 +73,7 @@ test.describe('Electron theme presets', () => {
         'mocha',
         'night-owl',
         'black-oled',
+        'glass',
     ] as const) {
         test(`@theme @settings @persistence @electron saves ${preset} across a process restart`, async ({
             dataDir,
@@ -167,9 +169,9 @@ test.describe('Electron theme presets', () => {
             await openSettingsSection(page, 'appearance');
             const group = page.getByTestId('select-theme');
             await expect(group).toHaveAttribute('role', 'radiogroup');
-            await expect(group.getByRole('radio')).toHaveCount(7);
+            await expect(group.getByRole('radio')).toHaveCount(8);
             const previews = group.locator('[data-theme-preview]');
-            await expect(previews).toHaveCount(6);
+            await expect(previews).toHaveCount(7);
             expect(
                 await previews.evaluateAll((elements) =>
                     elements.map((el) => ({
@@ -191,6 +193,7 @@ test.describe('Electron theme presets', () => {
                 ['ArrowRight', 'mocha'],
                 ['ArrowRight', 'night-owl'],
                 ['ArrowDown', 'black-oled'],
+                ['ArrowDown', 'glass'],
                 ['End', 'system'],
                 ['ArrowRight', 'light'],
                 ['ArrowLeft', 'system'],
@@ -271,7 +274,7 @@ test('@theme @settings @electron palette labels fit a narrow desktop settings pa
         const options = page.locator(
             '.theme-palette:not(.theme-palette--system)'
         );
-        await expect(options).toHaveCount(6);
+        await expect(options).toHaveCount(7);
         await expect
             .poll(() =>
                 page

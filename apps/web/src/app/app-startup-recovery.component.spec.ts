@@ -58,7 +58,7 @@ describe('startup recovery build identity', () => {
                 '[data-test-id="startup-version"]'
             ) as HTMLElement;
             expect(identity.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-                `IPTVnator 0.25.0 · ${expected}`
+                `D7my-TV 0.25.0 · ${expected}`
             );
         }
     );

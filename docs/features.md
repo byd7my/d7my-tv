@@ -46,4 +46,4 @@
 - Cross-platform desktop (Electron) and installable PWA
 - Desktop auto-updater and mobile remote control _(desktop)_
 - Docker self-hosting for the PWA + web backend
-- 21 language options, including Portuguese for Portugal and Brazil ([translation files](../apps/web/src/assets/i18n/)), light & dark themes, and keyboard shortcuts
+- 21 language options, including Portuguese for Portugal and Brazil ([translation files](../apps/web/src/assets/i18n/)), seven themes (Light, Dark, Cream, Mocha, Night Owl, Black OLED and Glass), and keyboard shortcuts

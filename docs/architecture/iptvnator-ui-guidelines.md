@@ -242,9 +242,10 @@ in the overlay chunk. Everything else is lazy by these rules:
 
 The app mode is the exclusive `.dark-theme` or `.light-theme` class that
 `SettingsService` puts on `<body>`. Its `data-app-theme` attribute identifies
-the resolved palette: `light`, `dark`, `cream`, `mocha`, `night-owl`, or
-`black-oled`. Cream uses light mode; Mocha, Night Owl and Black OLED use dark
-mode. A "System" choice resolves the OS preference
+the resolved palette: `light`, `dark`, `cream`, `mocha`, `night-owl`, `black-oled`, or
+`glass`. Cream uses light mode; Mocha, Night Owl, Black OLED and Glass use dark
+mode. Glass keeps opaque hex tokens like the others and adds translucency and
+blur only in `apps/web/src/_glass-theme.scss`, on a few large panels. A "System" choice resolves the OS preference
 to the original Light/Dark presets there and nowhere else. Component styles never use a
 `prefers-color-scheme` query, which follows the OS: with the app set to dark
 on a light OS it paints light colours

@@ -8,6 +8,7 @@ const presets = [
     'mocha',
     'night-owl',
     'black-oled',
+    'glass',
 ] as const;
 type Preset = (typeof presets)[number];
 
@@ -168,6 +169,7 @@ test.describe('PWA theme presets', () => {
         'mocha',
         'night-owl',
         'black-oled',
+        'glass',
     ] as const) {
         test(`@theme @settings @persistence @pwa @web saves ${preset} across reload`, async ({
             page,
@@ -233,9 +235,9 @@ test.describe('PWA theme presets', () => {
     }) => {
         const group = page.locator('[data-test-id="select-theme"]');
         await expect(group).toHaveAttribute('role', 'radiogroup');
-        await expect(group.getByRole('radio')).toHaveCount(7);
+        await expect(group.getByRole('radio')).toHaveCount(8);
         const previews = group.locator('[data-theme-preview]');
-        await expect(previews).toHaveCount(6);
+        await expect(previews).toHaveCount(7);
         expect(
             await previews.evaluateAll((elements) =>
                 elements.map((el) => ({
@@ -255,6 +257,7 @@ test.describe('PWA theme presets', () => {
             ['ArrowRight', 'mocha'],
             ['ArrowRight', 'night-owl'],
             ['ArrowDown', 'black-oled'],
+            ['ArrowDown', 'glass'],
             ['End', 'system'],
             ['ArrowRight', 'light'],
             ['ArrowLeft', 'system'],

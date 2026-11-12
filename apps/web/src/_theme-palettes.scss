@@ -405,3 +405,42 @@
         --app-popover-backdrop: rgba(0, 0, 0, 0.5);
     }
 }
+
+// Glass: Apple-style frosted dark. These tokens are the opaque fallback and the
+// source of every contrast decision; `_glass-theme.scss` layers the translucency
+// and blur on top for the surfaces that sit over the backdrop.
+@mixin glass($preview: false) {
+    // The mode class declares shared roles on this same body element.
+    @include dark($preview, $variant: true);
+    --app-shell-bg: #0c0d10;
+    --app-rail-bg: #14151a;
+    --app-content-bg: #181a1f;
+    --app-widget-bg: #23252c;
+    --app-heading-color: #f5f5f7;
+    --app-muted-color: #a8abb5;
+    --app-selection-color: #4da3ff;
+
+    @if not $preview {
+        --app-header-bg: #14151a;
+        --app-widget-header-bg: #23252c;
+        --app-card-hover-bg: #2b2e36;
+        --app-on-surface: #f5f5f7;
+        --app-body-color: #c1c5cf;
+        --app-eyebrow-color: #a8abb5;
+        --app-selection-text-color: #9bcdff;
+        --app-selection-on-color: #00142e;
+        --app-focus-ring: #9bcdff;
+        --app-provider-xtream: #4da3ff;
+        --app-accent-gradient: linear-gradient(
+            135deg,
+            rgba(77, 163, 255, 0.1),
+            rgba(255, 255, 255, 0.04)
+        );
+        --app-hero-surface: rgba(35, 37, 44, 0.9);
+        --app-cta-bg: #f5f5f7;
+        --app-cta-fg: #0e0f13;
+        --app-cta-hover-bg: #ffffff;
+        --app-cta-meta-fg: #535763;
+        --app-popover-backdrop: rgba(6, 7, 10, 0.5);
+    }
+}

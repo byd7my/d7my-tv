@@ -15,6 +15,7 @@ describe('theme presets', () => {
             MochaTheme: 'MOCHA_THEME',
             NightOwlTheme: 'NIGHT_OWL_THEME',
             BlackOledTheme: 'BLACK_OLED_THEME',
+            GlassTheme: 'GLASS_THEME',
         });
     });
 
@@ -26,6 +27,7 @@ describe('theme presets', () => {
             { value: Theme.MochaTheme, id: 'mocha', mode: 'dark' },
             { value: 'NIGHT_OWL_THEME', id: 'night-owl', mode: 'dark' },
             { value: 'BLACK_OLED_THEME', id: 'black-oled', mode: 'dark' },
+            { value: 'GLASS_THEME', id: 'glass', mode: 'dark' },
         ]);
     });
 
@@ -53,6 +55,8 @@ describe('theme presets', () => {
         ['NIGHT_OWL_THEME', true, 'night-owl'],
         ['BLACK_OLED_THEME', false, 'black-oled'],
         ['BLACK_OLED_THEME', true, 'black-oled'],
+        ['GLASS_THEME', false, 'glass'],
+        ['GLASS_THEME', true, 'glass'],
     ])('resolves %p with system dark %p to %s', (value, systemDark, id) => {
         expect(resolveThemePreset(value, systemDark as boolean).id).toBe(id);
     });

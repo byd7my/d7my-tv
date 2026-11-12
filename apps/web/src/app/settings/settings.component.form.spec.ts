@@ -68,6 +68,7 @@ describe('SettingsComponent form', () => {
         'MOCHA_THEME',
         'NIGHT_OWL_THEME',
         'BLACK_OLED_THEME',
+        'GLASS_THEME',
     ])(
         'previews %s from the palette picker and restores the saved theme on Discard',
         (value) => {

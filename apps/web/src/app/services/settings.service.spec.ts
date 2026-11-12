@@ -98,6 +98,7 @@ describe('Service: Settings', () => {
             ['MOCHA_THEME', 'mocha', 'dark-theme', 'light-theme'],
             ['NIGHT_OWL_THEME', 'night-owl', 'dark-theme', 'light-theme'],
             ['BLACK_OLED_THEME', 'black-oled', 'dark-theme', 'light-theme'],
+            ['GLASS_THEME', 'glass', 'dark-theme', 'light-theme'],
             [Theme.LightTheme, 'light', 'light-theme', 'dark-theme'],
             [Theme.DarkTheme, 'dark', 'dark-theme', 'light-theme'],
         ])(
@@ -123,6 +124,7 @@ describe('Service: Settings', () => {
             ['MOCHA_THEME', 'mocha'],
             ['NIGHT_OWL_THEME', 'night-owl'],
             ['BLACK_OLED_THEME', 'black-oled'],
+            ['GLASS_THEME', 'glass'],
         ])('stops following system changes after selecting %s', (theme, id) => {
             const service = TestBed.inject(SettingsService);
             service.changeTheme(Theme.SystemTheme);
