@@ -11,6 +11,12 @@ this marker — see `.changes/README.md`.
 
 <!-- next-release -->
 
+# 0.26.18 (2026-11-13)
+
+### Fixes
+
+- **playback** — When the second channel's sound cannot be opened, the audio panel now shows what the player reported (for example an HTTP error from the provider) under the failure notice, and the Auto Sync bar's "Sound not connected" text no longer blames a one-connection plan. ([8fef378](https://github.com/byd7my/d7my-tv/commit/8fef378bac01bfb0af12d38354e3e7fd2d6d1f9a))
+
 # 0.26.17 (2026-11-12)
 
 ### Features
