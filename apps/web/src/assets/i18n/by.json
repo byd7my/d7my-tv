@@ -1160,7 +1160,7 @@
                     "freezing": "Freezing to sync",
                     "resuming": "Resuming",
                     "failed": "Not synced",
-                    "noPair": "Гук не падключаны: тарыф з адным злучэннем не падыходзіць"
+                    "noPair": "Гук не падключаны: сервер не прыняў другі паток"
                 },
                 "FREEZE_SOON": "The picture freezes in {{in}}s for {{seconds}}s to sync the sound",
                 "PICTURE_FROZEN": "Picture frozen to sync · seconds left:",

@@ -366,17 +366,25 @@ export class EmbeddedMpvSplitAudioManager {
         sessionId: string,
         status: string,
         previous: string | null,
-        hasReconnect: boolean
+        hasReconnect: boolean,
+        error?: string
     ): void {
         const mainId = this.soundToMain.get(sessionId);
         if (mainId) {
             if (status === 'error' && !hasReconnect) {
+                // What mpv said is the only way to tell a provider that
+                // refuses a second connection from a stream that cannot be
+                // decoded, so it travels with the failure (and the log).
+                const reason = error?.trim().slice(0, 300);
+                this.deps.warn(
+                    `The sound session of ${mainId} failed${reason ? `: ${reason}` : ' without a reason from mpv.'}`
+                );
                 // Not inside the sound session's own refresh: it is disposed.
                 setTimeout(
                     () =>
                         this.fail(
                             mainId,
-                            'The audio channel stopped and could not be reloaded.',
+                            `The audio channel stopped and could not be reloaded${reason ? `: ${reason}` : '.'}`,
                             'channel-lost'
                         ),
                     0

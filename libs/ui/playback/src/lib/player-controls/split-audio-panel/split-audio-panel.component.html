@@ -43,6 +43,11 @@
                     : 'CHANNELS.SPLIT_AUDIO.AUDIO_FAILED'
                 ) | translate
             }}
+            <span
+                class="split-audio__error-detail"
+                data-test-id="split-audio-error-detail"
+                >{{ controls().error() }}</span
+            >
         </p>
     }
 

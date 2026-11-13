@@ -1160,7 +1160,7 @@
                     "freezing": "Freezing to sync",
                     "resuming": "Resuming",
                     "failed": "Not synced",
-                    "noPair": "音声に接続できません。同時接続1の契約では使えません"
+                    "noPair": "音声に接続できません。サーバーが2本目のストリームを受け付けませんでした"
                 },
                 "FREEZE_SOON": "The picture freezes in {{in}}s for {{seconds}}s to sync the sound",
                 "PICTURE_FROZEN": "Picture frozen to sync · seconds left:",

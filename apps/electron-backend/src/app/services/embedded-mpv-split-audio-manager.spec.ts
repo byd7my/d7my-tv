@@ -442,6 +442,29 @@ describe('EmbeddedMpvSplitAudioManager', () => {
         }
     });
 
+    it('carries what mpv said into the failure the player shows', () => {
+        jest.useFakeTimers();
+        try {
+            const { manager } = setup();
+            manager.allow('main', OPTIONS);
+            manager.setExternalAudio('main', PLAYBACK, 0);
+            manager.onStatus(
+                'sound',
+                'error',
+                'loading',
+                false,
+                'HTTP error 458'
+            );
+            jest.runAllTimers();
+            const p = payload('main');
+            manager.decorate(p);
+            expect(p.splitAudioNotice).toBe('channel-lost');
+            expect(p.externalAudioError).toContain('HTTP error 458');
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
     it('does not end the pair while the sound session is still reconnecting', () => {
         jest.useFakeTimers();
         try {

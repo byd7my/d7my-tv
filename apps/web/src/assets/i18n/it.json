@@ -1160,7 +1160,7 @@
                     "freezing": "Freezing to sync",
                     "resuming": "Resuming",
                     "failed": "Not synced",
-                    "noPair": "Audio non connesso: un piano con 1 connessione non basta"
+                    "noPair": "Audio non connesso: il server non ha accettato un secondo flusso"
                 },
                 "FREEZE_SOON": "The picture freezes in {{in}}s for {{seconds}}s to sync the sound",
                 "PICTURE_FROZEN": "Picture frozen to sync · seconds left:",

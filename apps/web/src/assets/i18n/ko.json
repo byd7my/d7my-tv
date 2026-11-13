@@ -1160,7 +1160,7 @@
                     "freezing": "Freezing to sync",
                     "resuming": "Resuming",
                     "failed": "Not synced",
-                    "noPair": "소리가 연결되지 않았습니다. 동시 접속 1개 요금제로는 사용할 수 없습니다"
+                    "noPair": "소리가 연결되지 않았습니다. 서버가 두 번째 스트림을 받아들이지 않았습니다"
                 },
                 "FREEZE_SOON": "The picture freezes in {{in}}s for {{seconds}}s to sync the sound",
                 "PICTURE_FROZEN": "Picture frozen to sync · seconds left:",

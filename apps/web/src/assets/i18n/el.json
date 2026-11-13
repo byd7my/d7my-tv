@@ -1160,7 +1160,7 @@
                     "freezing": "Freezing to sync",
                     "resuming": "Resuming",
                     "failed": "Not synced",
-                    "noPair": "Ο ήχος δεν συνδέθηκε: ένα πακέτο με 1 σύνδεση δεν αρκεί"
+                    "noPair": "Ο ήχος δεν συνδέθηκε: ο διακομιστής δεν δέχτηκε δεύτερη ροή"
                 },
                 "FREEZE_SOON": "The picture freezes in {{in}}s for {{seconds}}s to sync the sound",
                 "PICTURE_FROZEN": "Picture frozen to sync · seconds left:",

@@ -1160,7 +1160,7 @@
                     "freezing": "Freezing to sync",
                     "resuming": "Resuming",
                     "failed": "Not synced",
-                    "noPair": "A hang nincs csatlakoztatva: az 1 kapcsolatos csomag nem elég"
+                    "noPair": "A hang nincs csatlakoztatva: a szerver nem fogadta el a második adást"
                 },
                 "FREEZE_SOON": "The picture freezes in {{in}}s for {{seconds}}s to sync the sound",
                 "PICTURE_FROZEN": "Picture frozen to sync · seconds left:",

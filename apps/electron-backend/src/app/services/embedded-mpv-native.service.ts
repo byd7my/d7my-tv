@@ -1573,7 +1573,8 @@ export class EmbeddedMpvNativeService {
             sessionId,
             payload.status,
             previousStatus,
-            !!reconnect
+            !!reconnect,
+            payload.error
         );
         this.splitAudio.decorate(payload);
         if (

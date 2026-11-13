@@ -436,3 +436,12 @@
         transition: none;
     }
 }
+
+.split-audio__error-detail {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    opacity: 0.8;
+    word-break: break-word;
+    user-select: text;
+}
