@@ -11,6 +11,7 @@ import {
     SPLIT_AUDIO_DIALOG_OPENER,
     SPLIT_AUDIO_OVERRIDE_BUILDER,
     SplitAudioService,
+    StreamProbeService,
 } from '@iptvnator/services';
 import type {
     Channel,
@@ -48,6 +49,7 @@ export class ControlsSplitAudio {
         optional: true,
     });
     private readonly splitAudio = inject(SplitAudioService);
+    private readonly probeService = inject(StreamProbeService);
     private readonly ocr = inject(MatchClockOcrService);
 
     constructor(
@@ -95,6 +97,58 @@ export class ControlsSplitAudio {
     readonly channels = computed<readonly Channel[]>(() =>
         this.panelOpen() ? (this.splitAudio.context()?.channels() ?? []) : []
     );
+
+    /** Saved subscriptions the sound can come from besides the picture's own. */
+    readonly sourceOptions = computed(
+        () => this.splitAudio.context()?.sources?.() ?? []
+    );
+    /** The chosen sound subscription; null is the picture's own. */
+    readonly sourceId = computed(() => {
+        const id = this.splitAudio.audioSourceId();
+        return id !== null && this.sourceOptions().some((o) => o.id === id)
+            ? id
+            : null;
+    });
+    readonly sourceStatus = this.splitAudio.audioSourceStatus;
+
+    setSource(id: string | null): void {
+        this.splitAudio.setAudioSource(id);
+    }
+
+    /**
+     * Result of "check" per channel. Only channels of a subscription other
+     * than the picture's are checked: a check opens a connection, and on the
+     * picture's own account that could be the one the picture needs.
+     */
+    readonly checks = signal<
+        Record<string, { state: 'busy' | 'ok' | 'bad' | 'unknown'; ms?: number }>
+    >({});
+
+    readonly canCheck = computed(
+        () => this.sourceId() !== null && this.probeService.isAvailable
+    );
+
+    async check(channel: Channel): Promise<void> {
+        if (!this.canCheck()) return;
+        const key = channel.url;
+        this.checks.update((all) => ({ ...all, [key]: { state: 'busy' } }));
+        const http = channel.http;
+        const result = await this.probeService.probe(key, 'HEAD', {
+            userAgent: http?.['user-agent'] || null,
+            referer: http?.referrer || null,
+            origin: http?.origin || null,
+        });
+        const state =
+            result.status === 'ok'
+                ? 'ok'
+                : result.status === 'fail'
+                  ? 'bad'
+                  : 'unknown';
+        this.checks.update((all) => ({
+            ...all,
+            [key]: { state, ms: result.latencyMs },
+        }));
+    }
 
     readonly videoUrl = computed(
         () => this.splitAudio.context()?.video.url ?? ''

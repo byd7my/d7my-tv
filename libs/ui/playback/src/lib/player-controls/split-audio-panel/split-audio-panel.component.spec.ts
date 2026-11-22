@@ -9,6 +9,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import {
     SPLIT_AUDIO_OVERRIDE_BUILDER,
     SplitAudioService,
+    StreamProbeService,
 } from '@iptvnator/services';
 import type { Channel } from '@iptvnator/shared/interfaces';
 import { ControlsSplitAudio } from '../controls-split-audio';
@@ -257,6 +258,98 @@ describe('SplitAudioPanelComponent', () => {
             }));
             fixture.detectChanges();
             expect(root().querySelector('[data-test-id="split-audio-error"]')).not.toBeNull();
+        });
+    });
+
+    describe('sound from a second subscription', () => {
+        const probe = jest.fn();
+
+        beforeEach(() => {
+            probe.mockReset();
+            service.setContext({
+                video,
+                channels: () => channels,
+                sources: () => [
+                    { id: 'b', title: 'Second' },
+                    { id: 'c', title: 'Third' },
+                ],
+            });
+            TestBed.inject(StreamProbeService).probe = probe;
+            Object.defineProperty(
+                TestBed.inject(StreamProbeService),
+                'isAvailable',
+                { get: () => true, configurable: true }
+            );
+            fixture.detectChanges();
+        });
+
+        const select = () =>
+            root().querySelector(
+                '[data-test-id="split-audio-source"]'
+            ) as HTMLSelectElement;
+
+        it('offers the saved subscriptions next to "this subscription"', () => {
+            expect(select()).not.toBeNull();
+            expect(Array.from(select().options).map((o) => o.value)).toEqual([
+                '',
+                'b',
+                'c',
+            ]);
+        });
+
+        it('remembers the chosen subscription', () => {
+            select().value = 'b';
+            select().dispatchEvent(new Event('change'));
+            fixture.detectChanges();
+            expect(service.audioSourceId()).toBe('b');
+            expect(controls.sourceId()).toBe('b');
+        });
+
+        it('shows no picker when the page offers no other subscription', () => {
+            service.setContext({ video, channels: () => channels });
+            fixture.detectChanges();
+            expect(select()).toBeNull();
+        });
+
+        it('has no check button on the picture\'s own subscription', () => {
+            service.toggleFavorite(channels[2].url, 'audio');
+            fixture.detectChanges();
+            expect(
+                root().querySelector('[data-test-id="split-audio-check"]')
+            ).toBeNull();
+        });
+
+        it('checks a channel of the chosen subscription and shows the result', async () => {
+            probe.mockResolvedValue({ status: 'ok', latencyMs: 240 });
+            service.setAudioSource('b');
+            service.toggleFavorite(channels[2].url, 'audio');
+            fixture.detectChanges();
+            click('[data-test-id="split-audio-check"]');
+            await fixture.whenStable();
+            fixture.detectChanges();
+            expect(probe).toHaveBeenCalledWith(
+                channels[2].url,
+                'HEAD',
+                expect.objectContaining({ userAgent: null })
+            );
+            expect(
+                root().querySelector('[data-test-id="split-audio-check-result"]')
+                    ?.textContent
+            ).toContain('CHECK_OK');
+        });
+
+        it('reports a refused channel as not working', async () => {
+            probe.mockResolvedValue({ status: 'fail', httpStatus: 403 });
+            service.setAudioSource('b');
+            service.toggleFavorite(channels[2].url, 'audio');
+            fixture.detectChanges();
+            click('[data-test-id="split-audio-check"]');
+            await fixture.whenStable();
+            fixture.detectChanges();
+            expect(
+                root().querySelector('[data-test-id="split-audio-check-result"]')
+                    ?.textContent
+            ).toContain('CHECK_BAD');
         });
     });
 });

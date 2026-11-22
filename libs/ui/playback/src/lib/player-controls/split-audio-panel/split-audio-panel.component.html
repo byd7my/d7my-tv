@@ -31,6 +31,48 @@
         </button>
     </header>
 
+    @if (controls().sourceOptions().length > 0) {
+        <label class="split-audio__source">
+            <span>{{ 'CHANNELS.SPLIT_AUDIO.SOURCE_LABEL' | translate }}</span>
+            <select
+                data-test-id="split-audio-source"
+                [value]="controls().sourceId() ?? ''"
+                (change)="onSource($event)"
+            >
+                <option value="">
+                    {{ 'CHANNELS.SPLIT_AUDIO.SOURCE_SAME' | translate }}
+                </option>
+                @for (option of controls().sourceOptions(); track option.id) {
+                    <option
+                        [value]="option.id"
+                        [selected]="option.id === controls().sourceId()"
+                    >
+                        {{ option.title }}
+                    </option>
+                }
+            </select>
+        </label>
+        @if (controls().sourceId() !== null) {
+            @if (controls().sourceStatus() === 'loading') {
+                <p
+                    class="split-audio__error"
+                    role="status"
+                    data-test-id="split-audio-source-loading"
+                >
+                    {{ 'CHANNELS.SPLIT_AUDIO.SOURCE_LOADING' | translate }}
+                </p>
+            } @else if (controls().sourceStatus() === 'error') {
+                <p
+                    class="split-audio__error"
+                    role="alert"
+                    data-test-id="split-audio-source-failed"
+                >
+                    {{ 'CHANNELS.SPLIT_AUDIO.SOURCE_FAILED' | translate }}
+                </p>
+            }
+        }
+    }
+
     @if (controls().error()) {
         <p
             class="split-audio__error"
@@ -101,6 +143,58 @@
                     }
                     <span class="split-audio__name">{{ channel.name }}</span>
                 </button>
+                @if (controls().canCheck()) {
+                    @if (checkOf(channel); as check) {
+                        <span
+                            class="split-audio__check-result"
+                            [class.split-audio__check-result--ok]="
+                                check.state === 'ok'
+                            "
+                            [class.split-audio__check-result--bad]="
+                                check.state === 'bad'
+                            "
+                            data-test-id="split-audio-check-result"
+                        >
+                            @switch (check.state) {
+                                @case ('busy') {
+                                    {{
+                                        'CHANNELS.SPLIT_AUDIO.CHECK_BUSY'
+                                            | translate
+                                    }}
+                                }
+                                @case ('ok') {
+                                    {{
+                                        'CHANNELS.SPLIT_AUDIO.CHECK_OK'
+                                            | translate: { ms: check.ms ?? 0 }
+                                    }}
+                                }
+                                @case ('bad') {
+                                    {{
+                                        'CHANNELS.SPLIT_AUDIO.CHECK_BAD'
+                                            | translate
+                                    }}
+                                }
+                                @default {
+                                    {{
+                                        'CHANNELS.SPLIT_AUDIO.CHECK_UNKNOWN'
+                                            | translate
+                                    }}
+                                }
+                            }
+                        </span>
+                    }
+                    <button
+                        type="button"
+                        class="split-audio__star"
+                        data-test-id="split-audio-check"
+                        [attr.aria-label]="
+                            'CHANNELS.SPLIT_AUDIO.CHECK' | translate
+                        "
+                        (click)="controls().check(channel)"
+                    >
+                        <mat-icon>network_check</mat-icon>
+                    </button>
+                }
                 <button
                     type="button"
                     class="split-audio__star"

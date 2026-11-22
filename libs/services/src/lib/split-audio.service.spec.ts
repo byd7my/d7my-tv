@@ -14,6 +14,16 @@ describe('SplitAudioService', () => {
         service = TestBed.inject(SplitAudioService);
     });
 
+    it('remembers the chosen sound subscription and forgets it on null', () => {
+        expect(service.audioSourceId()).toBeNull();
+        service.setAudioSource('b');
+        expect(service.audioSourceId()).toBe('b');
+        expect(localStorage.getItem('iptvnator.splitAudioSource')).toBe('b');
+        service.setAudioSource(null);
+        expect(service.audioSourceId()).toBeNull();
+        expect(localStorage.getItem('iptvnator.splitAudioSource')).toBeNull();
+    });
+
     it('hands the pending override out exactly once', () => {
         service.request(
             { streamUrl: 'http://h/b.ts', delaySeconds: 1.5 },

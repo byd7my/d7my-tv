@@ -97,6 +97,15 @@ export class SplitAudioPanelComponent {
         }
     }
 
+    protected onSource(event: Event): void {
+        const value = (event.target as HTMLSelectElement).value;
+        this.controls().setSource(value || null);
+    }
+
+    protected checkOf(channel: Channel) {
+        return this.controls().checks()[channel.url];
+    }
+
     protected onQuery(event: Event): void {
         this.query.set((event.target as HTMLInputElement).value);
     }

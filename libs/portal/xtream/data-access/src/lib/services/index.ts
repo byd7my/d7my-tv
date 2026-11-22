@@ -5,3 +5,4 @@ export * from './xtream-api.service';
 export * from './xtream-url.service';
 export * from './xtream-vod-playback-source';
 export * from './xtream-xmltv-fallback.service';
+export * from './split-audio-source.service';

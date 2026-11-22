@@ -445,3 +445,41 @@
     word-break: break-word;
     user-select: text;
 }
+
+.split-audio__source {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--sa-text-dim);
+}
+
+.split-audio__source select {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 10px;
+    color: var(--sa-text);
+    font: inherit;
+    background: var(--sa-track);
+    border: 0;
+    border-radius: 999px;
+    box-shadow: var(--sa-track-shadow);
+}
+
+.split-audio__source select option {
+    color: #111;
+}
+
+.split-audio__check-result {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--sa-text-dim);
+}
+
+.split-audio__check-result--ok {
+    color: #c8f5d1;
+}
+
+.split-audio__check-result--bad {
+    color: #ffd0cc;
+}

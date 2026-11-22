@@ -11,6 +11,7 @@ export const SPLIT_AUDIO_MAX_DELAY_SECONDS = 60;
 
 const DELAY_STORAGE_PREFIX = 'iptvnator.splitAudioDelay.';
 const FAVORITE_STORAGE_PREFIX = 'iptvnator.splitAudioFavorite.';
+const SOURCE_STORAGE_KEY = 'iptvnator.splitAudioSource';
 
 /**
  * "Video from channel A, audio from channel B" for the external MPV player.
@@ -45,7 +46,21 @@ export type SplitAudioFavoriteRole = 'video' | 'audio';
 export interface SplitAudioContext {
     readonly video: Channel;
     readonly channels: () => readonly Channel[];
+    /**
+     * Other saved subscriptions the sound can come from (a second account
+     * has its own connection limit). Absent when the page offers none.
+     */
+    readonly sources?: () => readonly SplitAudioSourceOption[];
 }
+
+/** A saved subscription the sound can be taken from. */
+export interface SplitAudioSourceOption {
+    readonly id: string;
+    readonly title: string;
+}
+
+/** Progress of loading the chosen sound subscription's channel list. */
+export type SplitAudioSourceStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 /**
  * Turns a channel into the audio source for the player, with the request
@@ -64,6 +79,19 @@ export class SplitAudioService {
     readonly context = signal<SplitAudioContext | null>(null);
     readonly activeAudio = signal<ExternalAudioOverride | null>(null);
     readonly favoritesRevision = signal(0);
+    /** The subscription the sound comes from; null = the picture's own. */
+    readonly audioSourceId = signal<string | null>(readStoredSource());
+    readonly audioSourceStatus = signal<SplitAudioSourceStatus>('idle');
+
+    setAudioSource(id: string | null): void {
+        this.audioSourceId.set(id);
+        try {
+            if (id) localStorage.setItem(SOURCE_STORAGE_KEY, id);
+            else localStorage.removeItem(SOURCE_STORAGE_KEY);
+        } catch {
+            // The choice is a convenience; it just is not remembered.
+        }
+    }
 
     isFavorite(channelUrl: string, role: SplitAudioFavoriteRole): boolean {
         this.favoritesRevision();
@@ -183,6 +211,14 @@ export class SplitAudioService {
         role: SplitAudioFavoriteRole
     ): string {
         return `${FAVORITE_STORAGE_PREFIX}${role}.${fnv1a(channelUrl)}`;
+    }
+}
+
+function readStoredSource(): string | null {
+    try {
+        return localStorage.getItem(SOURCE_STORAGE_KEY) || null;
+    } catch {
+        return null;
     }
 }
 

@@ -59,6 +59,7 @@ import {
     FavoriteItem,
     FavoritesService,
     findCurrentEpgItem,
+    SplitAudioSourceService,
     XtreamUrlService,
     XtreamStore,
 } from '@iptvnator/portal/xtream/data-access';
@@ -178,6 +179,7 @@ export class LiveStreamLayoutComponent
     );
     private readonly archiveCopy = inject(EpgArchiveCopyService);
     private readonly xtreamUrlService = inject(XtreamUrlService);
+    private readonly splitAudioSource = inject(SplitAudioSourceService);
     private readonly splitAudio = inject(SplitAudioService);
     private readonly runtime = inject(RuntimeCapabilitiesService);
     private readonly epgPreferences = inject(EpgPreferencesService);
@@ -780,9 +782,19 @@ export class LiveStreamLayoutComponent
             }) as Channel;
         this.splitAudio.setContext({
             video: toChannel(item),
-            // Built only when the audio picker opens.
-            channels: () =>
-                this.channelNavigation.audioChannels().map(toChannel),
+            // Built only when the audio picker opens. A second saved
+            // subscription (its own connection limit) can be the sound's.
+            channels: () => {
+                const sourceId = this.splitAudio.audioSourceId();
+                if (sourceId && sourceId !== playlist.id) {
+                    return this.splitAudioSource.channels();
+                }
+                return this.channelNavigation.audioChannels().map(toChannel);
+            },
+            sources: () =>
+                this.splitAudioSource
+                    .options()
+                    .filter((option) => option.id !== playlist.id),
         });
     }
 
