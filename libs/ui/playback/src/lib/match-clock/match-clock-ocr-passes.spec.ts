@@ -5,7 +5,8 @@ import {
     type RawOcr,
 } from './match-clock-ocr-passes';
 
-const key = (pass: OcrPass) => `${pass.mode}${pass.flip ? '-flip' : ''}`;
+const key = (pass: OcrPass) =>
+    `${pass.mode}${pass.flip ? '-flip' : ''}${pass.isolate ? `-isolate-${pass.isolate}` : ''}`;
 
 function fake(answers: Record<string, RawOcr>) {
     const calls: string[] = [];
@@ -67,5 +68,21 @@ describe('recognizeClock', () => {
         expect(reading).toEqual({ text: '3-1', confidence: 0 });
         expect(pass).toBeNull();
         expect(calls).toHaveLength(OCR_PASSES.length);
+    });
+
+    it('falls back to cutting the clock out of the picture when the plain ways fail', async () => {
+        const { run, calls } = fake({
+            'line-isolate-light': { text: '17:53', confidence: 0 },
+        });
+        const { reading, pass } = await recognizeClock(run, null);
+        expect(reading.text).toBe('17:53');
+        expect(pass).toEqual({ mode: 'line', flip: false, isolate: 'light' });
+        // The plain ways were all tried first.
+        expect(calls.slice(0, 4)).toEqual([
+            'line',
+            'sparse',
+            'sparse-flip',
+            'line-flip',
+        ]);
     });
 });

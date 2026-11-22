@@ -31,6 +31,11 @@ export function effectiveConfidence(text: string, reported: number): number {
 export interface OcrPass {
     mode: 'line' | 'sparse';
     flip: boolean;
+    /**
+     * Cut the picture to black and white and keep only the clock's characters
+     * (digits of this colour), for a clock the plain passes could not read.
+     */
+    isolate?: 'dark' | 'light';
 }
 
 export const OCR_PASSES: readonly OcrPass[] = [
@@ -38,6 +43,8 @@ export const OCR_PASSES: readonly OcrPass[] = [
     { mode: 'sparse', flip: false },
     { mode: 'sparse', flip: true },
     { mode: 'line', flip: true },
+    { mode: 'line', flip: false, isolate: 'dark' },
+    { mode: 'line', flip: false, isolate: 'light' },
 ];
 
 export interface RawOcr {
@@ -46,7 +53,7 @@ export interface RawOcr {
 }
 
 function same(a: OcrPass, b: OcrPass): boolean {
-    return a.mode === b.mode && a.flip === b.flip;
+    return a.mode === b.mode && a.flip === b.flip && a.isolate === b.isolate;
 }
 
 /**

@@ -217,6 +217,35 @@
             >
                 {{ 'CHANNELS.SPLIT_AUDIO.SYNC.CONFIRM_REGION' | translate }}
             </button>
+            <button
+                type="button"
+                class="sync__link"
+                data-test-id="audio-sync-find-clock"
+                [disabled]="finder.finding()"
+                (click)="findClock()"
+            >
+                {{
+                    (finder.finding()
+                        ? 'CHANNELS.SPLIT_AUDIO.SYNC.FINDING'
+                        : 'CHANNELS.SPLIT_AUDIO.SYNC.FIND_CLOCK'
+                    ) | translate
+                }}
+            </button>
+            @if (canRestore()) {
+                <button
+                    type="button"
+                    class="sync__link"
+                    data-test-id="audio-sync-restore-region"
+                    (click)="restoreRegion()"
+                >
+                    {{ 'CHANNELS.SPLIT_AUDIO.SYNC.RESET_REGION' | translate }}
+                </button>
+            }
+            @if (finder.failed()) {
+                <p class="sync__hint" data-test-id="audio-sync-find-failed">
+                    {{ 'CHANNELS.SPLIT_AUDIO.SYNC.FIND_FAILED' | translate }}
+                </p>
+            }
             @if (sync().hasRegions()) {
                 <button type="button" class="sync__link" (click)="backToLive()">
                     {{ 'CHANNELS.SPLIT_AUDIO.SYNC.BACK' | translate }}

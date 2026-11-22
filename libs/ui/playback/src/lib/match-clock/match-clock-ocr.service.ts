@@ -5,6 +5,9 @@ import {
     type OcrPass,
     type OcrReading,
 } from './match-clock-ocr-passes';
+import type { EmbeddedMpvFrameRegion } from '@iptvnator/shared/interfaces';
+import { searchClock } from './clock-search';
+import { isolateClock } from './ocr-isolate';
 import { normalizeForOcr, ocrScaleFor } from './ocr-preprocess';
 
 export { effectiveConfidence };
@@ -73,6 +76,14 @@ export class MatchClockOcrService {
         return result;
     }
 
+    /**
+     * Looks for the clock in a whole frame and returns the area around it
+     * (0..1 of the frame), or null when none reads as a clock.
+     */
+    findClock(image: OcrImage): Promise<EmbeddedMpvFrameRegion | null> {
+        return searchClock(image, (crop) => this.recognize(crop));
+    }
+
     /** Frees the engine; the next `recognize` loads it again. */
     async dispose(): Promise<void> {
         const pending = this.worker;
@@ -91,10 +102,11 @@ export class MatchClockOcrService {
         // A tight box around the digits reads as one line; a whole scoreboard
         // needs a search for the clock among its scores and names.
         const { reading, pass } = await recognizeClock(async (pass) => {
+            const canvas = this.toCanvasFor(image, pass);
+            // No line of characters to isolate: nothing to read this way.
+            if (!canvas) return { text: '', confidence: 0 };
             await this.useMode(worker, pass.mode);
-            const { data } = await worker.recognize(
-                this.toCanvas(image, pass.flip)
-            );
+            const { data } = await worker.recognize(canvas);
             return { text: data.text ?? '', confidence: data.confidence };
         }, this.lastPass);
         if (pass) this.lastPass = pass;
@@ -141,7 +153,37 @@ export class MatchClockOcrService {
         return worker as unknown as OcrWorker;
     }
 
-    private toCanvas(image: OcrImage, flip: boolean): HTMLCanvasElement {
+    private toCanvasFor(
+        image: OcrImage,
+        pass: OcrPass
+    ): HTMLCanvasElement | null {
+        if (!pass.isolate) return this.toCanvas(image, pass.flip);
+        const clock = isolateClock(
+            image.data,
+            image.width,
+            image.height,
+            pass.isolate
+        );
+        if (!clock) return null;
+        const rgba = new Uint8ClampedArray(clock.width * clock.height * 4);
+        for (let i = 0; i < clock.pixels.length; i++) {
+            rgba[i * 4] = rgba[i * 4 + 1] = rgba[i * 4 + 2] = clock.pixels[i];
+            rgba[i * 4 + 3] = 255;
+        }
+        // The characters fill the picture: scale by the box, not the area.
+        const inner = clock.height / 1.5;
+        return this.toCanvas(
+            { width: clock.width, height: clock.height, data: rgba },
+            false,
+            Math.min(4, Math.max(1, Math.round(64 / Math.max(1, inner))))
+        );
+    }
+
+    private toCanvas(
+        image: OcrImage,
+        flip: boolean,
+        scaleOverride?: number
+    ): HTMLCanvasElement {
         const source = document.createElement('canvas');
         source.width = image.width;
         source.height = image.height;
@@ -157,7 +199,7 @@ export class MatchClockOcrService {
             0
         );
 
-        const scale = ocrScaleFor(image.height);
+        const scale = scaleOverride ?? ocrScaleFor(image.height);
         const canvas = document.createElement('canvas');
         canvas.width = image.width * scale + PADDING * 2;
         canvas.height = image.height * scale + PADDING * 2;

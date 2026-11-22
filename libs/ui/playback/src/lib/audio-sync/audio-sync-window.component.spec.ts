@@ -14,6 +14,7 @@ describe('AudioSyncWindowComponent', () => {
     } as ExternalAudioOverride);
     const setDelay = jest.fn();
     const adjustDelay = jest.fn();
+    const findClockRegion = jest.fn();
     let fixture: ComponentFixture<AudioSyncWindowComponent>;
     let sync: AudioSyncController;
 
@@ -43,6 +44,7 @@ describe('AudioSyncWindowComponent', () => {
             sync,
             activeAudio: audio,
             adjustDelay,
+            findClockRegion,
             saveDelay: jest.fn(),
             isDelaySaved: () => false,
         } as unknown as ControlsSplitAudio;
@@ -55,6 +57,7 @@ describe('AudioSyncWindowComponent', () => {
         localStorage.clear();
         setDelay.mockReset();
         adjustDelay.mockReset();
+        findClockRegion.mockReset();
         audio.set({
             streamUrl: 'http://audio/1',
             title: 'Alwan Sport',
@@ -223,6 +226,88 @@ describe('AudioSyncWindowComponent', () => {
             width: 0.4,
             height: expect.closeTo(0.3),
         });
+    });
+
+    it('finds the clock by itself when a picture arrives with no area chosen', async () => {
+        mount();
+        const found = { x: 0.2, y: 0.1, width: 0.3, height: 0.1 };
+        findClockRegion.mockResolvedValue(found);
+        sync.mode.set('pick');
+        fixture.detectChanges();
+
+        sync.pickFrameListener?.({
+            width: 4,
+            height: 4,
+            data: new Uint8ClampedArray(64),
+            ageMs: 0,
+            seq: 1,
+        });
+        await fixture.whenStable();
+        fixture.detectChanges();
+
+        const confirm = byId('audio-sync-confirm-region') as HTMLButtonElement;
+        expect(confirm.disabled).toBe(false);
+        const confirmRegion = jest.spyOn(sync, 'confirmRegion');
+        confirm.click();
+        expect(confirmRegion).toHaveBeenCalledWith(found);
+    });
+
+    it('says so when no clock is found and the area is drawn by hand', async () => {
+        mount();
+        findClockRegion.mockResolvedValue(null);
+        sync.mode.set('pick');
+        fixture.detectChanges();
+        sync.pickFrameListener?.({
+            width: 4,
+            height: 4,
+            data: new Uint8ClampedArray(64),
+            ageMs: 0,
+            seq: 1,
+        });
+        await fixture.whenStable();
+        fixture.detectChanges();
+
+        expect(byId('audio-sync-find-failed')).not.toBeNull();
+    });
+
+    it('restores the saved area after it was changed', () => {
+        mount();
+        const saved = { x: 0.1, y: 0.1, width: 0.4, height: 0.2 };
+        sync.audioRegion.set(saved);
+        sync.pickSource.set('audio');
+        sync.mode.set('pick');
+        fixture.detectChanges();
+        expect(byId('audio-sync-restore-region')).toBeNull();
+
+        const stage = root().querySelector(
+            '.sync__shot--picking'
+        ) as HTMLElement;
+        stage.getBoundingClientRect = () =>
+            ({ left: 0, top: 0, width: 200, height: 100 }) as DOMRect;
+        stage.setPointerCapture = jest.fn();
+        const fire = (type: string, x: number, y: number) =>
+            stage.dispatchEvent(
+                new MouseEvent(type, {
+                    clientX: x,
+                    clientY: y,
+                    button: 0,
+                    bubbles: true,
+                })
+            );
+        fire('pointerdown', 100, 50);
+        fire('pointermove', 180, 90);
+        fire('pointerup', 180, 90);
+        fixture.detectChanges();
+        const restore = byId('audio-sync-restore-region') as HTMLButtonElement;
+        expect(restore).not.toBeNull();
+
+        restore.click();
+        fixture.detectChanges();
+
+        expect(byId('audio-sync-restore-region')).toBeNull();
+        const confirmRegion = jest.spyOn(sync, 'confirmRegion');
+        (byId('audio-sync-confirm-region') as HTMLButtonElement).click();
+        expect(confirmRegion).toHaveBeenCalledWith(saved);
     });
 
     it('closes from the close button and on Escape', () => {

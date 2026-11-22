@@ -15,6 +15,7 @@ import {
 } from '@iptvnator/services';
 import type {
     Channel,
+    EmbeddedMpvFrameCapture,
     EmbeddedMpvFrameRegion,
     ExternalAudioOverride,
     ResolvedPortalPlayback,
@@ -184,6 +185,18 @@ export class ControlsSplitAudio {
         ocr: this.ocr,
         split: () => this.splitBridge,
     });
+
+    /** Looks for the match clock in a full picture: the area found, or null. */
+    async findClockRegion(
+        frame: EmbeddedMpvFrameCapture
+    ): Promise<EmbeddedMpvFrameRegion | null> {
+        try {
+            return await this.ocr.findClock(frame);
+        } catch (error) {
+            console.error('[audio-sync] clock search failed:', error);
+            return null;
+        }
+    }
 
     /** Two-session audio is on and a channel is chosen. */
     splitActive(): boolean {

@@ -19,6 +19,7 @@ import type {
     EmbeddedMpvFrameRegion,
 } from '@iptvnator/shared/interfaces';
 import type { ControlsSplitAudio } from '../player-controls/controls-split-audio';
+import { AudioSyncFinder } from './audio-sync-finder';
 import { regionFromDrag } from './audio-sync-regions';
 import type { SourceProblem, SyncSourceKey } from './audio-sync.model';
 
@@ -86,6 +87,10 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
     protected readonly manualInvalid = signal(false);
     /** The delay just set for the user, shown for a few seconds. */
     protected readonly appliedDelay = signal<string | null>(null);
+
+    protected readonly finder = new AudioSyncFinder((frame) =>
+        this.controls().findClockRegion(frame)
+    );
 
     private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
     private readonly mainCanvas =
@@ -217,6 +222,26 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
                 ? this.sync().mainRegion()
                 : this.sync().audioRegion();
         this.selection.set(region);
+        this.finder.reset();
+    }
+
+    /** True when the area on screen is not the one saved for this source. */
+    protected readonly canRestore = computed(() => {
+        const now = this.selection();
+        const saved =
+            this.pickSource() === 'main'
+                ? this.sync().mainRegion()
+                : this.sync().audioRegion();
+        return JSON.stringify(now) !== JSON.stringify(saved);
+    });
+
+    protected restoreRegion(): void {
+        this.seed(this.pickSource());
+        this.finder.skipAuto();
+    }
+
+    protected findClock(): void {
+        void this.finder.run((region) => this.selection.set(region));
     }
 
     protected selectPickSource(source: SyncSourceKey): void {
@@ -262,6 +287,10 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
     // --------------------------------------------------------------- drawing
 
     private drawMain(frame: EmbeddedMpvFrameCapture | null): void {
+        this.finder.see(frame);
+        if (this.isPicking() && !this.selection()) {
+            this.finder.auto((region) => this.selection.set(region));
+        }
         const canvas = this.mainCanvas()?.nativeElement;
         if (!canvas) return;
         const context = canvas.getContext('2d');
