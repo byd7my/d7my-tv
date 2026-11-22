@@ -11,6 +11,12 @@ this marker — see `.changes/README.md`.
 
 <!-- next-release -->
 
+# 0.26.19 (2026-11-22)
+
+### Features
+
+- **playback** — The audio panel can take the sound from a second saved subscription. Add the second Xtream subscription as a normal source, then pick it under "Sound from": its channels load for search and favorites, and a check button tests whether a channel answers. Each subscription keeps its own connection limit, so a one-connection plan for the picture and another for the sound is enough. ([942a4cb](https://github.com/byd7my/d7my-tv/commit/942a4cb656b0dae08cfeba5c244b1ac0d00c06ea))
+
 # 0.26.18 (2026-11-13)
 
 ### Fixes
