@@ -11,6 +11,16 @@ this marker — see `.changes/README.md`.
 
 <!-- next-release -->
 
+# 0.26.20 (2026-11-22)
+
+### Features
+
+- **playback** — When you pick the clock area for syncing the sound, the app now looks for the match clock in the picture by itself, so a new channel's scoreboard design needs no hand-drawn box. A "Find the clock automatically" button searches again, and "Restore original area" brings back the area you had saved. ([bba89bd](https://github.com/byd7my/d7my-tv/commit/bba89bdee99827640c94a13c9586f5003cb2ca1f))
+
+### Fixes
+
+- **playback** — The match-clock reader now has one more way to read a clock it could not read before: it cuts the picture to black and white and keeps only the digits, so a logo or banner next to the clock no longer hides them. ([bba89bd](https://github.com/byd7my/d7my-tv/commit/bba89bdee99827640c94a13c9586f5003cb2ca1f))
+
 # 0.26.19 (2026-11-22)
 
 ### Features
