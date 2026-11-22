@@ -1,4 +1,11 @@
-import { effect, inject, Injectable, signal, untracked } from '@angular/core';
+import {
+    effect,
+    inject,
+    Injectable,
+    Injector,
+    signal,
+    untracked,
+} from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
     PlaylistsService,
@@ -37,14 +44,24 @@ export function isXtreamSubscription(playlist: Playlist): boolean {
 @Injectable({ providedIn: 'root' })
 export class SplitAudioSourceService {
     private readonly splitAudio = inject(SplitAudioService);
-    private readonly playlists = inject(PlaylistsService);
-    private readonly api = inject(XtreamApiService);
-    private readonly urls = inject(XtreamUrlService);
+    private readonly injector = inject(Injector);
     private readonly cache = new Map<
         string,
         { at: number; channels: readonly Channel[] }
     >();
     private optionsAt = 0;
+
+    // Resolved on first use, not with the service: the Live TV view creates
+    // this service for every channel, and most never open the sound picker.
+    private get playlists(): PlaylistsService {
+        return this.injector.get(PlaylistsService);
+    }
+    private get api(): XtreamApiService {
+        return this.injector.get(XtreamApiService);
+    }
+    private get urls(): XtreamUrlService {
+        return this.injector.get(XtreamUrlService);
+    }
 
     /** The chosen subscription's channels; empty until it has loaded. */
     readonly channels = signal<readonly Channel[]>([]);
