@@ -1,9 +1,9 @@
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..417e6d4
+index 0000000..69dd48f
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,185 @@
 +// Fit the app to a phone screen when it runs inside the iOS shell (html.d7t-ios, set by the shell).
 +html.d7t-ios {
 +    -webkit-text-size-adjust: 100%;
@@ -34,6 +34,160 @@ index 0000000..417e6d4
 +        // iOS zooms into inputs below 16px.
 +        font-size: max(16px, 1em);
 +    }
++}
++
++// Video is drawn by the phone app BEHIND this page, so the player box and everything around it
++// must let it show through (a page with a player is see-through; the shell colour sits behind it).
++html.d7t-ios {
++    .embedded-mpv-player,
++    .embedded-mpv-player__viewport {
++        background: transparent !important;
++    }
++
++    *:has(.embedded-mpv-player__viewport) {
++        background: transparent !important;
++        backdrop-filter: none !important;
++    }
++}
++
++// ── Phone layout (iPhone app) ────────────────────────────────────────────────
++// Same app, same features; only the arrangement changes so it works with a thumb:
++//  - the navigation bar moves to the bottom (like every iPhone app),
++//  - the live player sits on top at 16:9 and the channel list fills the rest,
++//  - the player's controls float over the picture instead of taking a strip below it.
++@media (max-width: 640px) {
++    html.d7t-ios {
++        .workspace-shell {
++            grid-template-rows: 56px minmax(0, 1fr) auto auto !important;
++        }
++
++        app-workspace-shell-header {
++            grid-row: 1 !important;
++        }
++
++        .workspace-body {
++            grid-row: 2 !important;
++        }
++
++        app-workspace-shell-rail {
++            grid-column: 1 !important;
++            grid-row: 3 !important;
++            border-top: 1px solid var(--app-separator, rgba(255, 255, 255, 0.08));
++        }
++
++        .workspace-now-playing {
++            grid-row: 4 !important;
++        }
++
++        // Live TV: picture first, list underneath.
++        app-live-stream-layout {
++            flex-direction: column;
++
++            .content-container {
++                order: -1;
++                flex: 0 0 auto !important;
++                min-height: 0 !important;
++            }
++
++            .video-player {
++                flex: 0 0 auto !important;
++                aspect-ratio: 16 / 9;
++                width: 100%;
++                min-height: 0 !important;
++            }
++
++            .epg.epg--inline,
++            .epg.epg--list {
++                --epg-inline-height: 150px;
++                flex: 0 0 150px !important;
++            }
++
++            // No schedule for this channel: keep just the title row, not a big empty card.
++            .epg.epg--inline:has(app-epg-timeline-empty-state),
++            .epg.epg--list:has(app-epg-timeline-empty-state) {
++                --epg-inline-height: 64px;
++                flex: 0 0 64px !important;
++
++                app-epg-timeline-empty-state {
++                    display: none;
++                }
++            }
++
++            .sidebar {
++                order: 1;
++                flex: 1 1 0 !important;
++                max-height: none !important;
++                min-height: 0 !important;
++                border-bottom: none !important;
++            }
++        }
++
++        // The player's controls overlay the picture (the video sits behind the page),
++        // in two compact rows: [play, skip | actions] over [timeline].
++        .embedded-mpv-player--controls-enabled .embedded-mpv-player__viewport {
++            bottom: 0 !important;
++        }
++
++        .embedded-mpv-player__controls:not(.embedded-mpv-player__controls--panel) {
++            grid-template-columns: auto minmax(0, 1fr) !important;
++            grid-template-areas:
++                'transport actions'
++                'timeline timeline';
++            gap: 0 8px !important;
++            padding: 6px 12px 8px !important;
++            min-height: 0 !important;
++            background: linear-gradient(
++                to top,
++                rgba(0, 0, 0, 0.85),
++                rgba(0, 0, 0, 0)
++            ) !important;
++            border-top: 0 !important;
++            backdrop-filter: none !important;
++            color: #fff;
++            --embedded-mpv-text: #fff;
++            --embedded-mpv-text-muted: rgba(255, 255, 255, 0.8);
++            --mat-icon-button-icon-color: #fff;
++
++            .embedded-mpv-player__transport {
++                grid-area: transport;
++            }
++
++            .embedded-mpv-player__timeline {
++                grid-area: timeline;
++            }
++
++            .embedded-mpv-player__actions {
++                grid-area: actions;
++                justify-content: flex-end;
++                gap: 0;
++            }
++
++            // Volume is the phone's own buttons.
++            .embedded-mpv-player__volume-inline {
++                display: none !important;
++            }
++        }
++    }
++}
++
++// Stand-in fullscreen (iPhone WebKit has none for ordinary elements).
++html.d7t-ios .d7t-fullscreen {
++    position: fixed !important;
++    inset: 0 !important;
++    width: 100vw !important;
++    height: 100vh !important;
++    z-index: 2000 !important;
++    border-radius: 0 !important;
++
++    .embedded-mpv-player__controls {
++        padding-left: max(16px, env(safe-area-inset-left, 0px));
++        padding-right: max(16px, env(safe-area-inset-right, 0px));
++        padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
++    }
++}
++
++html.d7t-ios.d7t-has-fullscreen body {
++    padding: 0;
 +}
 diff --git a/apps/web/src/app/app.config.ts b/apps/web/src/app/app.config.ts
 index 1b79f58..79854e2 100644
@@ -399,6 +553,448 @@ index 0000000..73e6ac9
 +export function getD7tNative(): D7tNativeBridge | undefined {
 +    return typeof window === 'undefined' ? undefined : window.d7tNative;
 +}
+diff --git a/apps/web/src/app/ios/ios-fullscreen.ts b/apps/web/src/app/ios/ios-fullscreen.ts
+new file mode 100644
+index 0000000..3ba81db
+--- /dev/null
++++ b/apps/web/src/app/ios/ios-fullscreen.ts
+@@ -0,0 +1,38 @@
++/**
++ * iPhone WebKit only allows fullscreen for <video>. The player asks for fullscreen on its own
++ * container, so give the page a small stand-in: the element fills the screen (CSS class
++ * `d7t-fullscreen`) and `document.fullscreenElement` / `fullscreenchange` behave like the real thing.
++ * The native video box follows because the player re-measures its box on resize.
++ */
++export function installIosFullscreen(): void {
++    if (typeof window === 'undefined' || !(window as unknown as { d7tNative?: unknown }).d7tNative) {
++        return;
++    }
++    let current: Element | null = null;
++    const notify = () => document.dispatchEvent(new Event('fullscreenchange'));
++
++    const exit = async (): Promise<void> => {
++        if (!current) return;
++        current.classList.remove('d7t-fullscreen');
++        document.documentElement.classList.remove('d7t-has-fullscreen');
++        current = null;
++        notify();
++        window.dispatchEvent(new Event('resize'));
++    };
++
++    Object.defineProperty(document, 'fullscreenEnabled', { configurable: true, get: () => true });
++    Object.defineProperty(document, 'fullscreenElement', { configurable: true, get: () => current });
++    Object.defineProperty(document, 'exitFullscreen', { configurable: true, value: exit });
++    Object.defineProperty(Element.prototype, 'requestFullscreen', {
++        configurable: true,
++        writable: true,
++        value: async function (this: Element): Promise<void> {
++            if (current && current !== this) await exit();
++            current = this;
++            this.classList.add('d7t-fullscreen');
++            document.documentElement.classList.add('d7t-has-fullscreen');
++            notify();
++            window.dispatchEvent(new Event('resize'));
++        },
++    });
++}
+diff --git a/apps/web/src/app/ios/ios-mpv-host.ts b/apps/web/src/app/ios/ios-mpv-host.ts
+new file mode 100644
+index 0000000..51db722
+--- /dev/null
++++ b/apps/web/src/app/ios/ios-mpv-host.ts
+@@ -0,0 +1,392 @@
++import type {
++    ElectronBridgeApi,
++    EmbeddedMpvBounds,
++    EmbeddedMpvSession,
++    EmbeddedMpvSupport,
++    ResolvedPortalPlayback,
++} from '@iptvnator/shared/interfaces';
++import { getD7tNative } from './ios-bridge';
++
++/**
++ * The embedded-MPV half of the desktop bridge, for the iPhone app.
++ *
++ * The desktop main process owns the mpv sessions and reports them back as
++ * `EmbeddedMpvSession` snapshots. Here the sessions are real libmpv players
++ * drawn by the phone app behind this (transparent) page; this file keeps the
++ * snapshots and forwards each command. It is installed as `window.d7tMpv`
++ * (never `window.electron`), so the rest of the app stays in its web mode.
++ */
++
++type Listener = (session: EmbeddedMpvSession) => void;
++
++interface MpvEventPayload {
++    sid: string;
++    type: string;
++    [key: string]: unknown;
++}
++
++interface TrackInfo {
++    id: number;
++    type: string;
++    title?: string;
++    lang?: string;
++    selected?: boolean;
++    isDefault?: boolean;
++}
++
++const POSITION_PUBLISH_MS = 500;
++
++class IosMpvHost {
++    private readonly listeners = new Set<Listener>();
++    private readonly sessions = new Map<string, EmbeddedMpvSession>();
++    private readonly lastPublish = new Map<string, number>();
++    private counter = 0;
++
++    constructor() {
++        getD7tNative()?.on('mpv', (payload) =>
++            this.onEvent(payload as MpvEventPayload)
++        );
++    }
++
++    private native(method: string, args: Record<string, unknown>) {
++        const native = getD7tNative();
++        if (!native) {
++            return Promise.reject(new Error('native bridge missing'));
++        }
++        return native.call<unknown>(method, args);
++    }
++
++    // ------------------------------------------------------------ session state
++
++    private publish(id: string, force = true): EmbeddedMpvSession | null {
++        const session = this.sessions.get(id);
++        if (!session) return null;
++        const now = Date.now();
++        if (!force && now - (this.lastPublish.get(id) ?? 0) < POSITION_PUBLISH_MS) {
++            return session;
++        }
++        this.lastPublish.set(id, now);
++        session.updatedAt = new Date(now).toISOString();
++        const copy = { ...session };
++        this.listeners.forEach((listener) => listener(copy));
++        return copy;
++    }
++
++    private update(id: string, change: Partial<EmbeddedMpvSession>, force = true) {
++        const session = this.sessions.get(id);
++        if (!session) return null;
++        Object.assign(session, change);
++        return this.publish(id, force);
++    }
++
++    private onEvent(event: MpvEventPayload): void {
++        const { sid } = event;
++        const session = this.sessions.get(sid);
++        if (!session) return;
++        switch (event.type) {
++            case 'load': {
++                const duration = Number(event['duration']) || 0;
++                this.update(sid, {
++                    status: session.status === 'paused' ? 'paused' : 'playing',
++                    durationSeconds: duration > 0 && isFinite(duration) ? duration : null,
++                    videoWidth: Number(event['width']) || undefined,
++                    videoHeight: Number(event['height']) || undefined,
++                });
++                void this.refreshTracks(sid);
++                break;
++            }
++            case 'progress': {
++                const duration = Number(event['duration']) || 0;
++                this.update(
++                    sid,
++                    {
++                        positionSeconds: Number(event['position']) || 0,
++                        durationSeconds:
++                            duration > 0 && isFinite(duration) ? duration : session.durationSeconds,
++                        stats: {
++                            ...session.stats,
++                            bufferedAheadSeconds: Number(event['bufferedDuration']) || 0,
++                        },
++                    },
++                    false
++                );
++                break;
++            }
++            case 'state': {
++                const state = String(event['state']);
++                const status =
++                    state === 'playing' || state === 'buffering'
++                        ? 'playing'
++                        : state === 'paused'
++                          ? 'paused'
++                          : state === 'ended'
++                            ? 'ended'
++                            : state === 'loading'
++                              ? 'loading'
++                              : session.status;
++                if (status !== session.status) this.update(sid, { status });
++                break;
++            }
++            case 'buffer':
++                this.update(sid, {
++                    stats: { ...session.stats, buffering: !!event['isBuffering'] },
++                });
++                break;
++            case 'error':
++                this.update(sid, {
++                    status: 'error',
++                    error: String(event['error'] ?? 'playback error'),
++                });
++                break;
++            case 'end':
++                if (event['reason'] === 'error') {
++                    this.update(sid, { status: 'error', error: 'stream ended with an error' });
++                } else {
++                    this.update(sid, { status: 'ended' });
++                }
++                break;
++        }
++    }
++
++    private async refreshTracks(sid: string): Promise<void> {
++        try {
++            const result = (await this.native('mpv.tracks', { sid })) as {
++                tracks: TrackInfo[];
++                ids: { aid: number; sid: number };
++                media?: { videoCodec?: string; audioCodec?: string; hwdecCurrent?: string; fps?: number } | null;
++            };
++            const audio = result.tracks.filter((t) => t.type === 'audio');
++            const subs = result.tracks.filter((t) => t.type === 'sub');
++            const toTrack = (t: TrackInfo) => ({
++                id: t.id,
++                title: t.title || undefined,
++                language: t.lang || undefined,
++                selected: !!t.selected,
++                defaultTrack: !!t.isDefault,
++            });
++            const session = this.sessions.get(sid);
++            this.update(sid, {
++                audioTracks: audio.map(toTrack),
++                selectedAudioTrackId: result.ids.aid > 0 ? result.ids.aid : null,
++                subtitleTracks: subs.map(toTrack),
++                selectedSubtitleTrackId: result.ids.sid > 0 ? result.ids.sid : null,
++                stats: {
++                    ...session?.stats,
++                    videoCodec: result.media?.videoCodec || undefined,
++                    audioCodec: result.media?.audioCodec || undefined,
++                    hwdec: result.media?.hwdecCurrent || undefined,
++                    fps: result.media?.fps || undefined,
++                },
++            });
++        } catch {
++            /* tracks are optional */
++        }
++    }
++
++    // ------------------------------------------------------------ the bridge
++
++    readonly platform = 'ios';
++
++    onEmbeddedMpvSessionUpdate = (callback: Listener): (() => void) => {
++        this.listeners.add(callback);
++        return () => this.listeners.delete(callback);
++    };
++
++    getEmbeddedMpvSupport = async (): Promise<EmbeddedMpvSupport> => ({
++        supported: true,
++        platform: 'ios',
++        engine: 'native',
++        frameCopyAvailable: false,
++        capabilities: {
++            subtitles: true,
++            playbackSpeed: true,
++            aspectOverride: true,
++            screenshot: false,
++            recording: false,
++        },
++    });
++
++    prepareEmbeddedMpv = () => this.getEmbeddedMpvSupport();
++
++    createEmbeddedMpvSession = async (
++        bounds: EmbeddedMpvBounds,
++        title = '',
++        initialVolume = 100
++    ): Promise<EmbeddedMpvSession> => {
++        const id = `ios-${Date.now().toString(36)}-${++this.counter}`;
++        const now = new Date().toISOString();
++        const session: EmbeddedMpvSession = {
++            id,
++            title,
++            streamUrl: '',
++            status: 'loading',
++            positionSeconds: 0,
++            durationSeconds: null,
++            volume: initialVolume,
++            audioTracks: [],
++            selectedAudioTrackId: null,
++            subtitleTracks: [],
++            selectedSubtitleTrackId: null,
++            playbackSpeed: 1,
++            aspectOverride: 'auto',
++            startedAt: now,
++            updatedAt: now,
++        };
++        this.sessions.set(id, session);
++        await this.native('mpv.create', { sid: id, bounds, volume: initialVolume });
++        return { ...session };
++    };
++
++    loadEmbeddedMpvPlayback = async (
++        sessionId: string,
++        playback: ResolvedPortalPlayback
++    ): Promise<void> => {
++        this.update(sessionId, {
++            streamUrl: playback.streamUrl,
++            title: playback.title,
++            status: 'loading',
++            error: undefined,
++        });
++        await this.native('mpv.load', {
++            sid: sessionId,
++            url: playback.streamUrl,
++            headers: playback.headers,
++            userAgent: playback.userAgent,
++            referer: playback.referer,
++            startPosition: playback.startTime,
++        });
++    };
++
++    setEmbeddedMpvBounds = async (sessionId: string, bounds: EmbeddedMpvBounds): Promise<void> => {
++        await this.native('mpv.bounds', { sid: sessionId, bounds });
++    };
++
++    setEmbeddedMpvPaused = async (sessionId: string, paused: boolean) => {
++        await this.native('mpv.paused', { sid: sessionId, paused });
++        return this.update(sessionId, { status: paused ? 'paused' : 'playing' });
++    };
++
++    seekEmbeddedMpv = async (sessionId: string, seconds: number) => {
++        await this.native('mpv.seek', { sid: sessionId, seconds });
++        return this.update(sessionId, { positionSeconds: seconds });
++    };
++
++    seekEmbeddedMpvBy = async (sessionId: string, deltaSeconds: number) => {
++        await this.native('mpv.seekBy', { sid: sessionId, seconds: deltaSeconds });
++        return this.sessions.get(sessionId) ?? null;
++    };
++
++    setEmbeddedMpvVolume = async (sessionId: string, volume: number) => {
++        await this.native('mpv.volume', { sid: sessionId, volume });
++        return this.update(sessionId, { volume });
++    };
++
++    setEmbeddedMpvSpeed = async (sessionId: string, speed: number) => {
++        await this.native('mpv.speed', { sid: sessionId, speed });
++        return this.update(sessionId, { playbackSpeed: speed });
++    };
++
++    setEmbeddedMpvAudioTrack = async (sessionId: string, trackId: number) => {
++        await this.native('mpv.audioTrack', { sid: sessionId, trackId });
++        const session = this.sessions.get(sessionId);
++        return this.update(sessionId, {
++            selectedAudioTrackId: trackId,
++            audioTracks: (session?.audioTracks ?? []).map((t) => ({ ...t, selected: t.id === trackId })),
++        });
++    };
++
++    setEmbeddedMpvSubtitleTrack = async (sessionId: string, trackId: number) => {
++        await this.native('mpv.subTrack', { sid: sessionId, trackId });
++        const session = this.sessions.get(sessionId);
++        return this.update(sessionId, {
++            selectedSubtitleTrackId: trackId > 0 ? trackId : null,
++            subtitleTracks: (session?.subtitleTracks ?? []).map((t) => ({ ...t, selected: t.id === trackId })),
++        });
++    };
++
++    setEmbeddedMpvSubtitleDelay = async (sessionId: string, seconds: number) => {
++        await this.native('mpv.subDelay', { sid: sessionId, seconds });
++        return this.sessions.get(sessionId) ?? null;
++    };
++
++    setEmbeddedMpvAspect = async (sessionId: string, aspect: string) => {
++        await this.native('mpv.prop', {
++            sid: sessionId,
++            name: 'video-aspect-override',
++            value: aspect === 'auto' ? '-1' : aspect,
++        });
++        return this.update(sessionId, { aspectOverride: aspect });
++    };
++
++    disposeEmbeddedMpvSession = async (sessionId: string) => {
++        const session = this.sessions.get(sessionId) ?? null;
++        this.sessions.delete(sessionId);
++        this.lastPublish.delete(sessionId);
++        try {
++            await this.native('mpv.dispose', { sid: sessionId });
++        } catch {
++            /* already gone */
++        }
++        return session ? { ...session, status: 'closed' as const } : null;
++    };
++
++    /**
++     * Sound from another channel (even another subscription): mpv `audio-add`,
++     * shifted by `audio-delay`. The picture keeps its own audio track, which
++     * comes back when the other sound is removed.
++     */
++    private readonly ownAudio = new Map<string, number | null>();
++
++    setEmbeddedMpvExternalAudio = async (
++        sessionId: string,
++        playback: ResolvedPortalPlayback | null,
++        delaySeconds = 0
++    ) => {
++        const session = this.sessions.get(sessionId);
++        if (!session) return null;
++        if (!playback) {
++            const own = this.ownAudio.get(sessionId);
++            this.ownAudio.delete(sessionId);
++            if (own) {
++                await this.native('mpv.audioTrack', { sid: sessionId, trackId: own });
++            }
++            await this.native('mpv.prop', { sid: sessionId, name: 'audio-delay', value: 0 });
++            return this.update(sessionId, { externalAudioError: undefined });
++        }
++        if (!this.ownAudio.has(sessionId)) {
++            this.ownAudio.set(sessionId, session.selectedAudioTrackId);
++        }
++        try {
++            await this.native('mpv.addAudio', {
++                sid: sessionId,
++                url: playback.streamUrl,
++                title: playback.title,
++            });
++            await this.native('mpv.prop', {
++                sid: sessionId,
++                name: 'audio-delay',
++                value: delaySeconds,
++            });
++            void this.refreshTracks(sessionId);
++            return this.update(sessionId, { externalAudioError: undefined });
++        } catch (error) {
++            return this.update(sessionId, {
++                externalAudioError: error instanceof Error ? error.message : String(error),
++            });
++        }
++    };
++
++    setEmbeddedMpvExternalAudioDelay = async (sessionId: string, seconds: number) => {
++        await this.native('mpv.prop', { sid: sessionId, name: 'audio-delay', value: seconds });
++        return this.sessions.get(sessionId) ?? null;
++    };
++
++    detachEmbeddedMpvFrameView = (): void => undefined;
++}
++
++export function installIosMpvHost(): void {
++    if (typeof window === 'undefined' || !getD7tNative()) return;
++    const host = window as unknown as { d7tMpv?: unknown };
++    if (host.d7tMpv) return;
++    host.d7tMpv = new IosMpvHost() as unknown as ElectronBridgeApi;
++}
 diff --git a/apps/web/src/index.html b/apps/web/src/index.html
 index 4314d5c..05b7a87 100644
 --- a/apps/web/src/index.html
@@ -412,6 +1008,23 @@ index 4314d5c..05b7a87 100644
          <meta
              http-equiv="Content-Security-Policy"
              content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src https://www.youtube-nocookie.com; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' http: https: file: data: blob:; font-src 'self' data:; media-src 'self' http: https: file: data: blob:; connect-src 'self' http: https: ws: wss: blob: data:; worker-src 'self' blob:"
+diff --git a/apps/web/src/main.ts b/apps/web/src/main.ts
+index 4802425..c449d99 100644
+--- a/apps/web/src/main.ts
++++ b/apps/web/src/main.ts
+@@ -5,6 +5,12 @@ import { AppComponent } from './app/app.component';
+ import { appConfig, getInitialLanguage } from './app/app.config';
+ import { prepareSourceConnection } from '@iptvnator/services/source-sync/connection';
+ import { preparePlayerLoading } from './player-loading-rollback';
++import { installIosMpvHost } from './app/ios/ios-mpv-host';
++import { installIosFullscreen } from './app/ios/ios-fullscreen';
++
++// iPhone app only: real mpv players behind the page (no-op everywhere else).
++installIosMpvHost();
++installIosFullscreen();
+ 
+ const restoredHref = resolveRestoredRendererRoute(
+     window.location.href,
 diff --git a/apps/web/src/styles.scss b/apps/web/src/styles.scss
 index bc885dd..8e745ed 100644
 --- a/apps/web/src/styles.scss
@@ -429,3 +1042,255 @@ index bc885dd..8e745ed 100644
      @include focus-ring.focus-ring-declarations($offset: -2px);
  }
 +
+diff --git a/libs/services/src/lib/runtime-capabilities.service.ts b/libs/services/src/lib/runtime-capabilities.service.ts
+index 577b030..b1f4a18 100644
+--- a/libs/services/src/lib/runtime-capabilities.service.ts
++++ b/libs/services/src/lib/runtime-capabilities.service.ts
+@@ -1,5 +1,7 @@
+ import { Injectable } from '@angular/core';
+-import { ElectronBridgeApi } from '@iptvnator/shared/interfaces';
++import { ElectronBridgeApi,
++    getEmbeddedMpvBridge,
++} from '@iptvnator/shared/interfaces';
+ 
+ export type RuntimeEnvironment = 'electron' | 'pwa';
+ 
+@@ -370,7 +372,9 @@ export class RuntimeCapabilitiesService {
+     }
+ 
+     get supportsEmbeddedMpv(): boolean {
+-        return this.hasElectronMethod('prepareEmbeddedMpv');
++        const mpv = getEmbeddedMpvBridge() as
++            Record<string, unknown> | undefined;
++        return typeof mpv?.['prepareEmbeddedMpv'] === 'function';
+     }
+ 
+     get supportsDesktopFileSave(): boolean {
+diff --git a/libs/services/src/lib/settings-store.defaults.ts b/libs/services/src/lib/settings-store.defaults.ts
+index 8a79f35..18c17bf 100644
+--- a/libs/services/src/lib/settings-store.defaults.ts
++++ b/libs/services/src/lib/settings-store.defaults.ts
+@@ -11,9 +11,14 @@ import {
+     watchEmbeddedMpvSupport,
+ } from '@iptvnator/shared/interfaces';
+ 
++/** The iPhone app (not the desktop shell) injects `window.d7tNative` before the page runs. */
++const IOS_APP =
++    typeof window !== 'undefined' &&
++    !!(window as unknown as { d7tNative?: unknown }).d7tNative;
++
+ /** Defaults and boot-time helpers of `SettingsStore`, split out for size. */
+ export const DEFAULT_SETTINGS: Settings = {
+-    player: VideoPlayer.VideoJs,
++    player: IOS_APP ? VideoPlayer.EmbeddedMpv : VideoPlayer.VideoJs,
+     webPlayerSharedControls: true,
+     playerAmbientMode: false,
+     detailTrailerBackdrop: false,
+@@ -32,7 +37,7 @@ export const DEFAULT_SETTINGS: Settings = {
+     updateChannel: 'stable',
+     showExternalPlaybackBar: true,
+     stripCountryPrefix: false,
+-    theme: Theme.SystemTheme,
++    theme: IOS_APP ? Theme.DarkTheme : Theme.SystemTheme,
+     mpvPlayerPath: '',
+     mpvPlayerArguments: '',
+     mpvReuseInstance: false,
+diff --git a/libs/services/src/lib/settings-store.service.ts b/libs/services/src/lib/settings-store.service.ts
+index 2d547dc..0c16ccb 100644
+--- a/libs/services/src/lib/settings-store.service.ts
++++ b/libs/services/src/lib/settings-store.service.ts
+@@ -38,6 +38,7 @@ import {
+     normalizeParentalLockRelockMinutes,
+     normalizeStartupWindowMode,
+     DEFAULT_PARENTAL_LOCK_RELOCK_MINUTES,
++    getEmbeddedMpvBridge,
+ } from '@iptvnator/shared/interfaces';
+ 
+ import {
+@@ -372,7 +373,7 @@ export const SettingsStore = signalStore(
+              */
+             async sanitizeEmbeddedMpvSelection() {
+                 const electron =
+-                    typeof window === 'undefined' ? undefined : window.electron;
++                    getEmbeddedMpvBridge();
+                 if (!electron?.getEmbeddedMpvSupport) {
+                     return;
+                 }
+diff --git a/libs/shared/interfaces/src/index.ts b/libs/shared/interfaces/src/index.ts
+index 344f1bf..ca7a95e 100644
+--- a/libs/shared/interfaces/src/index.ts
++++ b/libs/shared/interfaces/src/index.ts
+@@ -9,6 +9,7 @@ export * from './lib/content-metadata.interface';
+ export * from './lib/dev-logger.util';
+ export * from './lib/download-metadata.interface';
+ export * from './lib/embedded-mpv-session.interface';
++export * from './lib/embedded-mpv-bridge';
+ export * from './lib/embedded-mpv-support-watch.util';
+ export * from './lib/subtitle-style.util';
+ export * from './lib/zoom-level.util';
+diff --git a/libs/shared/interfaces/src/lib/embedded-mpv-bridge.ts b/libs/shared/interfaces/src/lib/embedded-mpv-bridge.ts
+new file mode 100644
+index 0000000..abb36bb
+--- /dev/null
++++ b/libs/shared/interfaces/src/lib/embedded-mpv-bridge.ts
+@@ -0,0 +1,18 @@
++import type { ElectronBridgeApi } from './electron-api.interface';
++
++/**
++ * The embedded-MPV side of the host bridge. The desktop app exposes it as
++ * `window.electron`; the iPhone app (which is NOT the desktop shell) exposes
++ * the same methods as `window.d7tMpv` and leaves `window.electron` undefined,
++ * so the rest of the app keeps running in its web mode.
++ */
++export function getEmbeddedMpvBridge(): ElectronBridgeApi | undefined {
++    if (typeof window === 'undefined') {
++        return undefined;
++    }
++    const host = window as unknown as {
++        electron?: ElectronBridgeApi;
++        d7tMpv?: ElectronBridgeApi;
++    };
++    return host.electron ?? host.d7tMpv;
++}
+diff --git a/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-command-runner.ts b/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-command-runner.ts
+index 926d545..7fbc74c 100644
+--- a/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-command-runner.ts
++++ b/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-command-runner.ts
+@@ -5,6 +5,7 @@ import {
+     RecordingStartMetadata,
+     ResolvedPortalPlayback,
+     SplitAudioSyncAction,
++    getEmbeddedMpvBridge,
+ } from '@iptvnator/shared/interfaces';
+ 
+ type ElectronBridge = Window['electron'];
+@@ -333,6 +334,6 @@ export class EmbeddedMpvCommandRunner {
+     }
+ 
+     private bridge(): ElectronBridge | undefined {
+-        return window.electron;
++        return getEmbeddedMpvBridge();
+     }
+ }
+diff --git a/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-player.component.ts b/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-player.component.ts
+index ac30095..c90537d 100644
+--- a/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-player.component.ts
++++ b/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-player.component.ts
+@@ -23,6 +23,7 @@ import {
+     RecordingStartMetadata,
+     RecordingStoppedEvent,
+     ResolvedPortalPlayback,
++    getEmbeddedMpvBridge,
+ } from '@iptvnator/shared/interfaces';
+ import { sameTimelineSegments } from '../player-controls/chapter-timeline-segments';
+ import { PlayerControlsComponent } from '../player-controls/player-controls.component';
+@@ -494,7 +495,12 @@ export class EmbeddedMpvPlayerComponent implements OnDestroy {
+             // dialogs and overlays stack above it natively, so the
+             // hide-offscreen compositor workaround must not shrink its
+             // render size.
+-            if (this.isFrameCopyEngine()) {
++            if (
++                this.isFrameCopyEngine() ||
++                getEmbeddedMpvBridge()?.platform === 'ios'
++            ) {
++                // iPhone: the video is drawn BEHIND the page, so menus never
++                // need it hidden.
+                 return measureBounds(host);
+             }
+             if (this.overlayVisibility.overlayActive()) {
+@@ -530,7 +536,7 @@ export class EmbeddedMpvPlayerComponent implements OnDestroy {
+                 !viewport ||
+                 !playback.streamUrl ||
+                 !supported ||
+-                !window.electron
++                !getEmbeddedMpvBridge()
+             ) {
+                 return;
+             }
+diff --git a/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-session-controller.ts b/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-session-controller.ts
+index 8b40b03..7c6fc59 100644
+--- a/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-session-controller.ts
++++ b/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-session-controller.ts
+@@ -16,6 +16,7 @@ import {
+     ResolvedPortalPlayback,
+     watchEmbeddedMpvSupport,
+     SplitAudioSyncAction,
++    getEmbeddedMpvBridge,
+ } from '@iptvnator/shared/interfaces';
+ import { TranslateService } from '@ngx-translate/core';
+ import { EmbeddedMpvCommandRunner } from './embedded-mpv-command-runner';
+@@ -90,7 +91,7 @@ export class EmbeddedMpvSessionController {
+ 
+     constructor() {
+         this.unsubscribeSessionUpdate =
+-            window.electron?.onEmbeddedMpvSessionUpdate?.((session) => {
++            getEmbeddedMpvBridge()?.onEmbeddedMpvSessionUpdate?.((session) => {
+                 if (session.id !== this.sessionId()) {
+                     return;
+                 }
+@@ -98,7 +99,7 @@ export class EmbeddedMpvSessionController {
+             });
+ 
+         let stopSupportWatch: (() => void) | undefined;
+-        if (typeof window.electron?.getEmbeddedMpvSupport === 'function') {
++        if (typeof getEmbeddedMpvBridge()?.getEmbeddedMpvSupport === 'function') {
+             stopSupportWatch = this.watchSupport();
+         } else {
+             // No reason: the player shows its translated "not available".
+@@ -160,7 +161,7 @@ export class EmbeddedMpvSessionController {
+             }
+             const bounds = this.boundsProvider(host);
+             lastSyncedBounds = bounds;
+-            void window.electron
++            void getEmbeddedMpvBridge()
+                 ?.setEmbeddedMpvBounds(activeSessionId, bounds)
+                 .catch(() => undefined);
+         };
+@@ -335,9 +336,9 @@ export class EmbeddedMpvSessionController {
+ 
+             if (id) {
+                 if (untracked(() => this.isFrameCopyEngine())) {
+-                    window.electron?.detachEmbeddedMpvFrameView?.();
++                    getEmbeddedMpvBridge()?.detachEmbeddedMpvFrameView?.();
+                 }
+-                void window.electron?.disposeEmbeddedMpvSession(id);
++                void getEmbeddedMpvBridge()?.disposeEmbeddedMpvSession(id);
+             }
+         };
+     }
+@@ -413,7 +414,7 @@ export class EmbeddedMpvSessionController {
+             (error) =>
+                 this.support.set({
+                     supported: false,
+-                    platform: window.electron?.platform ?? 'unknown',
++                    platform: getEmbeddedMpvBridge()?.platform ?? 'unknown',
+                     reason:
+                         error instanceof Error ? error.message : String(error),
+                 })
+@@ -421,7 +422,7 @@ export class EmbeddedMpvSessionController {
+     }
+ 
+     private getElectronBridge(): ElectronBridge | undefined {
+-        return window.electron;
++        return getEmbeddedMpvBridge();
+     }
+ 
+     private notAvailableMessage(): string {
+diff --git a/libs/ui/playback/src/lib/player-controls/controls-split-audio.ts b/libs/ui/playback/src/lib/player-controls/controls-split-audio.ts
+index de5a577..9335fbc 100644
+--- a/libs/ui/playback/src/lib/player-controls/controls-split-audio.ts
++++ b/libs/ui/playback/src/lib/player-controls/controls-split-audio.ts
+@@ -1,3 +1,4 @@
++import { getEmbeddedMpvBridge } from '@iptvnator/shared/interfaces';
+ import {
+     computed,
+     DestroyRef,
+@@ -174,7 +175,7 @@ export class ControlsSplitAudio {
+      * picture and of the audio channel and suggests the delay.
+      */
+     readonly sync = new AudioSyncController({
+-        api: () => (typeof window === 'undefined' ? undefined : window.electron),
++        api: () => getEmbeddedMpvBridge(),
+         audio: this.activeAudio,
+         videoUrl: this.videoUrl,
+         setDelay: (seconds) => this.setDelay(seconds),

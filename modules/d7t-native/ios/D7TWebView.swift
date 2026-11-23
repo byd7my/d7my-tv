@@ -22,7 +22,7 @@ final class D7TWebView: ExpoView, WKURLSchemeHandler {
   static let bootstrapJS = """
   (function () {
     window.__IPTVNATOR_CONFIG__ = { BACKEND_URL: 'https://d7t-backend.local' };
-    document.documentElement.classList.add('d7t-ios');
+    (function () { var f = function () { if (document.documentElement) document.documentElement.classList.add('d7t-ios'); }; f(); document.addEventListener('readystatechange', f); })();
     // d7t:// is not a "secure context", so give the app the few APIs it expects there.
     if (window.crypto && !window.crypto.randomUUID) {
       window.crypto.randomUUID = function () {
@@ -78,8 +78,8 @@ final class D7TWebView: ExpoView, WKURLSchemeHandler {
     config.userContentController = controller
     let view = WKWebView(frame: .zero, configuration: config)
     view.isOpaque = false
-    view.backgroundColor = UIColor(red: 0.086, green: 0.102, blue: 0.133, alpha: 1)
-    view.scrollView.backgroundColor = view.backgroundColor
+    view.backgroundColor = .clear
+    view.scrollView.backgroundColor = .clear
     view.scrollView.contentInsetAdjustmentBehavior = .never
     view.scrollView.bounces = false
     view.scrollView.pinchGestureRecognizer?.isEnabled = false
