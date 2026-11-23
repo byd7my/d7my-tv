@@ -1,10 +1,58 @@
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..69dd48f
+index 0000000..beb3166
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,185 @@
+@@ -0,0 +1,467 @@
++@mixin phone-controls {
++            grid-template-columns: auto minmax(0, 1fr) !important;
++            grid-template-areas:
++                'transport actions'
++                'timeline timeline';
++            gap: 0 8px !important;
++            padding: 6px 12px 8px !important;
++            min-height: 0 !important;
++            background: linear-gradient(
++                to top,
++                rgba(0, 0, 0, 0.85),
++                rgba(0, 0, 0, 0)
++            ) !important;
++            border-top: 0 !important;
++            backdrop-filter: none !important;
++            color: #fff;
++            --embedded-mpv-text: #fff;
++            --embedded-mpv-text-muted: rgba(255, 255, 255, 0.8);
++            --mat-icon-button-icon-color: #fff;
++
++            .embedded-mpv-player__transport {
++                grid-area: transport;
++            }
++
++            .embedded-mpv-player__timeline {
++                grid-area: timeline;
++            }
++
++            .embedded-mpv-player__actions {
++                grid-area: actions;
++                justify-content: flex-end;
++                gap: 0;
++            }
++
++            // Volume is the phone's own buttons.
++            .embedded-mpv-player__volume-inline {
++                display: none !important;
++            }
++        }
++
 +// Fit the app to a phone screen when it runs inside the iOS shell (html.d7t-ios, set by the shell).
++// Same typeface as the iPhone's own apps (the reference apps use it).
++html.d7t-ios,
++html.d7t-ios body,
++html.d7t-ios *:not(mat-icon):not(.mat-icon):not(.material-icons) {
++    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui,
++        sans-serif;
++}
++
 +html.d7t-ios {
 +    -webkit-text-size-adjust: 100%;
 +    -webkit-tap-highlight-color: transparent;
@@ -58,7 +106,7 @@ index 0000000..69dd48f
 +@media (max-width: 640px) {
 +    html.d7t-ios {
 +        .workspace-shell {
-+            grid-template-rows: 56px minmax(0, 1fr) auto auto !important;
++            grid-template-rows: 56px minmax(0, 1fr) auto !important;
 +        }
 +
 +        app-workspace-shell-header {
@@ -69,14 +117,211 @@ index 0000000..69dd48f
 +            grid-row: 2 !important;
 +        }
 +
++        // Room under the content so the floating tab bar never covers the last row.
++        .workspace-content {
++            padding-bottom: 84px;
++            box-sizing: border-box;
++        }
++
++        // ── Floating glass tab bar: Home · Movies · Series · Live TV · Search · More ──
 +        app-workspace-shell-rail {
++            position: fixed !important;
++            left: 12px;
++            right: 12px;
++            bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
++            z-index: 900;
++            height: 64px;
++            grid-row: auto !important;
 +            grid-column: 1 !important;
-+            grid-row: 3 !important;
-+            border-top: 1px solid var(--app-separator, rgba(255, 255, 255, 0.08));
++        }
++
++        .app-rail {
++            flex-direction: row !important;
++            justify-content: space-around;
++            align-items: center;
++            gap: 0 !important;
++            padding: 6px 8px !important;
++            overflow: visible !important;
++            position: relative;
++            isolation: isolate;
++            border: 0 !important;
++            background: transparent !important;
++
++            // The glass lives on a pseudo-element: a backdrop-filter on the bar itself would make it
++            // the containing block of the fixed "More" sheet.
++            &::before {
++                content: '';
++                position: absolute;
++                inset: 0;
++                z-index: -1;
++                border: 0.5px solid rgba(255, 255, 255, 0.22);
++                border-radius: 32px;
++                // Dark-tinted glass in every theme, so the white labels always read.
++                background: linear-gradient(
++                    180deg,
++                    rgba(70, 74, 84, 0.62),
++                    rgba(28, 30, 36, 0.62)
++                );
++                backdrop-filter: blur(30px) saturate(1.8);
++                -webkit-backdrop-filter: blur(30px) saturate(1.8);
++                // Liquid Glass: soft drop shadow + bright top edge highlight.
++                box-shadow:
++                    inset 0 1px 0.5px rgba(255, 255, 255, 0.35),
++                    inset 0 -1px 0.5px rgba(255, 255, 255, 0.08),
++                    0 8px 28px rgba(0, 0, 0, 0.35);
++            }
++
++            // Flatten the nested link groups so every tab sits in one row and can be ordered.
++            app-workspace-shell-rail-links,
++            nav.rail-links,
++            .rail-context-region,
++            .rail-footer {
++                display: contents !important;
++            }
++
++            .rail-divider,
++            .rail-server {
++                display: none !important;
++            }
++
++            // Hidden here, available under "More".
++            a.nav-item,
++            button.rail-more {
++                display: flex !important;
++                flex-direction: column;
++                align-items: center;
++                justify-content: center;
++                gap: 2px;
++                flex: 1 1 0;
++                min-width: 0;
++                width: auto !important;
++                height: 52px !important;
++                border-radius: 26px !important;
++                border: 0;
++                background: transparent;
++                color: rgba(255, 255, 255, 0.72);
++                font: 500 10px/1.1 inherit;
++                padding: 0;
++                cursor: pointer;
++
++                &::after {
++                    content: attr(aria-label);
++                    max-width: 100%;
++                    overflow: hidden;
++                    text-overflow: ellipsis;
++                    white-space: nowrap;
++                    font-size: 10px;
++                    font-weight: 500;
++                }
++
++                mat-icon {
++                    font-size: 24px;
++                    width: 24px;
++                    height: 24px;
++                }
++
++                &.is-active,
++                &.active {
++                    background: rgba(255, 255, 255, 0.16) !important;
++                    box-shadow: inset 0 1px 0.5px rgba(255, 255, 255, 0.3) !important;
++                    color: #0a84ff !important;
++                }
++            }
++
++            // Short names, like the reference apps.
++            a.nav-item[href$='/dashboard']::after {
++                content: 'Home';
++            }
++            a.nav-item[href$='/search']::after {
++                content: 'Search';
++            }
++
++            a[href$='/dashboard'] {
++                order: 1;
++            }
++            a[href$='/vod'] {
++                order: 2;
++            }
++            a[href$='/series'] {
++                order: 3;
++            }
++            a[href$='/live'] {
++                order: 4;
++            }
++            a[href$='/search'] {
++                order: 5;
++            }
++            button.rail-more {
++                order: 6;
++            }
++
++            // Hidden here, available under "More" (same specificity as the tab rule, placed after it).
++            a.nav-item[href$='/sources'],
++            a.nav-item[href*='global-favorites'],
++            a.nav-item[href*='global-recent'],
++            a.nav-item[href$='/recently-added'],
++            .rail-footer a.nav-item {
++                display: none !important;
++            }
++        }
++
++        // "More": everything that is not one of the five places.
++        .rail-more-scrim {
++            display: block !important;
++            position: fixed;
++            inset: 0;
++            z-index: 960;
++            background: rgba(0, 0, 0, 0.35);
++        }
++
++        .rail-more-sheet {
++            display: flex !important;
++            flex-direction: column;
++            position: fixed;
++            left: 12px;
++            right: 12px;
++            bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
++            z-index: 961;
++            padding: 8px;
++            border-radius: 28px;
++            border: 0.5px solid rgba(255, 255, 255, 0.22);
++            background: rgba(44, 46, 54, 0.72);
++            backdrop-filter: blur(40px) saturate(1.8);
++            -webkit-backdrop-filter: blur(40px) saturate(1.8);
++            box-shadow:
++                inset 0 1px 0.5px rgba(255, 255, 255, 0.3),
++                0 16px 40px rgba(0, 0, 0, 0.45);
++
++            .rail-more-item {
++                display: flex !important;
++                align-items: center;
++                gap: 14px;
++                height: 52px;
++                padding: 0 16px;
++                border-radius: 20px;
++                color: #fff !important;
++                justify-content: flex-start !important;
++                font-size: 17px;
++                text-decoration: none;
++                width: auto !important;
++                height: 52px !important;
++                border-radius: 20px !important;
++
++                mat-icon {
++                    color: #fff;
++                    width: 24px;
++                    height: 24px;
++                    font-size: 24px;
++                }
++
++                &:active {
++                    background: rgba(255, 255, 255, 0.12);
++                }
++            }
 +        }
 +
 +        .workspace-now-playing {
-+            grid-row: 4 !important;
++            grid-row: 3 !important;
 +        }
 +
 +        // Live TV: picture first, list underneath.
@@ -122,6 +367,48 @@ index 0000000..69dd48f
 +            }
 +        }
 +
++        // ── Header: glass round buttons, rounded search, no keyboard-only controls ──
++        .workspace-header {
++            padding-inline: 12px !important;
++            gap: 10px !important;
++            background: transparent !important;
++            border: 0 !important;
++
++            .shortcuts-trigger,
++            .command-trigger {
++                display: none !important;
++            }
++
++            .context-drawer-toggle,
++            .header-back {
++                width: 40px;
++                height: 40px;
++                border-radius: 20px;
++                background: rgba(255, 255, 255, 0.1);
++                backdrop-filter: blur(20px);
++                -webkit-backdrop-filter: blur(20px);
++            }
++
++            .playlist-switcher {
++                border-radius: 20px;
++            }
++
++            .search-field {
++                height: 40px;
++                border-radius: 20px;
++                background: rgba(255, 255, 255, 0.1) !important;
++                border: 1px solid rgba(255, 255, 255, 0.12) !important;
++            }
++
++            .header-actions {
++                gap: 2px;
++                padding: 0 4px;
++                border-radius: 22px;
++                background: rgba(255, 255, 255, 0.1);
++                border: 1px solid rgba(255, 255, 255, 0.12);
++            }
++        }
++
 +        // The player's controls overlay the picture (the video sits behind the page),
 +        // in two compact rows: [play, skip | actions] over [timeline].
 +        .embedded-mpv-player--controls-enabled .embedded-mpv-player__viewport {
@@ -129,43 +416,7 @@ index 0000000..69dd48f
 +        }
 +
 +        .embedded-mpv-player__controls:not(.embedded-mpv-player__controls--panel) {
-+            grid-template-columns: auto minmax(0, 1fr) !important;
-+            grid-template-areas:
-+                'transport actions'
-+                'timeline timeline';
-+            gap: 0 8px !important;
-+            padding: 6px 12px 8px !important;
-+            min-height: 0 !important;
-+            background: linear-gradient(
-+                to top,
-+                rgba(0, 0, 0, 0.85),
-+                rgba(0, 0, 0, 0)
-+            ) !important;
-+            border-top: 0 !important;
-+            backdrop-filter: none !important;
-+            color: #fff;
-+            --embedded-mpv-text: #fff;
-+            --embedded-mpv-text-muted: rgba(255, 255, 255, 0.8);
-+            --mat-icon-button-icon-color: #fff;
-+
-+            .embedded-mpv-player__transport {
-+                grid-area: transport;
-+            }
-+
-+            .embedded-mpv-player__timeline {
-+                grid-area: timeline;
-+            }
-+
-+            .embedded-mpv-player__actions {
-+                grid-area: actions;
-+                justify-content: flex-end;
-+                gap: 0;
-+            }
-+
-+            // Volume is the phone's own buttons.
-+            .embedded-mpv-player__volume-inline {
-+                display: none !important;
-+            }
++            @include phone-controls;
 +        }
 +    }
 +}
@@ -179,15 +430,46 @@ index 0000000..69dd48f
 +    z-index: 2000 !important;
 +    border-radius: 0 !important;
 +
-+    .embedded-mpv-player__controls {
-+        padding-left: max(16px, env(safe-area-inset-left, 0px));
-+        padding-right: max(16px, env(safe-area-inset-right, 0px));
-+        padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
++    background: transparent !important;
++
++    .embedded-mpv-player__controls:not(.embedded-mpv-player__controls--panel) {
++        @include phone-controls;
++        padding-left: max(16px, env(safe-area-inset-left, 0px)) !important;
++        padding-right: max(16px, env(safe-area-inset-right, 0px)) !important;
++        padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)) !important;
++    }
++
++    // The picture fills the whole screen; the controls float over it.
++    .embedded-mpv-player__viewport {
++        bottom: 0 !important;
 +    }
 +}
 +
-+html.d7t-ios.d7t-has-fullscreen body {
-+    padding: 0;
++html.d7t-ios.d7t-has-fullscreen {
++    background: transparent !important;
++
++    body {
++        padding: 0;
++        background: transparent !important;
++    }
++
++    // Only the player is shown; the rest of the page must not appear around/over the video.
++    body * {
++        visibility: hidden;
++    }
++
++    .d7t-fullscreen,
++    .d7t-fullscreen * {
++        visibility: visible;
++    }
++}
++
++// Hover tooltips mean nothing on a touchscreen and can sit on top of the buttons they describe.
++html.d7t-ios .mat-mdc-tooltip-panel,
++html.d7t-ios .mdc-tooltip,
++html.d7t-ios .mat-mdc-tooltip-surface {
++    display: none !important;
++    pointer-events: none !important;
 +}
 diff --git a/apps/web/src/app/app.config.ts b/apps/web/src/app/app.config.ts
 index 1b79f58..79854e2 100644
@@ -268,10 +550,10 @@ index 0000000..d70a2f4
 +};
 diff --git a/apps/web/src/app/ios/ios-backend.ts b/apps/web/src/app/ios/ios-backend.ts
 new file mode 100644
-index 0000000..e59f8af
+index 0000000..a64a528
 --- /dev/null
 +++ b/apps/web/src/app/ios/ios-backend.ts
-@@ -0,0 +1,254 @@
+@@ -0,0 +1,337 @@
 +/**
 + * The web-backend (apps/web-backend) as it runs inside the iOS app: the same routes and answers, with the
 + * provider requests made by the phone itself (no CORS, no proxy server).
@@ -437,6 +719,83 @@ index 0000000..e59f8af
 +    }
 +}
 +
++
++// ── Provider response cache ─────────────────────────────────────────────────────
++// The web build has no local database, so every visit to Live / Movies / Series would download the
++// whole catalogue again (tens of thousands of items) and show "Syncing playlist" each time. Big list
++// answers are kept for a while, in memory and on the phone (IndexedDB), and reused.
++const CACHE_TTL_MS: Record<string, number> = {
++    get_live_categories: 20 * 60_000,
++    get_live_streams: 20 * 60_000,
++    get_vod_categories: 20 * 60_000,
++    get_vod_streams: 20 * 60_000,
++    get_series_categories: 20 * 60_000,
++    get_series: 20 * 60_000,
++    get_vod_info: 10 * 60_000,
++    get_series_info: 10 * 60_000,
++};
++const memoryCache = new Map<string, { at: number; body: string }>();
++const inflight = new Map<string, Promise<string>>();
++
++function openCacheDb(): Promise<IDBDatabase | null> {
++    return new Promise((resolve) => {
++        try {
++            const req = indexedDB.open('d7t-provider-cache', 1);
++            req.onupgradeneeded = () => req.result.createObjectStore('r');
++            req.onsuccess = () => resolve(req.result);
++            req.onerror = () => resolve(null);
++        } catch {
++            resolve(null);
++        }
++    });
++}
++
++async function cacheRead(key: string): Promise<{ at: number; body: string } | null> {
++    const db = await openCacheDb();
++    if (!db) return null;
++    return new Promise((resolve) => {
++        const req = db.transaction('r').objectStore('r').get(key);
++        req.onsuccess = () => resolve((req.result as { at: number; body: string } | undefined) ?? null);
++        req.onerror = () => resolve(null);
++    });
++}
++
++async function cacheWrite(key: string, value: { at: number; body: string }): Promise<void> {
++    const db = await openCacheDb();
++    if (!db) return;
++    await new Promise<void>((resolve) => {
++        const tx = db.transaction('r', 'readwrite');
++        tx.objectStore('r').put(value, key);
++        tx.oncomplete = () => resolve();
++        tx.onerror = () => resolve();
++    });
++}
++
++async function cachedBody(key: string, ttl: number, load: () => Promise<string>): Promise<string> {
++    const now = Date.now();
++    const mem = memoryCache.get(key);
++    if (mem && now - mem.at < ttl) return mem.body;
++    const disk = await cacheRead(key);
++    if (disk && now - disk.at < ttl) {
++        memoryCache.set(key, disk);
++        return disk.body;
++    }
++    const running = inflight.get(key);
++    if (running) return running;
++    const task = load()
++        .then(async (body) => {
++            // Only real JSON answers are kept; an error page that came back as 200 must not stick.
++            if (!/^\s*[\[{]/.test(body)) return body;
++            const value = { at: Date.now(), body };
++            memoryCache.set(key, value);
++            await cacheWrite(key, value);
++            return body;
++        })
++        .finally(() => inflight.delete(key));
++    inflight.set(key, task);
++    return task;
++}
++
 +async function xtream(url: URL, query: URLSearchParams): Promise<IosBackendResponse> {
 +    const action = query.get('action') ?? undefined;
 +    try {
@@ -448,15 +807,21 @@ index 0000000..e59f8af
 +            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
 +            .join('&');
 +        const ua = query.get('userAgent')?.trim();
-+        const r = await httpGet(qs ? `${base.href}?${qs}` : base.href, {
-+            timeout: TIMEOUT.xtream,
-+            headers: ua ? { 'User-Agent': ua } : undefined,
-+        });
++        const fullUrl = qs ? `${base.href}?${qs}` : base.href;
++        const load = async () => {
++            const r = await httpGet(fullUrl, {
++                timeout: TIMEOUT.xtream,
++                headers: ua ? { 'User-Agent': ua } : undefined,
++            });
++            return r.body;
++        };
++        const ttl = action ? CACHE_TTL_MS[action] : undefined;
++        const body = ttl ? await cachedBody(fullUrl, ttl, load) : await load();
 +        let payload: unknown;
 +        try {
-+            payload = JSON.parse(r.body);
++            payload = JSON.parse(body);
 +        } catch {
-+            payload = r.body;
++            payload = body;
 +        }
 +        return { status: 200, body: { action, payload } };
 +    } catch (error) {
@@ -555,47 +920,95 @@ index 0000000..73e6ac9
 +}
 diff --git a/apps/web/src/app/ios/ios-fullscreen.ts b/apps/web/src/app/ios/ios-fullscreen.ts
 new file mode 100644
-index 0000000..3ba81db
+index 0000000..2cc1c96
 --- /dev/null
 +++ b/apps/web/src/app/ios/ios-fullscreen.ts
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,86 @@
 +/**
 + * iPhone WebKit only allows fullscreen for <video>. The player asks for fullscreen on its own
 + * container, so give the page a small stand-in: the element fills the screen (CSS class
-+ * `d7t-fullscreen`) and `document.fullscreenElement` / `fullscreenchange` behave like the real thing.
-+ * The native video box follows because the player re-measures its box on resize.
++ * `d7t-fullscreen`), everything else on the page is hidden (the video is drawn behind the page),
++ * and `document.fullscreenElement` / `fullscreenchange` behave like the real thing.
++ *
++ * Turning the phone sideways while a live player is open enters fullscreen by itself, and turning it
++ * back leaves it (the same thing every video app does).
 + */
 +export function installIosFullscreen(): void {
 +    if (typeof window === 'undefined' || !(window as unknown as { d7tNative?: unknown }).d7tNative) {
 +        return;
 +    }
 +    let current: Element | null = null;
++    let enteredByRotation = false;
++    const root = document.documentElement;
 +    const notify = () => document.dispatchEvent(new Event('fullscreenchange'));
++
++    const clear = () => {
++        current?.classList.remove('d7t-fullscreen');
++        root.classList.remove('d7t-has-fullscreen');
++        current = null;
++    };
 +
 +    const exit = async (): Promise<void> => {
 +        if (!current) return;
-+        current.classList.remove('d7t-fullscreen');
-+        document.documentElement.classList.remove('d7t-has-fullscreen');
-+        current = null;
++        clear();
 +        notify();
 +        window.dispatchEvent(new Event('resize'));
 +    };
 +
++    // The player can disappear while fullscreen (another channel, back to the list). The page must
++    // not stay in the fullscreen look then.
++    new MutationObserver(() => {
++        if (current && !current.isConnected) {
++            clear();
++            enteredByRotation = false;
++            notify();
++            window.dispatchEvent(new Event('resize'));
++        }
++    }).observe(document.documentElement, { childList: true, subtree: true });
++
 +    Object.defineProperty(document, 'fullscreenEnabled', { configurable: true, get: () => true });
-+    Object.defineProperty(document, 'fullscreenElement', { configurable: true, get: () => current });
++    Object.defineProperty(document, 'fullscreenElement', {
++        configurable: true,
++        get: () => (current && current.isConnected ? current : null),
++    });
 +    Object.defineProperty(document, 'exitFullscreen', { configurable: true, value: exit });
 +    Object.defineProperty(Element.prototype, 'requestFullscreen', {
 +        configurable: true,
 +        writable: true,
 +        value: async function (this: Element): Promise<void> {
-+            if (current && current !== this) await exit();
++            if (current && current !== this) clear();
 +            current = this;
 +            this.classList.add('d7t-fullscreen');
-+            document.documentElement.classList.add('d7t-has-fullscreen');
++            root.classList.add('d7t-has-fullscreen');
 +            notify();
 +            window.dispatchEvent(new Event('resize'));
 +        },
 +    });
++
++    // Sideways = fullscreen for a live player.
++    const landscape = window.matchMedia('(orientation: landscape)');
++    const fullscreenButton = (): HTMLButtonElement | null => {
++        const buttons = document.querySelectorAll<HTMLButtonElement>('.embedded-mpv-player__controls button');
++        for (const button of Array.from(buttons)) {
++            const icon = button.querySelector('mat-icon')?.textContent?.trim();
++            if (icon === 'fullscreen' || icon === 'fullscreen_exit') return button;
++        }
++        return null;
++    };
++    const onRotate = () => {
++        if (landscape.matches) {
++            if (current) return;
++            const button = fullscreenButton();
++            if (button && button.querySelector('mat-icon')?.textContent?.trim() === 'fullscreen') {
++                enteredByRotation = true;
++                button.click();
++            }
++        } else if (current && enteredByRotation) {
++            enteredByRotation = false;
++            void exit();
++        }
++    };
++    landscape.addEventListener('change', () => window.setTimeout(onRotate, 150));
 +}
 diff --git a/apps/web/src/app/ios/ios-mpv-host.ts b/apps/web/src/app/ios/ios-mpv-host.ts
 new file mode 100644
@@ -1172,6 +1585,43 @@ index 926d545..7fbc74c 100644
 +        return getEmbeddedMpvBridge();
      }
  }
+diff --git a/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-legacy-interactions.ts b/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-legacy-interactions.ts
+index 20b3b3b..67748fe 100644
+--- a/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-legacy-interactions.ts
++++ b/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-legacy-interactions.ts
+@@ -1,4 +1,9 @@
+ import type { WritableSignal } from '@angular/core';
++
++/** The iPhone app (the shell injects `window.d7tNative`). */
++const isPhoneApp = (): boolean =>
++    typeof window !== 'undefined' &&
++    !!(window as unknown as { d7tNative?: unknown }).d7tNative;
+ import type { EmbeddedMpvMenuState } from './embedded-mpv-ui-state';
+ 
+ const HIDE_CONTROLS_DELAY_MS = 2500;
+@@ -105,6 +110,13 @@ export class EmbeddedMpvLegacyInteractions {
+         if (!this.deps.isAvailable()) {
+             return;
+         }
++        if (isPhoneApp()) {
++            // A tap on the picture only shows or hides the controls; it never pauses by accident.
++            if (!(event.target as HTMLElement | null)?.closest('button, input, [role="slider"]')) {
++                this.revealControls();
++            }
++            return;
++        }
+         const target = event.target as HTMLElement | null;
+         if (target?.closest('button, input, [role="slider"]')) {
+             return;
+@@ -130,7 +142,7 @@ export class EmbeddedMpvLegacyInteractions {
+     }
+ 
+     onPlayerDblClick(event: MouseEvent): void {
+-        if (!this.deps.isAvailable()) {
++        if (!this.deps.isAvailable() || isPhoneApp()) {
+             return;
+         }
+         const target = event.target as HTMLElement | null;
 diff --git a/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-player.component.ts b/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-player.component.ts
 index ac30095..c90537d 100644
 --- a/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-player.component.ts
@@ -1294,3 +1744,98 @@ index de5a577..9335fbc 100644
          audio: this.activeAudio,
          videoUrl: this.videoUrl,
          setDelay: (seconds) => this.setDelay(seconds),
+diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html
+index 4e89c2e..bb604db 100644
+--- a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html
++++ b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html
+@@ -22,6 +22,41 @@
+         </div>
+     }
+ 
++    <button
++        type="button"
++        class="rail-more nav-item"
++        [class.is-active]="moreOpen()"
++        [attr.aria-label]="'More'"
++        [attr.aria-expanded]="moreOpen()"
++        (click)="moreOpen.set(!moreOpen())"
++    >
++        <mat-icon aria-hidden="true">more_horiz</mat-icon>
++    </button>
++
++    @if (moreOpen()) {
++        <div class="rail-more-scrim" (click)="moreOpen.set(false)"></div>
++        <div class="rail-more-sheet" role="menu" (click)="moreOpen.set(false)">
++            @for (link of moreLinks(); track link.path.join('/')) {
++                <a
++                    class="rail-more-item"
++                    role="menuitem"
++                    [routerLink]="link.path"
++                >
++                    <mat-icon aria-hidden="true">{{ link.icon }}</mat-icon>
++                    <span>{{ link.tooltip }}</span>
++                </a>
++            }
++            <a
++                class="rail-more-item"
++                role="menuitem"
++                routerLink="/workspace/settings"
++            >
++                <mat-icon aria-hidden="true">settings</mat-icon>
++                <span>{{ 'WORKSPACE.SHELL.RAIL_SETTINGS' | translate }}</span>
++            </a>
++        </div>
++    }
++
+     <div class="rail-footer">
+         @if (serverState() !== 'inactive') {
+             <a
+diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.scss b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.scss
+index 839d26b..76abf2f 100644
+--- a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.scss
++++ b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.scss
+@@ -282,3 +282,11 @@
+         }
+     }
+ }
++
++
++// iPhone app only (see _ios-shell.scss): hidden everywhere else.
++.rail-more,
++.rail-more-scrim,
++.rail-more-sheet {
++    display: none;
++}
+diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts
+index 92fce1a..e5abaf4 100644
+--- a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts
++++ b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts
+@@ -4,6 +4,7 @@ import {
+     computed,
+     inject,
+     input,
++    signal,
+ } from '@angular/core';
+ import { MatIcon } from '@angular/material/icon';
+ import { MatTooltip } from '@angular/material/tooltip';
+@@ -43,6 +44,20 @@ export class WorkspaceShellRailComponent {
+     readonly railProviderClass = input('rail-context-region');
+     readonly isSettingsRoute = input(false);
+ 
++    /**
++     * iPhone app only (the button and the sheet are hidden by CSS everywhere else): the tab bar
++     * keeps five places and everything else opens from "More".
++     */
++    readonly moreOpen = signal(false);
++    readonly moreLinks = computed<PortalRailLink[]>(() => [
++        ...this.workspaceLinks().filter(
++            (link) => !link.path.join('/').endsWith('/dashboard')
++        ),
++        ...this.secondaryContextLinks().filter(
++            (link) => !link.path.join('/').endsWith('/search')
++        ),
++    ]);
++
+     /** Self-hosted server storage: hidden while `inactive`. */
+     readonly serverState = inject(ServerStorageStatusService).state;
+     readonly serverIcon = computed(() => SERVER_ICONS[this.serverState()]);
