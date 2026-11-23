@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "D7T",
+    "slug": "d7t",
+    "version": "0.1.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#17181B",
+    "plugins": [
+      "expo-mpv",
+      ["expo-build-properties", { "ios": { "deploymentTarget": "16.4" } }]
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.d7my.d7t",
+      "buildNumber": "1",
+      "infoPlist": {
+        "UIBackgroundModes": ["audio"],
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSAllowsLocalNetworking": true
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,72 @@
+name: ios-unsigned-ipa
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [ios-app]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Tool versions
+        run: |
+          xcodebuild -version
+          python3 --version
+          ls /Applications | grep -i xcode || true
+
+      - name: Install JS dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate native iOS project
+        run: npx expo prebuild -p ios --no-install
+
+      - name: Install pods
+        working-directory: ios
+        run: pod install
+
+      - name: Build (signing disabled)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -workspace ios/D7T.xcworkspace \
+            -scheme D7T \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build | tee xcodebuild.log | tail -n 200
+
+      - name: Package unsigned IPA
+        run: |
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -n 1)
+          echo "APP=$APP"
+          rm -rf Payload && mkdir Payload
+          cp -R "$APP" Payload/
+          zip -qry D7T-unsigned.ipa Payload
+          ls -lh D7T-unsigned.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: D7T-unsigned-ipa
+          path: D7T-unsigned.ipa
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: xcodebuild-log
+          path: xcodebuild.log
+          retention-days: 7
