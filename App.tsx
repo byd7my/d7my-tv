@@ -1,143 +1,173 @@
 import { StatusBar } from 'expo-status-bar';
-import { ExpoMpvView, type ExpoMpvViewRef, type MediaInfo } from 'expo-mpv';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator, AppState, FlatList, KeyboardAvoidingView, Platform, Pressable,
-  SafeAreaView, StyleSheet, Text, TextInput, View,
+  ActivityIndicator, FlatList, Image, KeyboardAvoidingView, Platform, Pressable,
+  SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
-import AsyncStorageLite from './src/store';
+import Player from './src/Player';
 import { Channel, loadM3U, loadXtream } from './src/playlist';
+import { store } from './src/store';
 import { C } from './src/theme';
+import { Btn, Card, Pill } from './src/ui';
 
-type Pick = 'video' | 'audio';
-type Target = 'video' | 'audio';
+type Source = { mode: 'm3u' | 'xtream'; m3u: string; srv: string; usr: string; pwd: string };
+type Pick = 'picture' | 'sound';
 
-function Btn(p: { label: string; onPress: () => void; active?: boolean; small?: boolean; danger?: boolean; disabledLike?: boolean }) {
-  return (
-    <Pressable
-      onPress={p.onPress}
-      style={({ pressed }) => [
-        s.btn, p.small && s.btnSmall, p.active && { backgroundColor: C.accent, borderColor: C.accent },
-        p.danger && { borderColor: C.bad }, p.disabledLike && { opacity: 0.35 }, pressed && { opacity: 0.6 },
-      ]}>
-      <Text style={[s.btnText, p.small && { fontSize: 14 }]}>{p.label}</Text>
-    </Pressable>
-  );
-}
+const EMPTY: Source = { mode: 'xtream', m3u: '', srv: '', usr: '', pwd: '' };
 
-function fmtInfo(i: MediaInfo | null) {
-  if (!i) return '—';
-  const br = i.videoBitrate ? ` · ${(i.videoBitrate / 1e6).toFixed(1)} Mbps` : '';
-  return `${i.width}×${i.height} @${Math.round(i.fps || 0)} · ${i.videoCodec || '?'}${br} · ${i.hwdecCurrent ? 'HW' : 'SW'}`;
-}
+const initials = (n: string) => {
+  const w = n.replace(/[^\p{L}\p{N} ]/gu, '').trim().split(/\s+/).filter(Boolean);
+  return ((w[0]?.[0] ?? '?') + (w[1]?.[0] ?? '')).toUpperCase();
+};
+const tint = (n: string) => {
+  let h = 0;
+  for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) % 360;
+  return `hsl(${h}, 28%, 30%)`;
+};
 
 export default function App() {
-  const [mode, setMode] = useState<'m3u' | 'xtream'>('m3u');
-  const [m3u, setM3u] = useState('');
-  const [srv, setSrv] = useState('');
-  const [usr, setUsr] = useState('');
-  const [pwd, setPwd] = useState('');
+  const [src, setSrc] = useState<Source>(() => store.get<Source>('source') ?? EMPTY);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
   const [channels, setChannels] = useState<Channel[]>([]);
+  const [cat, setCat] = useState<string | null>(null);
   const [q, setQ] = useState('');
-  const [pick, setPick] = useState<Pick>('video');
-  const [vch, setVch] = useState<Channel | null>(null);
-  const [ach, setAch] = useState<Channel | null>(null);
+  const [pick, setPick] = useState<Pick>('picture');
+  const [pic, setPic] = useState<Channel | null>(null);
+  const [snd, setSnd] = useState<Channel | null>(null);
   const [playing, setPlaying] = useState(false);
 
-  useEffect(() => {
-    AsyncStorageLite.load().then((d) => {
-      if (!d) return;
-      setM3u(d.m3u ?? ''); setSrv(d.srv ?? ''); setUsr(d.usr ?? ''); setPwd(d.pwd ?? '');
-      if (d.mode) setMode(d.mode);
-    });
-  }, []);
+  const patch = (p: Partial<Source>) => setSrc((o) => ({ ...o, ...p }));
 
-  const connect = async () => {
-    setErr(''); setLoading(true);
+  const connect = useCallback(async (s: Source) => {
+    setErr('');
+    setLoading(true);
     try {
-      const list = mode === 'm3u' ? await loadM3U(m3u.trim()) : await loadXtream(srv.trim(), usr.trim(), pwd.trim());
+      const list = s.mode === 'm3u' ? await loadM3U(s.m3u.trim()) : await loadXtream(s.srv, s.usr.trim(), s.pwd.trim());
       if (!list.length) throw new Error('القائمة فاضية');
       setChannels(list);
-      AsyncStorageLite.save({ mode, m3u, srv, usr, pwd });
+      setCat(null);
+      store.set('source', s);
     } catch (e: any) {
       setErr(String(e?.message ?? e));
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const saved = store.get<Source>('source');
+    if (saved && (saved.m3u || saved.srv)) connect(saved);
+  }, [connect]);
+
+  const cats = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const c of channels) m.set(c.group || 'بدون فئة', (m.get(c.group || 'بدون فئة') ?? 0) + 1);
+    return [...m.entries()];
+  }, [channels]);
 
   const shown = useMemo(() => {
     const t = q.trim().toLowerCase();
-    const base = t ? channels.filter((c) => c.name.toLowerCase().includes(t) || c.group.toLowerCase().includes(t)) : channels;
-    return base.slice(0, 400);
-  }, [channels, q]);
+    let base = channels;
+    if (cat) base = base.filter((c) => (c.group || 'بدون فئة') === cat);
+    if (t) base = base.filter((c) => c.name.toLowerCase().includes(t));
+    return base.slice(0, 300);
+  }, [channels, cat, q]);
 
-  if (playing && vch && ach) {
-    return <Player video={vch} audio={ach} onBack={() => setPlaying(false)} />;
-  }
+  if (playing && pic && snd) return <Player picture={pic} sound={snd} onBack={() => setPlaying(false)} />;
 
   return (
     <SafeAreaView style={s.root}>
       <StatusBar style="light" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <Text style={s.title}>D7T</Text>
         {!channels.length ? (
-          <View style={s.card}>
-            <View style={s.row}>
-              <Btn small label="رابط M3U" active={mode === 'm3u'} onPress={() => setMode('m3u')} />
-              <Btn small label="Xtream" active={mode === 'xtream'} onPress={() => setMode('xtream')} />
-            </View>
-            {mode === 'm3u' ? (
-              <TextInput style={s.input} placeholder="https://.../playlist.m3u" placeholderTextColor={C.sub}
-                autoCapitalize="none" autoCorrect={false} value={m3u} onChangeText={setM3u} />
-            ) : (
-              <>
-                <TextInput style={s.input} placeholder="http://server:port" placeholderTextColor={C.sub}
-                  autoCapitalize="none" autoCorrect={false} value={srv} onChangeText={setSrv} />
-                <TextInput style={s.input} placeholder="اسم المستخدم" placeholderTextColor={C.sub}
-                  autoCapitalize="none" autoCorrect={false} value={usr} onChangeText={setUsr} />
-                <TextInput style={s.input} placeholder="كلمة المرور" placeholderTextColor={C.sub}
-                  autoCapitalize="none" autoCorrect={false} secureTextEntry value={pwd} onChangeText={setPwd} />
-              </>
-            )}
-            {!!err && <Text style={{ color: C.bad, textAlign: 'right' }}>{err}</Text>}
-            {loading ? <ActivityIndicator color={C.accent} /> : <Btn label="تحميل القنوات" active onPress={connect} />}
-          </View>
+          <ScrollView contentContainerStyle={s.setup} keyboardShouldPersistTaps="handled">
+            <Image source={require('./assets/logo.png')} style={s.logoBig} />
+            <Text style={s.title}>D7T</Text>
+            <Text style={s.tagline}>صورة من قناة وصوت من قناة ثانية</Text>
+            <Card style={{ alignSelf: 'stretch' }}>
+              <View style={s.seg}>
+                <Pill label="Xtream" active={src.mode === 'xtream'} onPress={() => patch({ mode: 'xtream' })} />
+                <Pill label="رابط M3U" active={src.mode === 'm3u'} onPress={() => patch({ mode: 'm3u' })} />
+              </View>
+              {src.mode === 'm3u' ? (
+                <Field ph="https://example.com/playlist.m3u" v={src.m3u} on={(v) => patch({ m3u: v })} />
+              ) : (
+                <>
+                  <Field ph="http://server:port" v={src.srv} on={(v) => patch({ srv: v })} />
+                  <Field ph="اسم المستخدم" v={src.usr} on={(v) => patch({ usr: v })} />
+                  <Field ph="كلمة المرور" v={src.pwd} on={(v) => patch({ pwd: v })} secure />
+                </>
+              )}
+              {!!err && <Text style={s.err}>{err}</Text>}
+              {loading ? <ActivityIndicator color={C.accent} style={{ paddingVertical: 12 }} /> : <Btn kind="primary" label="تحميل القنوات" onPress={() => connect(src)} />}
+            </Card>
+          </ScrollView>
         ) : (
           <>
-            <View style={s.card}>
-              <View style={s.row}>
-                <Btn small label={`صوت: ${ach?.name ?? '—'}`} active={pick === 'audio'} onPress={() => setPick('audio')} />
-                <Btn small label={`فيديو: ${vch?.name ?? '—'}`} active={pick === 'video'} onPress={() => setPick('video')} />
-              </View>
-              <TextInput style={s.input} placeholder="بحث عن قناة" placeholderTextColor={C.sub}
-                value={q} onChangeText={setQ} autoCorrect={false} />
-              <View style={s.row}>
-                <Btn small label="تغيير القائمة" onPress={() => { setChannels([]); setVch(null); setAch(null); }} />
-                <Btn label="تشغيل" active disabledLike={!(vch && ach)} onPress={() => vch && ach && setPlaying(true)} />
-              </View>
+            <View style={s.header}>
+              <Btn small label="تغيير المصدر" onPress={() => { setChannels([]); setPic(null); setSnd(null); }} />
+              <View style={{ flex: 1 }} />
+              <Text style={s.headTitle}>D7T</Text>
+              <Image source={require('./assets/logo.png')} style={s.logoSmall} />
             </View>
+
+            <View style={s.split}>
+              <Tile label="الصورة من" ch={pic} active={pick === 'picture'} onPress={() => setPick('picture')} />
+              <Tile label="الصوت من" ch={snd} active={pick === 'sound'} onPress={() => setPick('sound')} />
+            </View>
+
+            <TextInput
+              style={s.search}
+              placeholder="ابحث عن قناة"
+              placeholderTextColor={C.muted}
+              value={q}
+              onChangeText={setQ}
+              autoCorrect={false}
+              autoCapitalize="none"
+            />
+            <View style={{ height: 50 }}>
+              <FlatList
+                horizontal
+                inverted
+                showsHorizontalScrollIndicator={false}
+                data={[['', channels.length] as [string, number], ...cats]}
+                keyExtractor={(c) => c[0] || '__all'}
+                contentContainerStyle={{ paddingHorizontal: 12, gap: 8, alignItems: 'center' }}
+                renderItem={({ item }) => (
+                  <Pill label={item[0] || 'الكل'} count={item[1]} active={(cat ?? '') === item[0]} onPress={() => setCat(item[0] || null)} />
+                )}
+              />
+            </View>
+
             <FlatList
               data={shown}
               keyExtractor={(c) => c.id}
               initialNumToRender={20}
+              contentContainerStyle={{ paddingBottom: 110, paddingTop: 6 }}
+              keyboardShouldPersistTaps="handled"
               renderItem={({ item }) => {
-                const isV = vch?.id === item.id, isA = ach?.id === item.id;
+                const isP = pic?.id === item.id, isS = snd?.id === item.id;
                 return (
                   <Pressable
-                    style={[s.item, (isV || isA) && { borderColor: C.accent }]}
-                    onPress={() => (pick === 'video' ? setVch(item) : setAch(item))}>
-                    <Text style={s.tag}>{isV ? 'فيديو' : isA ? 'صوت' : ''}</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={s.itemName} numberOfLines={1}>{item.name}</Text>
-                      {!!item.group && <Text style={s.itemSub} numberOfLines={1}>{item.group}</Text>}
+                    style={[s.row, (isP || isS) && { borderColor: C.accent, backgroundColor: C.accentSoft }]}
+                    onPress={() => (pick === 'picture' ? setPic(item) : setSnd(item))}>
+                    <View style={[s.avatar, { backgroundColor: tint(item.name) }]}>
+                      <Text style={s.avatarText}>{initials(item.name)}</Text>
                     </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.rowName} numberOfLines={1}>{item.name}</Text>
+                      {!!item.group && <Text style={s.rowSub} numberOfLines={1}>{item.group}</Text>}
+                    </View>
+                    {(isP || isS) && <Text style={s.badge}>{isP && isS ? 'صورة + صوت' : isP ? 'صورة' : 'صوت'}</Text>}
                   </Pressable>
                 );
               }}
             />
+
+            <View style={s.dock} pointerEvents="box-none">
+              <Btn kind="primary" label="تشغيل" disabled={!(pic && snd)} onPress={() => setPlaying(true)} style={{ alignSelf: 'stretch' }} />
+            </View>
           </>
         )}
       </KeyboardAvoidingView>
@@ -145,111 +175,62 @@ export default function App() {
   );
 }
 
-function Player({ video, audio, onBack }: { video: Channel; audio: Channel; onBack: () => void }) {
-  const vRef = useRef<ExpoMpvViewRef>(null);
-  const aRef = useRef<ExpoMpvViewRef>(null);
-  const [offset, setOffset] = useState(0); // seconds, signed
-  const [target, setTarget] = useState<Target>('video');
-  const [vInfo, setVInfo] = useState<MediaInfo | null>(null);
-  const [aInfo, setAInfo] = useState<MediaInfo | null>(null);
-  const [log, setLog] = useState<string[]>([]);
-  const [paused, setPaused] = useState(false);
-  const note = useCallback((m: string) => setLog((l) => [m, ...l].slice(0, 6)), []);
-
-  // delay is applied on ONE instance via mpv `audio-delay`; the other is reset to 0
-  useEffect(() => {
-    const on = target === 'video' ? vRef.current : aRef.current;
-    const off = target === 'video' ? aRef.current : vRef.current;
-    off?.setPropertyString('audio-delay', '0');
-    on?.setPropertyString('audio-delay', String(offset));
-  }, [offset, target]);
-
-  // audio instance must never decode video; re-assert after returning from background
-  const killVideo = useCallback(() => { aRef.current?.setPropertyString('vid', 'no'); }, []);
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (st) => { if (st === 'active') setTimeout(killVideo, 300); });
-    return () => sub.remove();
-  }, [killVideo]);
-
-  useEffect(() => {
-    const t = setInterval(async () => {
-      try { setVInfo(await vRef.current!.getMediaInfo()); } catch {}
-      try { setAInfo(await aRef.current!.getMediaInfo()); } catch {}
-    }, 3000);
-    return () => clearInterval(t);
-  }, []);
-
-  const nudge = (d: number) => setOffset((o) => Math.round((o + d) * 100) / 100);
-
+function Field(p: { ph: string; v: string; on: (v: string) => void; secure?: boolean }) {
   return (
-    <SafeAreaView style={s.root}>
-      <StatusBar style="light" />
-      <View style={s.videoBox}>
-        <ExpoMpvView
-          ref={vRef}
-          style={StyleSheet.absoluteFill}
-          source={video.url}
-          muted
-          paused={paused}
-          onError={(e) => note('فيديو: ' + e.nativeEvent.error)}
-          onLoad={() => note('تحميل الفيديو ✓')}
-        />
-        {/* audio-only instance: 2×2 px, no video decoded */}
-        <ExpoMpvView
-          ref={aRef}
-          style={s.hidden}
-          source={audio.url}
-          paused={paused}
-          onError={(e) => note('صوت: ' + e.nativeEvent.error)}
-          onLoad={() => { killVideo(); note('تحميل الصوت ✓'); }}
-        />
-      </View>
+    <TextInput
+      style={s.input}
+      placeholder={p.ph}
+      placeholderTextColor={C.muted}
+      autoCapitalize="none"
+      autoCorrect={false}
+      secureTextEntry={p.secure}
+      value={p.v}
+      onChangeText={p.on}
+    />
+  );
+}
 
-      <View style={s.card}>
-        <Text style={s.itemName}>الفيديو: {video.name}</Text>
-        <Text style={s.itemSub}>{fmtInfo(vInfo)}</Text>
-        <Text style={[s.itemName, { marginTop: 6 }]}>الصوت: {audio.name}</Text>
-        <Text style={s.itemSub}>{aInfo ? `${aInfo.audioCodec || '?'} · ${aInfo.audioBitrate ? Math.round(aInfo.audioBitrate / 1000) + ' kbps' : ''}` : '—'}</Text>
-      </View>
-
-      <View style={s.card}>
-        <Text style={s.offset}>{offset > 0 ? '+' : ''}{offset.toFixed(2)} ث</Text>
-        <View style={s.row}>
-          {[-1, -0.25, -0.05].map((d) => <Btn key={d} small label={String(d)} onPress={() => nudge(d)} />)}
-          {[0.05, 0.25, 1].map((d) => <Btn key={d} small label={'+' + d} onPress={() => nudge(d)} />)}
-        </View>
-        <View style={s.row}>
-          <Btn small label="صفّر" onPress={() => setOffset(0)} />
-          <Btn small label="التأخير على الصوت" active={target === 'audio'} onPress={() => setTarget('audio')} />
-          <Btn small label="التأخير على الفيديو" active={target === 'video'} onPress={() => setTarget('video')} />
-        </View>
-        <View style={s.row}>
-          <Btn small label="رجوع" danger onPress={onBack} />
-          <Btn small label={paused ? 'تشغيل' : 'إيقاف مؤقت'} onPress={() => setPaused((p) => !p)} />
-        </View>
-      </View>
-
-      <View style={{ paddingHorizontal: 16 }}>
-        {log.map((l, i) => <Text key={i} style={s.itemSub}>{l}</Text>)}
-      </View>
-    </SafeAreaView>
+function Tile(p: { label: string; ch: Channel | null; active: boolean; onPress: () => void }) {
+  return (
+    <Pressable onPress={p.onPress} style={[s.tile, p.active && { borderColor: C.accent, backgroundColor: C.accentSoft }]}>
+      <Text style={s.tileLabel}>{p.label}</Text>
+      <Text style={s.tileName} numberOfLines={1}>{p.ch?.name ?? 'اختر قناة'}</Text>
+    </Pressable>
   );
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bg },
-  title: { color: C.text, fontSize: 28, fontWeight: '700', textAlign: 'center', paddingVertical: 8 },
-  card: { backgroundColor: C.card, borderColor: C.line, borderWidth: 1, borderRadius: 18, margin: 12, padding: 12, gap: 10 },
-  row: { flexDirection: 'row-reverse', gap: 8, justifyContent: 'center', flexWrap: 'wrap' },
-  input: { backgroundColor: C.cardStrong, color: C.text, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, textAlign: 'right', fontSize: 16 },
-  btn: { backgroundColor: C.cardStrong, borderColor: C.line, borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, alignItems: 'center' },
-  btnSmall: { paddingHorizontal: 12, paddingVertical: 8 },
-  btnText: { color: C.text, fontSize: 16, fontWeight: '600' },
-  item: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10, marginHorizontal: 12, marginVertical: 3, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.card },
-  itemName: { color: C.text, fontSize: 16, textAlign: 'right' },
-  itemSub: { color: C.sub, fontSize: 13, textAlign: 'right' },
-  tag: { color: C.accent, fontSize: 13, minWidth: 40, textAlign: 'left' },
-  videoBox: { width: '100%', aspectRatio: 16 / 9, backgroundColor: '#000' },
-  hidden: { position: 'absolute', width: 2, height: 2, opacity: 0.02, left: 0, bottom: 0 },
-  offset: { color: C.text, fontSize: 36, fontWeight: '700', textAlign: 'center' },
+  root: { flex: 1, backgroundColor: C.content },
+  setup: { padding: 20, alignItems: 'center', gap: 12, paddingTop: 48 },
+  logoBig: { width: 96, height: 96, borderRadius: 22 },
+  logoSmall: { width: 34, height: 34, borderRadius: 8 },
+  title: { color: C.heading, fontSize: 30, fontWeight: '700' },
+  tagline: { color: C.muted, fontSize: 15, marginBottom: 8 },
+  seg: { flexDirection: 'row-reverse', gap: 8, justifyContent: 'center' },
+  input: {
+    backgroundColor: 'rgba(255,255,255,0.06)', color: C.heading, borderRadius: 12,
+    borderWidth: 1, borderColor: C.line, paddingHorizontal: 12, paddingVertical: 11,
+    textAlign: 'right', fontSize: 16,
+  },
+  err: { color: C.danger, textAlign: 'right', fontSize: 14 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: C.rail },
+  headTitle: { color: C.heading, fontSize: 20, fontWeight: '700' },
+  split: { flexDirection: 'row-reverse', gap: 10, padding: 12 },
+  tile: { flex: 1, backgroundColor: C.widget, borderColor: C.line, borderWidth: 1, borderRadius: 16, padding: 12, gap: 2 },
+  tileLabel: { color: C.muted, fontSize: 12, textAlign: 'right' },
+  tileName: { color: C.heading, fontSize: 15, fontWeight: '600', textAlign: 'right' },
+  search: {
+    marginHorizontal: 12, marginBottom: 8, backgroundColor: C.widget, color: C.heading, borderRadius: 14,
+    borderWidth: 1, borderColor: C.line, paddingHorizontal: 14, paddingVertical: 10, textAlign: 'right', fontSize: 16,
+  },
+  row: {
+    flexDirection: 'row-reverse', alignItems: 'center', gap: 12, marginHorizontal: 12, marginVertical: 3,
+    padding: 10, borderRadius: 16, borderWidth: 1, borderColor: 'transparent', backgroundColor: C.widget,
+  },
+  avatar: { width: 46, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: C.heading, fontWeight: '700', fontSize: 15 },
+  rowName: { color: C.heading, fontSize: 16, textAlign: 'right', fontWeight: '600' },
+  rowSub: { color: C.muted, fontSize: 13, textAlign: 'right' },
+  badge: { color: C.accentText, fontSize: 12 },
+  dock: { position: 'absolute', left: 14, right: 14, bottom: 18 },
 });

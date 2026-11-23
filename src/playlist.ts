@@ -1,3 +1,5 @@
+import { getText } from './net';
+
 export type Channel = { id: string; name: string; url: string; group: string };
 
 export function parseM3U(text: string): Channel[] {
@@ -23,30 +25,33 @@ export function parseM3U(text: string): Channel[] {
 }
 
 export async function loadM3U(url: string): Promise<Channel[]> {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  return parseM3U(await r.text());
+  return parseM3U(await getText(url));
 }
 
 export async function loadXtream(server: string, user: string, pass: string): Promise<Channel[]> {
-  const base = server.replace(/\/+$/, '');
+  let base = server.trim().replace(/\/+$/, '');
+  if (!/^https?:\/\//i.test(base)) base = 'http://' + base;
   const q = `username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`;
-  const [catsR, listR] = await Promise.all([
-    fetch(`${base}/player_api.php?${q}&action=get_live_categories`),
-    fetch(`${base}/player_api.php?${q}&action=get_live_streams`),
+  const api = `${base}/player_api.php?${q}`;
+  const [catsText, listText] = await Promise.all([
+    getText(`${api}&action=get_live_categories`).catch(() => '[]'),
+    getText(`${api}&action=get_live_streams`, 60),
   ]);
-  if (!listR.ok) throw new Error('HTTP ' + listR.status);
   const cats: Record<string, string> = {};
   try {
-    for (const c of await catsR.json()) cats[String(c.category_id)] = c.category_name;
+    for (const c of JSON.parse(catsText)) cats[String(c.category_id)] = c.category_name;
   } catch {}
-  const list = await listR.json();
-  if (!Array.isArray(list)) throw new Error('رد غير متوقع من السيرفر');
+  let list: any;
+  try {
+    list = JSON.parse(listText);
+  } catch {
+    throw new Error('رد غير متوقع من السيرفر (تأكد من البيانات)');
+  }
+  if (!Array.isArray(list)) throw new Error('بيانات الدخول غير صحيحة أو الاشتراك منتهي');
   return list.map((s: any, i: number) => ({
     id: String(s.stream_id ?? i),
     name: String(s.name ?? ''),
     group: cats[String(s.category_id)] ?? '',
-    // .m3u8 (HLS) first; most panels serve both
     url: `${base}/live/${encodeURIComponent(user)}/${encodeURIComponent(pass)}/${s.stream_id}.m3u8`,
   }));
 }
