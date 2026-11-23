@@ -17,8 +17,34 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
+
+      # The real D7my-TV web app (unchanged main), pinned so the patch always applies.
+      - name: Checkout D7my-TV web app
+        uses: actions/checkout@v4
+        with:
+          ref: e96fa2844c450e3b31f6c51eabe3e2b3f5933836
+          path: web-src
+
+      - name: Build D7my-TV web app for iPhone
+        working-directory: web-src
+        env:
+          NX_DAEMON: 'false'
+          NODE_OPTIONS: --max-old-space-size=6144
+        run: |
+          set -e
+          git apply --whitespace=nowarn ../web-overlay/d7t-ios-web.patch
+          npm i -g pnpm@10.33.0
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm nx build web --configuration=pwa --skip-nx-cache
+          DIST=$(find dist/apps/web -name index.html -maxdepth 3 | head -n 1 | xargs dirname)
+          echo "web dist: $DIST"
+          rm -rf ../modules/d7t-native/ios/web
+          mkdir -p ../modules/d7t-native/ios/web
+          cp -R "$DIST"/. ../modules/d7t-native/ios/web/
+          ls ../modules/d7t-native/ios/web | head -n 20
+          du -sh ../modules/d7t-native/ios/web
 
       - name: Select Xcode 26 (Swift 6.2 needed by Expo modules)
         run: sudo xcode-select -s /Applications/Xcode_26.3.app

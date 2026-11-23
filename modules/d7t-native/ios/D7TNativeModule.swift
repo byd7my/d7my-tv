@@ -17,7 +17,7 @@ public class D7TNativeModule: Module {
     // Plain-socket HTTP GET. App Transport Security only polices URLSession and friends,
     // not raw TCP, so http:// panels work regardless of how the app was re-signed.
     AsyncFunction("httpGet") { (urlString: String, timeout: Double) -> [String: Any] in
-      return try D7THttp.get(urlString, timeout: timeout)
+      return try D7THttp.request(urlString, headers: [:], timeout: timeout, binary: false)
     }.runOnQueue(.global(qos: .userInitiated))
 
     AsyncFunction("frameRGBA") { (path: String, maxWidth: Int) -> [String: Any] in
@@ -27,6 +27,19 @@ public class D7TNativeModule: Module {
     AsyncFunction("readText") { (path: String, x: Double, y: Double, w: Double, h: Double) -> [String: Any] in
       return try D7TVision.readText(path: path, x: x, y: y, w: w, h: h)
     }.runOnQueue(.global(qos: .userInitiated))
+
+    View(D7TWebView.self) {
+      Events("onBridge")
+
+      AsyncFunction("resolve") { (view: D7TWebView, id: Int, ok: Bool, json: String) in
+        let value = (try? JSONSerialization.jsonObject(with: Data(json.utf8), options: [.fragmentsAllowed])) ?? NSNull()
+        view.resolve(id, ok: ok, value: value)
+      }.runOnQueue(.main)
+
+      AsyncFunction("emit") { (view: D7TWebView, event: String, json: String) in
+        view.emit(event, json: json)
+      }.runOnQueue(.main)
+    }
 
     Function("tempDir") { () -> String in
       return NSTemporaryDirectory()
@@ -43,7 +56,46 @@ public class D7TNativeModule: Module {
 }
 
 enum D7THttp {
-  static func get(_ urlString: String, timeout: Double) throws -> [String: Any] {
+  /// https goes through URLSession (valid certificates, ATS allows it); http uses a raw socket.
+  static func request(_ urlString: String, headers: [String: String], timeout: Double, binary: Bool) throws -> [String: Any] {
+    if urlString.lowercased().hasPrefix("https://") {
+      return try viaURLSession(urlString, headers: headers, timeout: timeout, binary: binary)
+    }
+    return try get(urlString, headers: headers, timeout: timeout, binary: binary)
+  }
+
+  static func viaURLSession(_ urlString: String, headers: [String: String], timeout: Double, binary: Bool) throws -> [String: Any] {
+    guard let url = URL(string: urlString) else { throw D7TError("رابط غير صالح") }
+    var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: timeout)
+    for (k, v) in headers { req.setValue(v, forHTTPHeaderField: k) }
+    if req.value(forHTTPHeaderField: "User-Agent") == nil { req.setValue("D7T/1.0", forHTTPHeaderField: "User-Agent") }
+    let sem = DispatchSemaphore(value: 0)
+    var outData: Data?
+    var outResp: URLResponse?
+    var outErr: Error?
+    let session = URLSession(configuration: .ephemeral)
+    session.dataTask(with: req) { data, resp, err in
+      outData = data
+      outResp = resp
+      outErr = err
+      sem.signal()
+    }.resume()
+    sem.wait()
+    session.finishTasksAndInvalidate()
+    if let e = outErr { throw e }
+    let http = outResp as? HTTPURLResponse
+    let data = outData ?? Data()
+    var result: [String: Any] = [
+      "status": http?.statusCode ?? 0,
+      "location": "",
+      "contentType": http?.value(forHTTPHeaderField: "Content-Type") ?? "",
+      "body": binary ? "" : String(decoding: data, as: UTF8.self),
+    ]
+    if binary { result["bodyBase64"] = data.base64EncodedString() }
+    return result
+  }
+
+  static func get(_ urlString: String, headers: [String: String] = [:], timeout: Double, binary: Bool = false) throws -> [String: Any] {
     guard let comps = URLComponents(string: urlString), let host = comps.host else {
       throw D7TError("رابط غير صالح")
     }
@@ -67,7 +119,15 @@ enum D7THttp {
     }
     let deadline = Date().addingTimeInterval(timeout)
     let hostHeader = comps.port != nil ? "\(host):\(port)" : host
-    let request = "GET \(path) HTTP/1.1\r\nHost: \(hostHeader)\r\nUser-Agent: D7T/1.0\r\nAccept: */*\r\nAccept-Encoding: identity\r\nConnection: close\r\n\r\n"
+    var lower: [String: String] = [:]
+    for (k, v) in headers { lower[k.lowercased()] = v }
+    var request = "GET \(path) HTTP/1.1\r\nHost: \(hostHeader)\r\n"
+    if lower["user-agent"] == nil { request += "User-Agent: D7T/1.0\r\n" }
+    if lower["accept"] == nil { request += "Accept: */*\r\n" }
+    for (k, v) in headers where k.lowercased() != "host" && k.lowercased() != "connection" && k.lowercased() != "accept-encoding" {
+      request += "\(k): \(v)\r\n"
+    }
+    request += "Accept-Encoding: identity\r\nConnection: close\r\n\r\n"
     let bytes = Array(request.utf8)
     var sent = 0
     while sent < bytes.count {
@@ -131,11 +191,14 @@ enum D7THttp {
     if let enc = headers["content-encoding"], enc.lowercased().contains("gzip") {
       throw D7TError("السيرفر رد بضغط gzip")
     }
-    return [
+    var result: [String: Any] = [
       "status": status,
       "location": headers["location"] ?? "",
-      "body": String(decoding: body, as: UTF8.self),
+      "contentType": headers["content-type"] ?? "",
+      "body": binary ? "" : String(decoding: body, as: UTF8.self),
     ]
+    if binary { result["bodyBase64"] = body.base64EncodedString() }
+    return result
   }
 
   static func dechunk(_ d: Data) -> Data {

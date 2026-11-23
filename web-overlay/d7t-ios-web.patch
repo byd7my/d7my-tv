@@ -1,0 +1,424 @@
+diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
+new file mode 100644
+index 0000000..417e6d4
+--- /dev/null
++++ b/apps/web/src/_ios-shell.scss
+@@ -0,0 +1,31 @@
++// Fit the app to a phone screen when it runs inside the iOS shell (html.d7t-ios, set by the shell).
++html.d7t-ios {
++    -webkit-text-size-adjust: 100%;
++    -webkit-tap-highlight-color: transparent;
++    -webkit-touch-callout: none;
++    overscroll-behavior: none;
++    height: 100%;
++
++    body {
++        // Notch / Dynamic Island on top, home indicator at the bottom.
++        padding-top: env(safe-area-inset-top, 0px);
++        padding-bottom: env(safe-area-inset-bottom, 0px);
++        padding-left: env(safe-area-inset-left, 0px);
++        padding-right: env(safe-area-inset-right, 0px);
++        box-sizing: border-box;
++        height: 100%;
++        background: var(--app-shell-bg, #0d0f12);
++        overflow: hidden;
++        user-select: none;
++        -webkit-user-select: none;
++    }
++
++    input,
++    textarea,
++    [contenteditable] {
++        user-select: text;
++        -webkit-user-select: text;
++        // iOS zooms into inputs below 16px.
++        font-size: max(16px, 1em);
++    }
++}
+diff --git a/apps/web/src/app/app.config.ts b/apps/web/src/app/app.config.ts
+index 1b79f58..79854e2 100644
+--- a/apps/web/src/app/app.config.ts
++++ b/apps/web/src/app/app.config.ts
+@@ -60,6 +60,7 @@ import { getInitialLanguage } from './app-language-preference';
+ import { storeDevtoolsProviders } from '../environments/store-devtools.providers';
+ import { routes } from './app.routes';
+ import { ElectronService } from './services/electron.service';
++import { iosBackendInterceptor } from './ios/ios-backend.interceptor';
+ import { ExternalPlaybackService } from './services/external-playback.service';
+ import { PlayerService } from './services/player.service';
+ import { provideParentalLockPrompt } from './services/parental-lock-prompt.service';
+@@ -167,7 +168,7 @@ export const appConfig: ApplicationConfig = {
+         provideHttpClient(
+             withXhr(),
+             withInterceptorsFromDi(),
+-            withInterceptors([sourceAuthInterceptor])
++            withInterceptors([iosBackendInterceptor, sourceAuthInterceptor])
+         ),
+         provideStore({
+             router: routerReducer,
+diff --git a/apps/web/src/app/ios/epg-parser.d.ts b/apps/web/src/app/ios/epg-parser.d.ts
+new file mode 100644
+index 0000000..6307817
+--- /dev/null
++++ b/apps/web/src/app/ios/epg-parser.d.ts
+@@ -0,0 +1,7 @@
++declare module 'epg-parser' {
++    const parser: {
++        parse(xml: string): unknown;
++    };
++
++    export default parser;
++}
+diff --git a/apps/web/src/app/ios/ios-backend.interceptor.ts b/apps/web/src/app/ios/ios-backend.interceptor.ts
+new file mode 100644
+index 0000000..d70a2f4
+--- /dev/null
++++ b/apps/web/src/app/ios/ios-backend.interceptor.ts
+@@ -0,0 +1,37 @@
++import {
++    HttpErrorResponse,
++    HttpResponse,
++    type HttpInterceptorFn,
++} from '@angular/common/http';
++import { from, throwError } from 'rxjs';
++import { catchError, map } from 'rxjs/operators';
++import { handleIosBackend } from './ios-backend';
++import { getD7tNative, IOS_BACKEND_ORIGIN } from './ios-bridge';
++
++/** Answers the app's own backend calls inside the iOS shell, so no server is needed. */
++export const iosBackendInterceptor: HttpInterceptorFn = (req, next) => {
++    if (!getD7tNative() || !req.url.startsWith(IOS_BACKEND_ORIGIN)) {
++        return next(req);
++    }
++    const url = new URL(req.urlWithParams);
++    return from(
++        handleIosBackend({
++            method: req.method,
++            path: url.pathname.replace(/\/+$/, '') || '/',
++            query: url.searchParams,
++            body: req.body,
++        })
++    ).pipe(
++        map((res) => {
++            if (res.status >= 400) {
++                throw new HttpErrorResponse({
++                    url: req.url,
++                    status: res.status,
++                    error: res.body,
++                });
++            }
++            return new HttpResponse({ url: req.url, status: res.status, body: res.body });
++        }),
++        catchError((error) => throwError(() => error))
++    );
++};
+diff --git a/apps/web/src/app/ios/ios-backend.ts b/apps/web/src/app/ios/ios-backend.ts
+new file mode 100644
+index 0000000..e59f8af
+--- /dev/null
++++ b/apps/web/src/app/ios/ios-backend.ts
+@@ -0,0 +1,254 @@
++/**
++ * The web-backend (apps/web-backend) as it runs inside the iOS app: the same routes and answers, with the
++ * provider requests made by the phone itself (no CORS, no proxy server).
++ */
++import epgParser from 'epg-parser';
++import parser from 'iptv-playlist-parser';
++import {
++    buildStalkerIdentityRequestContext,
++    buildStalkerRequestUrl,
++    normalizeXtreamServerUrl,
++    type ParsedPlaylist,
++} from '@iptvnator/shared/interfaces';
++import { createPlaylistObject as createM3uPlaylist } from '@iptvnator/shared/m3u-utils';
++import { getD7tNative } from './ios-bridge';
++
++interface NativeHttpResult {
++    status: number;
++    location: string;
++    contentType: string;
++    body: string;
++    bodyBase64?: string;
++}
++
++export interface IosBackendRequest {
++    readonly method: string;
++    readonly path: string;
++    readonly query: URLSearchParams;
++    readonly body: unknown;
++}
++
++export interface IosBackendResponse {
++    readonly status: number;
++    readonly body: unknown;
++}
++
++const targets = new Map<string, URL>();
++const TIMEOUT = { playlist: 120, epg: 180, xtream: 45, stalker: 30 } as const;
++
++class ProviderHttpError extends Error {
++    constructor(
++        readonly status: number,
++        message: string
++    ) {
++        super(message);
++    }
++}
++
++async function httpGet(
++    url: string,
++    options: { headers?: Record<string, string>; timeout: number; binary?: boolean }
++): Promise<NativeHttpResult> {
++    const native = getD7tNative();
++    if (!native) throw new ProviderHttpError(502, 'Bad Gateway');
++    let current = url;
++    for (let hop = 0; hop < 6; hop++) {
++        const r = await native.call<NativeHttpResult>('httpGet', {
++            url: current,
++            headers: options.headers ?? {},
++            timeout: options.timeout,
++            binary: !!options.binary,
++        });
++        if (r.status >= 300 && r.status < 400 && r.location) {
++            current = new URL(r.location, current).toString();
++            continue;
++        }
++        if (r.status < 200 || r.status >= 300) {
++            throw new ProviderHttpError(r.status, statusText(r.status));
++        }
++        return r;
++    }
++    throw new ProviderHttpError(502, 'Too many redirects');
++}
++
++function statusText(status: number): string {
++    switch (status) {
++        case 401: return 'Unauthorized';
++        case 403: return 'Forbidden';
++        case 404: return 'Not Found';
++        case 429: return 'Too Many Requests';
++        case 500: return 'Internal Server Error';
++        case 503: return 'Service Unavailable';
++        default: return 'Bad Gateway';
++    }
++}
++
++function errorBody(error: unknown): IosBackendResponse {
++    if (error instanceof ProviderHttpError) {
++        return { status: 200, body: { message: error.message, status: error.status } };
++    }
++    return { status: 200, body: { message: 'Bad Gateway', status: 502 } };
++}
++
++function target(query: URLSearchParams): URL | IosBackendResponse {
++    const id = query.get('targetId')?.trim();
++    if (!id) return { status: 400, body: { message: 'Missing targetId', status: 400 } };
++    const url = targets.get(id);
++    if (!url) {
++        return {
++            status: 404,
++            body: { message: 'Provider target not found', status: 404, code: 'PROVIDER_TARGET_NOT_FOUND' },
++        };
++    }
++    return url;
++}
++
++const isResponse = (v: URL | IosBackendResponse): v is IosBackendResponse => !(v instanceof URL);
++
++function proxyParams(query: URLSearchParams, excluded: string[]): Record<string, string> {
++    const out: Record<string, string> = {};
++    query.forEach((value, key) => {
++        if (!excluded.includes(key) && value.trim()) out[key] = value.trim();
++    });
++    return out;
++}
++
++function guid(): string {
++    return Math.random().toString(36).slice(2);
++}
++
++function lastSegment(value: string): string {
++    const s = value.slice(value.lastIndexOf('/') + 1).trim();
++    return s.length > 0 ? s : 'Playlist without title';
++}
++
++async function gunzip(base64: string): Promise<string> {
++    const bin = atob(base64);
++    const bytes = new Uint8Array(bin.length);
++    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
++    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
++    return await new Response(stream).text();
++}
++
++async function parsePlaylist(url: URL, userAgent?: string): Promise<IosBackendResponse> {
++    try {
++        const r = await httpGet(url.href, {
++            timeout: TIMEOUT.playlist,
++            headers: userAgent ? { 'User-Agent': userAgent } : undefined,
++        });
++        const parsed = parser.parse(r.body) as ParsedPlaylist;
++        const now = new Date().toISOString();
++        const id = guid();
++        const playlist = createM3uPlaylist(lastSegment(url.href), parsed, url.href, 'URL');
++        for (const item of playlist.playlist.items) item.id = guid();
++        return {
++            status: 200,
++            body: { ...playlist, id, _id: id, importDate: now, lastUsage: now, ...(userAgent ? { userAgent } : {}) },
++        };
++    } catch (error) {
++        const e = errorBody(error).body as { status: number; message: string };
++        return { status: e.status >= 400 ? e.status : 500, body: e };
++    }
++}
++
++async function parseEpg(url: URL): Promise<IosBackendResponse> {
++    try {
++        const gz = url.pathname.endsWith('.gz');
++        const r = await httpGet(url.href, { timeout: TIMEOUT.epg, binary: gz });
++        const xml = gz ? await gunzip(r.bodyBase64 ?? '') : r.body;
++        return { status: 200, body: epgParser.parse(xml) };
++    } catch (error) {
++        const e = errorBody(error).body as { status: number; message: string };
++        return { status: e.status >= 400 ? e.status : 500, body: e };
++    }
++}
++
++async function xtream(url: URL, query: URLSearchParams): Promise<IosBackendResponse> {
++    const action = query.get('action') ?? undefined;
++    try {
++        const base = new URL(normalizeXtreamServerUrl(url.href));
++        base.pathname = `${base.pathname.replace(/\/+$/, '')}/player_api.php`;
++        base.search = '';
++        const params = proxyParams(query, ['targetId', 'connectionTest', 'userAgent']);
++        const qs = Object.entries(params)
++            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
++            .join('&');
++        const ua = query.get('userAgent')?.trim();
++        const r = await httpGet(qs ? `${base.href}?${qs}` : base.href, {
++            timeout: TIMEOUT.xtream,
++            headers: ua ? { 'User-Agent': ua } : undefined,
++        });
++        let payload: unknown;
++        try {
++            payload = JSON.parse(r.body);
++        } catch {
++            payload = r.body;
++        }
++        return { status: 200, body: { action, payload } };
++    } catch (error) {
++        if (query.get('connectionTest') === 'true') {
++            return { status: 200, body: { connectionFailure: { kind: 'connection', canTryHttp: false } } };
++        }
++        return errorBody(error);
++    }
++}
++
++async function stalker(url: URL, query: URLSearchParams): Promise<IosBackendResponse> {
++    try {
++        const macAddress = query.get('macAddress')?.trim() ?? '';
++        const token = query.get('token')?.trim();
++        const serialNumber = query.get('serialNumber')?.trim();
++        const params: Record<string, string | number> = proxyParams(query, [
++            'targetId', 'macAddress', 'token', 'serialNumber', 'skipConnectionGuard',
++        ]);
++        if (params['action'] === 'handshake' && token) params['token'] = token;
++        const identity = buildStalkerIdentityRequestContext({
++            macAddress,
++            params,
++            ...(token ? { token } : {}),
++            ...(serialNumber ? { serialNumber } : {}),
++        });
++        const headers = { ...identity.headers };
++        if (!macAddress) delete headers['Cookie'];
++        const requestUrl = buildStalkerRequestUrl(url.href, identity.requestParams);
++        const r = await httpGet(requestUrl, {
++            headers,
++            timeout: params['action'] === 'create_link' ? 60 : TIMEOUT.stalker,
++        });
++        let payload: unknown;
++        try {
++            payload = JSON.parse(r.body);
++        } catch {
++            payload = r.body;
++        }
++        return { status: 200, body: { action: query.get('action') ?? undefined, payload } };
++    } catch (error) {
++        return errorBody(error);
++    }
++}
++
++export async function handleIosBackend(req: IosBackendRequest): Promise<IosBackendResponse> {
++    const { method, path, query } = req;
++    if (method === 'POST' && path === '/provider-targets') {
++        const raw = (req.body as { url?: string } | null)?.url;
++        try {
++            const url = new URL(String(raw));
++            const targetId = guid() + guid();
++            targets.set(targetId, url);
++            return { status: 200, body: { targetId } };
++        } catch {
++            return { status: 400, body: { message: 'Invalid URL', status: 400 } };
++        }
++    }
++    if (method === 'GET' && (path === '/parse' || path === '/parse-xml' || path === '/xtream' || path === '/stalker')) {
++        const url = target(query);
++        if (isResponse(url)) return url;
++        if (path === '/parse') return parsePlaylist(url, query.get('userAgent')?.trim() || undefined);
++        if (path === '/parse-xml') return parseEpg(url);
++        if (path === '/xtream') return xtream(url, query);
++        return stalker(url, query);
++    }
++    if (path === '/health') return { status: 200, body: { ok: true } };
++    if (path === '/provider-hosts/reset') return { status: 200, body: { reset: false } };
++    return { status: 404, body: { message: 'Not found', status: 404 } };
++}
+diff --git a/apps/web/src/app/ios/ios-bridge.ts b/apps/web/src/app/ios/ios-bridge.ts
+new file mode 100644
+index 0000000..73e6ac9
+--- /dev/null
++++ b/apps/web/src/app/ios/ios-bridge.ts
+@@ -0,0 +1,21 @@
++/**
++ * The iOS shell (D7T app) injects `window.d7tNative` before the page starts.
++ * Everything that needs the phone itself (raw-socket HTTP, mpv, Vision OCR) goes through it.
++ */
++export interface D7tNativeBridge {
++    readonly platform: 'ios';
++    call<T = unknown>(method: string, args?: unknown): Promise<T>;
++    on(event: string, handler: (payload: unknown) => void): () => void;
++}
++
++declare global {
++    interface Window {
++        d7tNative?: D7tNativeBridge;
++    }
++}
++
++export const IOS_BACKEND_ORIGIN = 'https://d7t-backend.local';
++
++export function getD7tNative(): D7tNativeBridge | undefined {
++    return typeof window === 'undefined' ? undefined : window.d7tNative;
++}
+diff --git a/apps/web/src/index.html b/apps/web/src/index.html
+index 4314d5c..05b7a87 100644
+--- a/apps/web/src/index.html
++++ b/apps/web/src/index.html
+@@ -5,7 +5,7 @@
+         <title>D7my-TV</title>
+         <base href="/" />
+ 
+-        <meta name="viewport" content="width=device-width, initial-scale=1" />
++        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+         <meta
+             http-equiv="Content-Security-Policy"
+             content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src https://www.youtube-nocookie.com; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' http: https: file: data: blob:; font-src 'self' data:; media-src 'self' http: https: file: data: blob:; connect-src 'self' http: https: ws: wss: blob: data:; worker-src 'self' blob:"
+diff --git a/apps/web/src/styles.scss b/apps/web/src/styles.scss
+index bc885dd..446595f 100644
+--- a/apps/web/src/styles.scss
++++ b/apps/web/src/styles.scss
+@@ -342,3 +342,5 @@ body.dark-theme {
+ .channel-scroll-focus:focus-visible {
+     @include focus-ring.focus-ring-declarations($offset: -2px);
+ }
++
++@use './ios-shell';

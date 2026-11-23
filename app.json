@@ -6,20 +6,31 @@
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#17181B",
+    "backgroundColor": "#161a22",
     "plugins": [
       "expo-mpv",
-      ["expo-build-properties", { "ios": { "deploymentTarget": "16.4" } }]
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.4"
+          }
+        }
+      ]
     ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.d7my.d7t",
       "buildNumber": "1",
       "infoPlist": {
-        "UIBackgroundModes": ["audio"],
+        "UIBackgroundModes": [
+          "audio"
+        ],
         "ITSAppUsesNonExemptEncryption": false,
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
+          "NSAllowsArbitraryLoadsForMedia": true,
+          "NSAllowsArbitraryLoadsInWebContent": true,
           "NSAllowsLocalNetworking": true
         }
       }

@@ -40,3 +40,4 @@ yarn-error.*
 /ios
 /android
 .claude/
+modules/d7t-native/ios/web/
