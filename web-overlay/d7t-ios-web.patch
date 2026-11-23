@@ -413,12 +413,19 @@ index 4314d5c..05b7a87 100644
              http-equiv="Content-Security-Policy"
              content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src https://www.youtube-nocookie.com; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' http: https: file: data: blob:; font-src 'self' data:; media-src 'self' http: https: file: data: blob:; connect-src 'self' http: https: ws: wss: blob: data:; worker-src 'self' blob:"
 diff --git a/apps/web/src/styles.scss b/apps/web/src/styles.scss
-index bc885dd..446595f 100644
+index bc885dd..8e745ed 100644
 --- a/apps/web/src/styles.scss
 +++ b/apps/web/src/styles.scss
-@@ -342,3 +342,5 @@ body.dark-theme {
+@@ -5,6 +5,7 @@
+ @use './settings-theme';
+ @use './glass-theme';
+ @use './cover-size';
++@use './ios-shell';
+ 
+ // ─── Tailwind CSS ─────────────────────────────────────────────────────────────
+ // Preflight is disabled in tailwind.config.js to avoid conflicts with
+@@ -342,3 +343,4 @@ body.dark-theme {
  .channel-scroll-focus:focus-visible {
      @include focus-ring.focus-ring-declarations($offset: -2px);
  }
 +
-+@use './ios-shell';
