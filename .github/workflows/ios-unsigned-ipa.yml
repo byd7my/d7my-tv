@@ -6,12 +6,14 @@ on:
     branches: [ios-app]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
     runs-on: macos-15
     timeout-minutes: 120
+    env:
+      EXPO_USE_PRECOMPILED_MODULES: '0'
     steps:
       - uses: actions/checkout@v4
 
@@ -47,7 +49,8 @@ jobs:
             -destination 'generic/platform=iOS' \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
-            build | tee xcodebuild.log | tail -n 200
+            build > xcodebuild.log 2>&1 || { echo '=== ERRORS ==='; grep -nE 'error:|fatal error|Command .* failed|\*\* BUILD FAILED' -B3 -A12 xcodebuild.log | head -n 150; echo '=== LOG TAIL ==='; tail -n 60 xcodebuild.log; exit 1; }
+          tail -n 5 xcodebuild.log
 
       - name: Package unsigned IPA
         run: |
@@ -64,9 +67,14 @@ jobs:
           path: D7T-unsigned.ipa
           retention-days: 14
 
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: xcodebuild-log
-          path: xcodebuild.log
-          retention-days: 7
+      - name: Publish IPA parts to ios-ipa branch
+        run: |
+          mkdir out && cd out
+          split -b 45m -d ../D7T-unsigned.ipa D7T-unsigned.ipa.part
+          shasum -a 256 ../D7T-unsigned.ipa > SHA256.txt
+          unzip -l ../D7T-unsigned.ipa | head -n 40 > CONTENTS.txt
+          git init -q
+          git config user.name "ci"; git config user.email "ci@users.noreply.github.com"
+          git checkout -q -b ios-ipa
+          git add -A && git commit -q -m "IPA from ${GITHUB_SHA}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ios-ipa
