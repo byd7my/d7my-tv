@@ -33,6 +33,13 @@ public class D7TNativeModule: Module {
       return try D7TVision.readText(path: path, x: x, y: y, w: w, h: h)
     }.runOnQueue(.global(qos: .userInitiated))
 
+    View(D7TTabBarView.self) {
+      Events("onSelectTab")
+      Prop("tabs") { (view: D7TTabBarView, tabs: [[String: String]]) in view.tabs = tabs }
+      Prop("selected") { (view: D7TTabBarView, selected: String) in view.selected = selected }
+      Prop("barHidden") { (view: D7TTabBarView, hidden: Bool) in view.barHidden = hidden }
+    }
+
     View(D7TWebView.self) {
       Events("onBridge")
 

@@ -83,6 +83,9 @@ final class D7TWebView: ExpoView, WKURLSchemeHandler {
     view.scrollView.contentInsetAdjustmentBehavior = .never
     view.scrollView.bounces = false
     view.scrollView.pinchGestureRecognizer?.isEnabled = false
+    // The page must never be zoomed (rotating the phone could leave it ~6 % zoomed in).
+    view.scrollView.minimumZoomScale = 1
+    view.scrollView.maximumZoomScale = 1
     if #available(iOS 16.4, *) { view.isInspectable = true }
     webView = view
     addSubview(view)

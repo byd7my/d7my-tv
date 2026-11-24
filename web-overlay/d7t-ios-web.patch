@@ -1,9 +1,9 @@
 diff --git a/apps/web/src/_ios-lume.scss b/apps/web/src/_ios-lume.scss
 new file mode 100644
-index 0000000..8199759
+index 0000000..a598e9b
 --- /dev/null
 +++ b/apps/web/src/_ios-lume.scss
-@@ -0,0 +1,1035 @@
+@@ -0,0 +1,1187 @@
 +// ─────────────────────────────────────────────────────────────────────────────
 +// One design language for the whole iPhone app, taken from Lume's SwiftUI source
 +// (sizes read from Lume/Views: PosterCardMetrics, CategoryTileMetrics,
@@ -914,7 +914,44 @@ index 0000000..8199759
 +// its settings lists: 52-tall rows, 24 icons, 20 inset, hairlines inset past the icon.
 +@media (max-width: 640px) {
 +    html.d7t-ios {
++        @keyframes l-sheet-in {
++            from {
++                transform: translateY(28px) scale(0.98);
++                opacity: 0;
++            }
++        }
++        @keyframes l-sheet-out {
++            to {
++                transform: translateY(28px) scale(0.98);
++                opacity: 0;
++            }
++        }
++        @keyframes l-scrim-in {
++            from {
++                opacity: 0;
++            }
++        }
++        @keyframes l-scrim-out {
++            to {
++                opacity: 0;
++            }
++        }
++
++        .rail-more-scrim {
++            animation: l-scrim-in 0.25s ease-out;
++
++            &.is-closing {
++                animation: l-scrim-out 0.24s ease-in forwards;
++            }
++        }
++
 +        .rail-more-sheet {
++            animation: l-sheet-in 0.38s cubic-bezier(0.32, 0.72, 0, 1);
++
++            &.is-closing {
++                animation: l-sheet-out 0.24s cubic-bezier(0.4, 0, 1, 1) forwards;
++            }
++
 +            left: 8px !important;
 +            right: 8px !important;
 +            bottom: calc(env(safe-area-inset-bottom, 0px) + 78px) !important;
@@ -1039,12 +1076,127 @@ index 0000000..8199759
 +        }
 +    }
 +}
++
++// ═════════ Now playing / stream status bar (EPG timeline toolbar) ═════════
++// Two lines instead of one crushed line: the channel and programme on top (never truncated to
++// "No pr…"), the controls underneath; 44-pt targets; no mono "TIMELINE" label.
++@media (max-width: 640px) {
++    html.d7t-ios {
++        .epg-timeline .epg-timeline__toolbar {
++            flex-wrap: wrap;
++            align-items: center;
++            gap: 2px 8px;
++            padding: 8px var(--l-inset);
++            min-height: 56px;
++            background: transparent;
++            border-bottom: 0.5px solid var(--l-sep);
++            font-family: var(--l-font);
++        }
++
++        .epg-timeline--collapsed .epg-timeline__toolbar {
++            border-bottom: 0;
++        }
++
++        .epg-timeline .epg-timeline__collapse {
++            flex: 1 1 100%;
++            min-height: 44px;
++            gap: 10px;
++            padding: 0;
++            border-radius: 0;
++            background: none;
++            -webkit-tap-highlight-color: transparent;
++        }
++
++        .epg-timeline .epg-timeline__heading {
++            flex: 1 1 auto;
++            min-width: 0;
++
++            b {
++                font-size: 17px;
++                font-weight: 600;
++                letter-spacing: -0.02em;
++                color: var(--l-label);
++            }
++
++            // The uppercase source label ("TIMELINE") is noise on a phone.
++            > span:not(.epg-timeline__subtitle) {
++                display: none;
++            }
++
++            .epg-timeline__subtitle {
++                font-size: 13px;
++                color: var(--l-label-2);
++            }
++        }
++
++        .epg-timeline .epg-timeline__collapse-icon {
++            width: 24px;
++            height: 24px;
++
++            mat-icon {
++                font-size: 24px;
++                width: 24px;
++                height: 24px;
++            }
++        }
++
++        .epg-timeline .epg-timeline__spacer {
++            display: none;
++        }
++
++        // Collapsed: tag, programme and time on one full-width line under the channel.
++        .epg-timeline--collapsed .epg-timeline__summary-title {
++            flex: 1 1 0;
++            min-width: 0;
++            font-size: 15px;
++            color: var(--l-label);
++        }
++
++        .epg-timeline .epg-timeline__summary-tag {
++            font-family: var(--l-font);
++            font-size: 11px;
++            font-weight: 700;
++            letter-spacing: 0.02em;
++        }
++
++        .epg-timeline .epg-timeline__summary-meta {
++            font-family: var(--l-font);
++            font-size: 13px;
++            color: var(--l-label-2);
++        }
++
++        .epg-timeline .epg-timeline__iconbtn,
++        .epg-timeline .epg-timeline__livebtn {
++            min-width: 44px;
++            min-height: 44px;
++        }
++    }
++}
++
++// ═════════ System tab bar ═════════
++// The bottom bar is the system's own (UITabBarController: real Liquid Glass), laid over the app by
++// the phone. The HTML bar stays in the DOM only so the native bar can activate its links; the More
++// sheet it owns must remain visible.
++@media (max-width: 640px) {
++    html.d7t-ios.d7t-native-tabs {
++        .app-rail::before,
++        .app-rail::after {
++            display: none !important;
++        }
++
++        .app-rail a.nav-item,
++        .app-rail button.rail-more {
++            opacity: 0 !important;
++            pointer-events: none !important;
++        }
++    }
++}
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..0d8e561
+index 0000000..ca35f09
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,696 @@
+@@ -0,0 +1,736 @@
 +@mixin phone-controls {
 +            grid-template-columns: auto minmax(0, 1fr) !important;
 +            grid-template-areas:
@@ -1102,6 +1254,11 @@ index 0000000..0d8e561
 +    height: 100%;
 +
 +    body {
++        // The document itself never scrolls or shifts (rotating the phone and leaving fullscreen
++        // used to leave the page scrolled away, i.e. blank, and zoomed ~6 %).
++        position: fixed;
++        inset: 0;
++        width: 100%;
 +        // Notch / Dynamic Island on top, home indicator at the bottom.
 +        padding-top: env(safe-area-inset-top, 0px);
 +        padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -1271,12 +1428,47 @@ index 0000000..0d8e561
 +                    height: 24px;
 +                }
 +
++                // Colour fades; the highlight itself is the sliding .app-rail::after.
++                transition:
++                    color 0.2s ease,
++                    transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
++                -webkit-tap-highlight-color: transparent;
++
++                &:active {
++                    transform: scale(0.94);
++                }
++
 +                &.is-active,
 +                &.active {
-+                    background: rgba(255, 255, 255, 0.16) !important;
-+                    box-shadow: inset 0 1px 0.5px rgba(255, 255, 255, 0.3) !important;
++                    background: transparent !important;
++                    box-shadow: none !important;
 +                    color: #0a84ff !important;
 +                }
++            }
++
++            // The one highlight, behind the active tab. Position/size come from the rail component.
++            &::after {
++                content: '';
++                position: absolute;
++                z-index: -1;
++                top: 6px;
++                bottom: 6px;
++                left: 0;
++                width: var(--tab-w, 0);
++                transform: translateX(var(--tab-x, 0));
++                opacity: var(--tab-o, 0);
++                border-radius: 26px;
++                background: rgba(255, 255, 255, 0.16);
++                box-shadow: inset 0 1px 0.5px rgba(255, 255, 255, 0.3);
++                pointer-events: none;
++            }
++
++            &.tabs-ready::after {
++                // Lume's tab bar is the system one; this follows the same calm ease-out feel.
++                transition:
++                    transform 0.4s cubic-bezier(0.32, 0.72, 0, 1),
++                    width 0.4s cubic-bezier(0.32, 0.72, 0, 1),
++                    opacity 0.2s ease;
 +            }
 +
 +            // Short names, like the reference apps.
@@ -1742,10 +1934,27 @@ index 0000000..0d8e561
 +    }
 +}
 diff --git a/apps/web/src/app/app.component.ts b/apps/web/src/app/app.component.ts
-index 3f52add..7aef310 100644
+index 3f52add..ff1d90f 100644
 --- a/apps/web/src/app/app.component.ts
 +++ b/apps/web/src/app/app.component.ts
-@@ -194,7 +194,11 @@ export class AppComponent implements OnInit {
+@@ -1,3 +1,4 @@
++import { SplitAudioCatalogService } from '@iptvnator/portal/xtream/data-access';
+ import { startAppMenuActions } from './services/app-menu-actions';
+ import {
+     Component,
+@@ -98,6 +99,11 @@ export class AppComponent implements OnInit {
+     private readonly DEFAULT_LANG = Language.ENGLISH;
+ 
+     constructor() {
++        // iPhone app: the sound picker searches every saved subscription, whichever page started
++        // the picture (see SplitAudioCatalogService). Nothing changes on the other platforms.
++        if ((window as unknown as { d7tNative?: unknown }).d7tNative) {
++            inject(SplitAudioCatalogService);
++        }
+         startAppMenuActions();
+         syncDocumentLanguage();
+ 
+@@ -194,7 +200,11 @@ export class AppComponent implements OnInit {
       * Applies the operating system color scheme when no explicit theme is set
       */
      detectDarkMode(): void {
@@ -2207,10 +2416,10 @@ index 0000000..73e6ac9
 +}
 diff --git a/apps/web/src/app/ios/ios-fullscreen.ts b/apps/web/src/app/ios/ios-fullscreen.ts
 new file mode 100644
-index 0000000..2cc1c96
+index 0000000..35cacea
 --- /dev/null
 +++ b/apps/web/src/app/ios/ios-fullscreen.ts
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,96 @@
 +/**
 + * iPhone WebKit only allows fullscreen for <video>. The player asks for fullscreen on its own
 + * container, so give the page a small stand-in: the element fills the screen (CSS class
@@ -2228,6 +2437,15 @@ index 0000000..2cc1c96
 +    let enteredByRotation = false;
 +    const root = document.documentElement;
 +    const notify = () => document.dispatchEvent(new Event('fullscreenchange'));
++    // Turning the phone (and fullscreen on/off) can leave the page scrolled or zoomed by WebKit:
++    // put the viewport back. The meta viewport pins the scale; this pins the scroll position.
++    const resetViewport = () => {
++        window.scrollTo(0, 0);
++        document.documentElement.scrollTop = 0;
++        document.body.scrollTop = 0;
++    };
++    window.addEventListener('orientationchange', () => window.setTimeout(resetViewport, 120));
++    window.addEventListener('resize', () => window.setTimeout(resetViewport, 0));
 +
 +    const clear = () => {
 +        current?.classList.remove('d7t-fullscreen');
@@ -2240,6 +2458,7 @@ index 0000000..2cc1c96
 +        clear();
 +        notify();
 +        window.dispatchEvent(new Event('resize'));
++        resetViewport();
 +    };
 +
 +    // The player can disappear while fullscreen (another channel, back to the list). The page must
@@ -2299,10 +2518,10 @@ index 0000000..2cc1c96
 +}
 diff --git a/apps/web/src/app/ios/ios-mpv-host.ts b/apps/web/src/app/ios/ios-mpv-host.ts
 new file mode 100644
-index 0000000..67010c2
+index 0000000..7880bdf
 --- /dev/null
 +++ b/apps/web/src/app/ios/ios-mpv-host.ts
-@@ -0,0 +1,734 @@
+@@ -0,0 +1,741 @@
 +import type {
 +    ElectronBridgeApi,
 +    EmbeddedMpvBounds,
@@ -2707,6 +2926,13 @@ index 0000000..67010c2
 +    ): Promise<void> => {
 +        // A new picture ends the audio channel that belonged to the old one.
 +        this.split.onUserLoad(sessionId);
++        // Whatever page started it (Live, Recently viewed, Favorites, Search), the sound picker
++        // must know which channel is the picture; see SplitAudioCatalogService.
++        window.dispatchEvent(
++            new CustomEvent('d7t-primary-playback', {
++                detail: { url: playback.streamUrl, title: playback.title },
++            })
++        );
 +        this.update(sessionId, {
 +            streamUrl: playback.streamUrl,
 +            title: playback.title,
@@ -3036,6 +3262,105 @@ index 0000000..67010c2
 +    canvas.setAttribute('data-embedded-mpv-frame', '');
 +    canvas.hidden = true;
 +    (document.body ?? document.documentElement).appendChild(canvas);
++}
+diff --git a/apps/web/src/app/ios/ios-native-tabs.ts b/apps/web/src/app/ios/ios-native-tabs.ts
+new file mode 100644
+index 0000000..d0b3fec
+--- /dev/null
++++ b/apps/web/src/app/ios/ios-native-tabs.ts
+@@ -0,0 +1,93 @@
++import { getD7tNative } from './ios-bridge';
++
++/**
++ * iPhone app: the bottom tab bar is the system's own (UITabBarController, drawn as Liquid Glass by
++ * iOS), not HTML. The page keeps its router and its existing tab links; this connects the two:
++ *  - tells the phone which tab is showing (and when the bar must hide, e.g. fullscreen);
++ *  - follows the phone's taps by activating the page's own tab link, so routing, guards and the
++ *    "More" sheet behave exactly as before.
++ */
++const TAB_LINKS: Record<string, string> = {
++    home: '/dashboard',
++    movies: '/vod',
++    series: '/series',
++    live: '/live',
++    search: '/search',
++};
++
++export function installIosNativeTabs(): void {
++    const native = getD7tNative();
++    if (!native) return;
++    document.documentElement.classList.add('d7t-native-tabs');
++
++    let last = '';
++    const send = (active: string, hidden: boolean) => {
++        const key = `${active}|${hidden}`;
++        if (key === last) return;
++        last = key;
++        void native.call('tabs.state', { active, hidden }).catch(() => undefined);
++    };
++
++    const compute = () => {
++        const html = document.documentElement;
++        const hidden =
++            html.classList.contains('d7t-has-fullscreen') ||
++            !!document.querySelector('.d7t-fullscreen');
++        const moreOpen = document.querySelector('.rail-more-sheet:not(.is-closing)');
++        let active = 'more';
++        if (!moreOpen) {
++            for (const [id, suffix] of Object.entries(TAB_LINKS)) {
++                const link = document.querySelector(
++                    `.app-rail a.nav-item[href$="${suffix}"]`
++                );
++                if (link?.classList.contains('is-active') || link?.classList.contains('active')) {
++                    active = id;
++                    break;
++                }
++            }
++        }
++        send(active, hidden);
++    };
++
++    let frame = 0;
++    const schedule = () => {
++        cancelAnimationFrame(frame);
++        frame = requestAnimationFrame(compute);
++    };
++
++    // The rail (tab links, More sheet) and the fullscreen classes are what the state is read from.
++    let watched: Element | null = null;
++    const observer = new MutationObserver(schedule);
++    const watch = () => {
++        const rail = document.querySelector('.app-rail');
++        if (rail && rail !== watched) {
++            observer.disconnect();
++            watched = rail;
++            observer.observe(rail, {
++                attributes: true,
++                attributeFilter: ['class'],
++                childList: true,
++                subtree: true,
++            });
++            observer.observe(document.documentElement, {
++                attributes: true,
++                attributeFilter: ['class'],
++            });
++        }
++        schedule();
++    };
++    window.setInterval(watch, 700);
++    window.addEventListener('popstate', schedule);
++    watch();
++
++    native.on('tab', (payload) => {
++        const id = String(payload);
++        const target =
++            id === 'more'
++                ? document.querySelector<HTMLElement>('.app-rail button.rail-more')
++                : document.querySelector<HTMLElement>(
++                      `.app-rail a.nav-item[href$="${TAB_LINKS[id]}"]`
++                  );
++        target?.click();
++    });
 +}
 diff --git a/apps/web/src/app/ios/ios-touch.ts b/apps/web/src/app/ios/ios-touch.ts
 new file mode 100644
@@ -6215,8 +6540,216 @@ index 0000000..0c8ed87
 +    /** Counts every end of a freeze: readers drop what they smoothed. */
 +    epoch: number;
 +}
+diff --git a/apps/web/src/app/settings/settings-general-section.component.html b/apps/web/src/app/settings/settings-general-section.component.html
+index 738df92..0ba4ea6 100644
+--- a/apps/web/src/app/settings/settings-general-section.component.html
++++ b/apps/web/src/app/settings/settings-general-section.component.html
+@@ -220,4 +220,8 @@
+             </div>
+         </section>
+     }
++
++    @if (isIosApp) {
++        <app-settings-provider-sync />
++    }
+ </section>
+diff --git a/apps/web/src/app/settings/settings-general-section.component.ts b/apps/web/src/app/settings/settings-general-section.component.ts
+index 8e3d29d..9a7f1c1 100644
+--- a/apps/web/src/app/settings/settings-general-section.component.ts
++++ b/apps/web/src/app/settings/settings-general-section.component.ts
+@@ -11,6 +11,7 @@ import {
+     StartupWindowModeOption,
+ } from './settings.models';
+ import { markSectionForCheckOnFormEvents } from './settings-section-form-render';
++import { SettingsProviderSyncComponent } from './settings-provider-sync.component';
+ import { provideFormFieldDefaults } from '@iptvnator/ui/components/form-field-defaults';
+ 
+ @Component({
+@@ -22,6 +23,7 @@ import { provideFormFieldDefaults } from '@iptvnator/ui/components/form-field-de
+         MatSelectModule,
+         MatSlideToggleModule,
+         ReactiveFormsModule,
++        SettingsProviderSyncComponent,
+         TranslateModule,
+     ],
+     templateUrl: './settings-general-section.component.html',
+@@ -37,6 +39,10 @@ export class SettingsGeneralSectionComponent {
+         markSectionForCheckOnFormEvents(this.form);
+     }
+ 
++    /** iPhone app only: a subscription's catalog is synced from here, never automatically. */
++    protected readonly isIosApp = !!(window as unknown as { d7tNative?: unknown })
++        .d7tNative;
++
+     readonly languageEnum = input.required<typeof Language>();
+     readonly startupBehaviorOptions = input.required<StartupBehaviorOption[]>();
+     readonly startupWindowModeOptions =
+diff --git a/apps/web/src/app/settings/settings-provider-sync.component.ts b/apps/web/src/app/settings/settings-provider-sync.component.ts
+new file mode 100644
+index 0000000..b298213
+--- /dev/null
++++ b/apps/web/src/app/settings/settings-provider-sync.component.ts
+@@ -0,0 +1,158 @@
++import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
++import { DatePipe } from '@angular/common';
++import { firstValueFrom } from 'rxjs';
++import { PlaylistsService } from '@iptvnator/services';
++import {
++    CatalogSyncService,
++    isXtreamSubscription,
++} from '@iptvnator/portal/xtream/data-access';
++
++interface SyncRow {
++    id: string;
++    title: string;
++    syncedAt: number | null;
++}
++
++/**
++ * iPhone app: "Sync with provider". A subscription's catalog is downloaded once, when it is first
++ * opened, and kept on the phone. This is the only place that downloads it again.
++ */
++@Component({
++    selector: 'app-settings-provider-sync',
++    imports: [DatePipe],
++    changeDetection: ChangeDetectionStrategy.OnPush,
++    template: `
++        <section class="settings-section provider-sync" data-test-id="provider-sync">
++            <h2 class="provider-sync__title">Sync with provider</h2>
++            <p class="provider-sync__hint">
++                Channels, movies and series are downloaded once and kept on this phone. Sync
++                again only when your provider has changed its list.
++            </p>
++            <div class="provider-sync__group">
++                @for (row of rows(); track row.id) {
++                    <div class="provider-sync__row">
++                        <div class="provider-sync__text">
++                            <span class="provider-sync__name">{{ row.title }}</span>
++                            <span class="provider-sync__when">
++                                @if (row.syncedAt) {
++                                    Last synced {{ row.syncedAt | date: 'd MMM y, HH:mm' }}
++                                } @else {
++                                    Not downloaded yet
++                                }
++                            </span>
++                        </div>
++                        <button
++                            type="button"
++                            class="provider-sync__button"
++                            data-test-id="provider-sync-button"
++                            [disabled]="busy() !== null"
++                            (click)="sync(row)"
++                        >
++                            {{ busy() === row.id ? 'Syncing…' : 'Sync now' }}
++                        </button>
++                    </div>
++                } @empty {
++                    <div class="provider-sync__row">
++                        <span class="provider-sync__when">No subscriptions yet.</span>
++                    </div>
++                }
++            </div>
++        </section>
++    `,
++    styles: [
++        `
++            :host {
++                display: block;
++            }
++            .provider-sync__title {
++                margin: 0 0 4px;
++                font-size: 17px;
++                font-weight: 700;
++            }
++            .provider-sync__hint {
++                margin: 0 0 12px;
++                font-size: 13px;
++                opacity: 0.62;
++            }
++            .provider-sync__group {
++                border-radius: 12px;
++                background: rgba(118, 118, 128, 0.24);
++                overflow: hidden;
++            }
++            .provider-sync__row {
++                display: flex;
++                align-items: center;
++                gap: 12px;
++                min-height: 52px;
++                padding: 8px 16px;
++            }
++            .provider-sync__row + .provider-sync__row {
++                border-top: 0.5px solid rgba(84, 84, 88, 0.65);
++            }
++            .provider-sync__text {
++                display: flex;
++                flex: 1;
++                flex-direction: column;
++                min-width: 0;
++            }
++            .provider-sync__name {
++                overflow: hidden;
++                text-overflow: ellipsis;
++                white-space: nowrap;
++                font-size: 17px;
++            }
++            .provider-sync__when {
++                font-size: 13px;
++                opacity: 0.62;
++            }
++            .provider-sync__button {
++                flex: none;
++                min-width: 44px;
++                min-height: 36px;
++                padding: 0 16px;
++                border: 0;
++                border-radius: 999px;
++                background: #0a84ff;
++                color: #fff;
++                font: 600 15px/1 inherit;
++                cursor: pointer;
++            }
++            .provider-sync__button:disabled {
++                opacity: 0.5;
++            }
++        `,
++    ],
++})
++export class SettingsProviderSyncComponent {
++    private readonly playlists = inject(PlaylistsService);
++    private readonly sync$ = inject(CatalogSyncService);
++
++    readonly rows = signal<readonly SyncRow[]>([]);
++    readonly busy = signal<string | null>(null);
++
++    constructor() {
++        void this.load();
++    }
++
++    private async load(): Promise<void> {
++        const all = await firstValueFrom(this.playlists.getAllPlaylists());
++        const subs = all.filter(isXtreamSubscription);
++        this.rows.set(
++            await Promise.all(
++                subs.map(async (playlist) => ({
++                    id: playlist._id,
++                    title: playlist.title,
++                    syncedAt: await this.sync$.syncedAt(playlist._id),
++                }))
++            )
++        );
++    }
++
++    /** Forgets the saved copy and restarts the app screen so the next open downloads a new one. */
++    async sync(row: SyncRow): Promise<void> {
++        this.busy.set(row.id);
++        await this.sync$.forget(row.id);
++        // A clean start: nothing of the old catalog stays in memory.
++        window.location.assign('/');
++    }
++}
 diff --git a/apps/web/src/index.html b/apps/web/src/index.html
-index 4314d5c..05b7a87 100644
+index 4314d5c..06063d8 100644
 --- a/apps/web/src/index.html
 +++ b/apps/web/src/index.html
 @@ -5,7 +5,7 @@
@@ -6224,25 +6757,27 @@ index 4314d5c..05b7a87 100644
          <base href="/" />
  
 -        <meta name="viewport" content="width=device-width, initial-scale=1" />
-+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
++        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
          <meta
              http-equiv="Content-Security-Policy"
              content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src https://www.youtube-nocookie.com; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' http: https: file: data: blob:; font-src 'self' data:; media-src 'self' http: https: file: data: blob:; connect-src 'self' http: https: ws: wss: blob: data:; worker-src 'self' blob:"
 diff --git a/apps/web/src/main.ts b/apps/web/src/main.ts
-index 4802425..e4b2f4f 100644
+index 4802425..bf3d4ce 100644
 --- a/apps/web/src/main.ts
 +++ b/apps/web/src/main.ts
-@@ -5,6 +5,14 @@ import { AppComponent } from './app/app.component';
+@@ -5,6 +5,16 @@ import { AppComponent } from './app/app.component';
  import { appConfig, getInitialLanguage } from './app/app.config';
  import { prepareSourceConnection } from '@iptvnator/services/source-sync/connection';
  import { preparePlayerLoading } from './player-loading-rollback';
 +import { installIosMpvHost } from './app/ios/ios-mpv-host';
 +import { installIosFullscreen } from './app/ios/ios-fullscreen';
++import { installIosNativeTabs } from './app/ios/ios-native-tabs';
 +import { installIosLongPress } from './app/ios/ios-touch';
 +
 +// iPhone app only: real mpv players behind the page (no-op everywhere else).
 +installIosMpvHost();
 +installIosFullscreen();
++installIosNativeTabs();
 +installIosLongPress();
  
  const restoredHref = resolveRestoredRendererRoute(
@@ -6265,6 +6800,441 @@ index bc885dd..e1b57a3 100644
      @include focus-ring.focus-ring-declarations($offset: -2px);
  }
 +
+diff --git a/libs/portal/xtream/data-access/src/index.ts b/libs/portal/xtream/data-access/src/index.ts
+index 5449f5c..ac00d23 100644
+--- a/libs/portal/xtream/data-access/src/index.ts
++++ b/libs/portal/xtream/data-access/src/index.ts
+@@ -1,4 +1,5 @@
+ export * from './lib/account-info/account-info.interface';
++export * from './lib/catalog-sync.service';
+ export * from './lib/data-sources';
+ export * from './lib/services';
+ export * from './lib/stores';
+diff --git a/libs/portal/xtream/data-access/src/lib/catalog-sync.service.ts b/libs/portal/xtream/data-access/src/lib/catalog-sync.service.ts
+new file mode 100644
+index 0000000..b9b570b
+--- /dev/null
++++ b/libs/portal/xtream/data-access/src/lib/catalog-sync.service.ts
+@@ -0,0 +1,27 @@
++import { inject, Injectable } from '@angular/core';
++import { PwaXtreamDataSource } from './data-sources/pwa-xtream-data-source';
++import {
++    isCatalogDiskCacheEnabled,
++    pwaCatalogDiskCache,
++} from './data-sources/pwa-catalog-disk-cache';
++
++/**
++ * "Sync with provider" (iPhone app, in Settings): the one place that downloads a subscription's
++ * catalog again. Opening a subscription never does it once a saved copy exists.
++ */
++@Injectable({ providedIn: 'root' })
++export class CatalogSyncService {
++    private readonly dataSource = inject(PwaXtreamDataSource);
++
++    readonly available = isCatalogDiskCacheEnabled;
++
++    syncedAt(playlistId: string): Promise<number | null> {
++        return pwaCatalogDiskCache.syncedAt(playlistId);
++    }
++
++    /** Drops the saved copy; the caller reloads the app so the next open downloads a fresh one. */
++    async forget(playlistId: string): Promise<void> {
++        this.dataSource.clearSessionCache(playlistId);
++        await pwaCatalogDiskCache.clear(playlistId);
++    }
++}
+diff --git a/libs/portal/xtream/data-access/src/lib/data-sources/pwa-catalog-disk-cache.ts b/libs/portal/xtream/data-access/src/lib/data-sources/pwa-catalog-disk-cache.ts
+new file mode 100644
+index 0000000..0375342
+--- /dev/null
++++ b/libs/portal/xtream/data-access/src/lib/data-sources/pwa-catalog-disk-cache.ts
+@@ -0,0 +1,122 @@
++/**
++ * iPhone app only: the provider's catalog (categories and streams) kept on the phone.
++ *
++ * The web build keeps the catalog in memory for one session, so every launch downloaded the
++ * whole catalog from the provider again. In the iPhone app that download happens once, when a
++ * subscription is first opened; after that the saved copy is used, and a new download happens
++ * only when the user asks for it in Settings ("Sync with provider").
++ *
++ * IndexedDB holds it (a large catalog does not fit localStorage). If IndexedDB is not available
++ * every call quietly does nothing, and the app behaves as before (download each session).
++ */
++const DB_NAME = 'd7t-provider-catalog';
++const STORE = 'entries';
++
++interface DiskEntry {
++    at: number;
++    data: unknown;
++}
++
++function enabled(): boolean {
++    return (
++        typeof window !== 'undefined' &&
++        !!(window as unknown as { d7tNative?: unknown }).d7tNative &&
++        typeof indexedDB !== 'undefined'
++    );
++}
++
++class PwaCatalogDiskCache {
++    private dbPromise: Promise<IDBDatabase | null> | null = null;
++
++    private open(): Promise<IDBDatabase | null> {
++        if (!enabled()) return Promise.resolve(null);
++        this.dbPromise ??= new Promise((resolve) => {
++            try {
++                const request = indexedDB.open(DB_NAME, 1);
++                request.onupgradeneeded = () =>
++                    request.result.createObjectStore(STORE);
++                request.onsuccess = () => resolve(request.result);
++                request.onerror = () => resolve(null);
++                request.onblocked = () => resolve(null);
++            } catch {
++                resolve(null);
++            }
++        });
++        return this.dbPromise;
++    }
++
++    private async run<T>(
++        mode: IDBTransactionMode,
++        work: (store: IDBObjectStore) => IDBRequest<T>
++    ): Promise<T | null> {
++        const db = await this.open();
++        if (!db) return null;
++        return new Promise((resolve) => {
++            try {
++                const request = work(
++                    db.transaction(STORE, mode).objectStore(STORE)
++                );
++                request.onsuccess = () => resolve(request.result);
++                request.onerror = () => resolve(null);
++            } catch {
++                resolve(null);
++            }
++        });
++    }
++
++    async read<T>(key: string): Promise<{ at: number; data: T } | null> {
++        const entry = (await this.run('readonly', (s) => s.get(key))) as
++            | DiskEntry
++            | null
++            | undefined;
++        return entry && entry.data !== undefined
++            ? { at: entry.at, data: entry.data as T }
++            : null;
++    }
++
++    async write(key: string, data: unknown): Promise<void> {
++        await this.run('readwrite', (s) =>
++            s.put({ at: Date.now(), data } satisfies DiskEntry, key)
++        );
++    }
++
++    /** When the subscription's catalog was last downloaded; null if it never was. */
++    async syncedAt(playlistId: string): Promise<number | null> {
++        const times: number[] = [];
++        for (const type of ['live', 'movie', 'series']) {
++            const entry = (await this.run('readonly', (s) =>
++                s.get(`${playlistId}-${type}-content`)
++            )) as DiskEntry | null | undefined;
++            if (entry) times.push(entry.at);
++        }
++        return times.length ? Math.max(...times) : null;
++    }
++
++    /** Forget the saved catalog of one subscription: the next open downloads it again. */
++    async clear(playlistId: string): Promise<void> {
++        const db = await this.open();
++        if (!db) return;
++        await new Promise<void>((resolve) => {
++            try {
++                const store = db
++                    .transaction(STORE, 'readwrite')
++                    .objectStore(STORE);
++                const request = store.openCursor();
++                request.onsuccess = () => {
++                    const cursor = request.result;
++                    if (!cursor) return resolve();
++                    if (String(cursor.key).startsWith(playlistId)) {
++                        cursor.delete();
++                    }
++                    cursor.continue();
++                };
++                request.onerror = () => resolve();
++            } catch {
++                resolve();
++            }
++        });
++    }
++}
++
++export const pwaCatalogDiskCache = new PwaCatalogDiskCache();
++export const isCatalogDiskCacheEnabled = enabled;
+diff --git a/libs/portal/xtream/data-access/src/lib/data-sources/pwa-xtream-data-source.ts b/libs/portal/xtream/data-access/src/lib/data-sources/pwa-xtream-data-source.ts
+index cc6ad47..7bdb3f0 100644
+--- a/libs/portal/xtream/data-access/src/lib/data-sources/pwa-xtream-data-source.ts
++++ b/libs/portal/xtream/data-access/src/lib/data-sources/pwa-xtream-data-source.ts
+@@ -51,6 +51,7 @@ import {
+ import { PwaCollectionStorage } from './pwa-collection-storage';
+ import { PwaCollectionCatalog } from './pwa-collection-catalog';
+ import type { XtreamCachedContentItem } from './pwa-cached-content';
++import { pwaCatalogDiskCache } from './pwa-catalog-disk-cache';
+ 
+ /**
+  * Storage keys for PWA persistence
+@@ -173,6 +174,7 @@ export class PwaXtreamDataSource implements IXtreamDataSource {
+ 
+         // Clear cache
+         this.clearCacheForPlaylist(playlistId);
++        void pwaCatalogDiskCache.clear(playlistId);
+     }
+ 
+     private getPlaylistsFromStorage(): XtreamPlaylistData[] {
+@@ -343,6 +345,13 @@ export class PwaXtreamDataSource implements IXtreamDataSource {
+             );
+         }
+ 
++        // The saved copy of the provider's catalog (iPhone app): no download.
++        const saved = await pwaCatalogDiskCache.read<XtreamCategory[]>(cacheKey);
++        if (saved) {
++            this.categoryCache.set(cacheKey, saved.data);
++            return this.withoutLockedCategories(playlistId, type, saved.data);
++        }
++
+         // Fetch from API
+         options?.onPhaseChange?.('loading-categories');
+         const categories = await this.apiService.getCategories(
+@@ -352,8 +361,9 @@ export class PwaXtreamDataSource implements IXtreamDataSource {
+         );
+         options?.signal?.throwIfAborted();
+ 
+-        // Cache in memory
++        // Cache in memory (and on the phone, iPhone app)
+         this.categoryCache.set(cacheKey, categories);
++        void pwaCatalogDiskCache.write(cacheKey, categories);
+ 
+         return this.withoutLockedCategories(playlistId, type, categories);
+     }
+@@ -510,6 +520,21 @@ export class PwaXtreamDataSource implements IXtreamDataSource {
+             ) as XtreamLiveStream[] | XtreamVodStream[] | XtreamSerieItem[];
+         }
+ 
++        // The saved copy of the provider's catalog (iPhone app): no download.
++        const savedContent = await pwaCatalogDiskCache.read<
++            XtreamCachedContentItem[]
++        >(cacheKey);
++        if (savedContent) {
++            this.contentCache.set(cacheKey, savedContent.data);
++            onTotal?.(savedContent.data.length);
++            onProgress?.(savedContent.data.length);
++            return this.withoutLockedContent(
++                playlistId,
++                type,
++                savedContent.data
++            ) as XtreamLiveStream[] | XtreamVodStream[] | XtreamSerieItem[];
++        }
++
+         // Fetch from API
+         options?.onPhaseChange?.(
+             type === 'live'
+@@ -539,8 +564,9 @@ export class PwaXtreamDataSource implements IXtreamDataSource {
+             onProgress(content.length);
+         }
+ 
+-        // Cache in memory
++        // Cache in memory (and on the phone, iPhone app)
+         this.contentCache.set(cacheKey, content);
++        void pwaCatalogDiskCache.write(cacheKey, content);
+ 
+         return this.withoutLockedContent(playlistId, type, content);
+     }
+diff --git a/libs/portal/xtream/data-access/src/lib/services/index.ts b/libs/portal/xtream/data-access/src/lib/services/index.ts
+index ea495cc..470783a 100644
+--- a/libs/portal/xtream/data-access/src/lib/services/index.ts
++++ b/libs/portal/xtream/data-access/src/lib/services/index.ts
+@@ -5,4 +5,5 @@ export * from './xtream-api.service';
+ export * from './xtream-url.service';
+ export * from './xtream-vod-playback-source';
+ export * from './xtream-xmltv-fallback.service';
++export * from './split-audio-catalog.service';
+ export * from './split-audio-source.service';
+diff --git a/libs/portal/xtream/data-access/src/lib/services/split-audio-catalog.service.ts b/libs/portal/xtream/data-access/src/lib/services/split-audio-catalog.service.ts
+new file mode 100644
+index 0000000..ba21a5c
+--- /dev/null
++++ b/libs/portal/xtream/data-access/src/lib/services/split-audio-catalog.service.ts
+@@ -0,0 +1,148 @@
++import { inject, Injectable, signal } from '@angular/core';
++import { firstValueFrom } from 'rxjs';
++import {
++    PlaylistsService,
++    SplitAudioService,
++    type SplitAudioCatalog,
++    type SplitAudioCatalogChannel,
++} from '@iptvnator/services';
++import type { Channel } from '@iptvnator/shared/interfaces';
++import {
++    isXtreamSubscription,
++    SplitAudioSourceService,
++} from './split-audio-source.service';
++
++/** Two subscriptions load at once: each is a provider connection, and lists can be large. */
++const PARALLEL_LOADS = 2;
++/** The loaded catalog is reused this long before every subscription is fetched again. */
++const CATALOG_TTL_MS = 10 * 60 * 1000;
++
++/**
++ * The "audio from another channel" picker's view of ALL saved Xtream subscriptions at once.
++ *
++ * Before, the picker only knew the list the Live TV page published for the channel it started, so
++ * a channel opened from Recently viewed, Favorites or Search had no list at all, and another
++ * subscription had to be chosen by hand. This service loads every subscription's live channels
++ * (through the same Xtream API and cache as the single-source picker) and offers them as one
++ * searchable list, each channel tagged with its subscription.
++ *
++ * It also publishes a minimal context for a channel started from a page that published none (or
++ * a stale one), so choosing the sound, its saved delay and Auto Sync work wherever the picture
++ * came from. It never changes how the synchronisation itself works.
++ */
++@Injectable({ providedIn: 'root' })
++export class SplitAudioCatalogService implements SplitAudioCatalog {
++    private readonly splitAudio = inject(SplitAudioService);
++    private readonly sources = inject(SplitAudioSourceService);
++    private readonly playlists = inject(PlaylistsService);
++
++    private readonly all = signal<readonly SplitAudioCatalogChannel[]>([]);
++    private readonly isLoading = signal(false);
++    private readonly failedCount = signal(0);
++    private loadedAt = 0;
++    private running: Promise<void> | null = null;
++
++    constructor() {
++        this.splitAudio.catalog.set(this);
++        // The iPhone host announces every primary playback; see IosMpvHost.
++        window.addEventListener('d7t-primary-playback', (event) => {
++            const detail = (event as CustomEvent<{ url?: string; title?: string }>)
++                .detail;
++            if (detail?.url) this.onPrimaryPlayback(detail.url, detail.title ?? '');
++        });
++    }
++
++    channels(): readonly SplitAudioCatalogChannel[] {
++        return this.all();
++    }
++
++    loading(): boolean {
++        return this.isLoading();
++    }
++
++    failed(): number {
++        return this.failedCount();
++    }
++
++    ensureLoaded(): void {
++        if (this.running) return;
++        if (Date.now() - this.loadedAt < CATALOG_TTL_MS && this.all().length) {
++            return;
++        }
++        this.running = this.load().finally(() => {
++            this.running = null;
++        });
++    }
++
++    private async load(): Promise<void> {
++        this.isLoading.set(true);
++        this.failedCount.set(0);
++        try {
++            const playlists = (
++                await firstValueFrom(this.playlists.getAllPlaylists())
++            ).filter(isXtreamSubscription);
++            const merged: SplitAudioCatalogChannel[] = [];
++            let next = 0;
++            const worker = async (): Promise<void> => {
++                while (next < playlists.length) {
++                    const playlist = playlists[next++];
++                    try {
++                        const channels = await this.sources.channelsFor(
++                            playlist._id
++                        );
++                        const tagged = channels.map(
++                            (channel) =>
++                                ({
++                                    ...channel,
++                                    sourceId: playlist._id,
++                                    sourceTitle: playlist.title,
++                                }) as SplitAudioCatalogChannel
++                        );
++                        merged.push(...tagged);
++                        // Results show up as each subscription arrives.
++                        this.all.set([...merged]);
++                    } catch (error) {
++                        console.warn(
++                            'Could not load a subscription for the sound picker',
++                            error
++                        );
++                        this.failedCount.update((count) => count + 1);
++                    }
++                }
++            };
++            await Promise.all(
++                Array.from(
++                    { length: Math.min(PARALLEL_LOADS, playlists.length) },
++                    worker
++                )
++            );
++            this.loadedAt = Date.now();
++        } catch (error) {
++            console.warn('Could not list the subscriptions', error);
++            this.failedCount.update((count) => count + 1);
++        } finally {
++            this.isLoading.set(false);
++        }
++    }
++
++    /**
++     * A channel started from a page that published no split-audio context (Recently viewed,
++     * Favorites, Search) or a context of an earlier channel: describe the one now playing.
++     */
++    private onPrimaryPlayback(url: string, title: string): void {
++        const current = this.splitAudio.context();
++        if (current && current.video.url === url) return;
++        const known = this.all().find((channel) => channel.url === url);
++        const video = (known ?? {
++            id: '',
++            name: title,
++            url,
++            http: {},
++        }) as Channel;
++        this.splitAudio.setContext({
++            video,
++            channels: () => [],
++            sources: () => [],
++        });
++    }
++}
+diff --git a/libs/portal/xtream/data-access/src/lib/services/split-audio-source.service.ts b/libs/portal/xtream/data-access/src/lib/services/split-audio-source.service.ts
+index 0b3bb2a..897b3a3 100644
+--- a/libs/portal/xtream/data-access/src/lib/services/split-audio-source.service.ts
++++ b/libs/portal/xtream/data-access/src/lib/services/split-audio-source.service.ts
+@@ -126,6 +126,17 @@ export class SplitAudioSourceService {
+         }
+     }
+ 
++    /** A subscription's live channels, from the cache while fresh (shared with the sound picker). */
++    async channelsFor(id: string): Promise<readonly Channel[]> {
++        const cached = this.cache.get(id);
++        if (cached && Date.now() - cached.at < SPLIT_AUDIO_SOURCE_TTL_MS) {
++            return cached.channels;
++        }
++        const channels = await this.fetchChannels(id);
++        this.cache.set(id, { at: Date.now(), channels });
++        return channels;
++    }
++
+     private async fetchChannels(id: string): Promise<readonly Channel[]> {
+         const playlist = await firstValueFrom(
+             this.playlists.getPlaylistById(id)
 diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.html b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.html
 new file mode 100644
 index 0000000..a0952a9
@@ -7746,10 +8716,10 @@ index 0000000..5c87312
 +}
 diff --git a/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.ts b/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.ts
 new file mode 100644
-index 0000000..136c92f
+index 0000000..f6267e3
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.ts
-@@ -0,0 +1,360 @@
+@@ -0,0 +1,362 @@
 +import {
 +    ChangeDetectionStrategy,
 +    Component,
@@ -7993,11 +8963,13 @@ index 0000000..136c92f
 +    }
 +
 +    ngOnInit(): void {
-+        const selected = this.store.selectedCategoryId();
-+        const fromRoute = Number(this.route.snapshot.params['categoryId']);
-+        const initial = Number.isFinite(fromRoute) ? fromRoute : selected;
-+        if (initial !== null && initial !== undefined && Number.isFinite(Number(initial))) {
-+            this.scope.set({ kind: 'category', id: Number(initial) });
++        // Only the route may pick the first category. The store's selection is shared by Movies,
++        // Series and Live: taking it here opened Live on a *movie* category (no live channels
++        // in it, so an empty list) after the user had browsed Movies.
++        const raw = this.route.snapshot.params['categoryId'];
++        const fromRoute = raw === undefined || raw === '' ? NaN : Number(raw);
++        if (Number.isFinite(fromRoute)) {
++            this.scope.set({ kind: 'category', id: fromRoute });
 +        }
 +
 +        const playlist = this.store.currentPlaylist();
@@ -8540,6 +9512,48 @@ index 2d547dc..0c16ccb 100644
                  if (!electron?.getEmbeddedMpvSupport) {
                      return;
                  }
+diff --git a/libs/services/src/lib/split-audio.service.ts b/libs/services/src/lib/split-audio.service.ts
+index 33e3bd5..70bfe08 100644
+--- a/libs/services/src/lib/split-audio.service.ts
++++ b/libs/services/src/lib/split-audio.service.ts
+@@ -59,6 +59,28 @@ export interface SplitAudioSourceOption {
+     readonly title: string;
+ }
+ 
++/** A channel from the all-subscriptions catalog, with the subscription it belongs to. */
++export type SplitAudioCatalogChannel = Channel & {
++    readonly sourceId: string;
++    readonly sourceTitle: string;
++};
++
++/**
++ * Every live channel of every saved subscription, for the "audio from another channel" picker.
++ * Registered by the app (the iPhone app does); absent elsewhere, where the picker keeps using
++ * the list the Live TV page publishes.
++ */
++export interface SplitAudioCatalog {
++    /** Channels loaded so far; grows while {@link loading} is true. */
++    channels(): readonly SplitAudioCatalogChannel[];
++    /** Subscriptions still being fetched. */
++    loading(): boolean;
++    /** Number of subscriptions that could not be loaded. */
++    failed(): number;
++    /** Starts (or refreshes) loading every subscription; cheap when cached. */
++    ensureLoaded(): void;
++}
++
+ /** Progress of loading the chosen sound subscription's channel list. */
+ export type SplitAudioSourceStatus = 'idle' | 'loading' | 'ready' | 'error';
+ 
+@@ -77,6 +99,8 @@ export class SplitAudioService {
+      * control bar can offer "audio from another channel" for it.
+      */
+     readonly context = signal<SplitAudioContext | null>(null);
++    /** All subscriptions' channels; see {@link SplitAudioCatalog}. */
++    readonly catalog = signal<SplitAudioCatalog | null>(null);
+     readonly activeAudio = signal<ExternalAudioOverride | null>(null);
+     readonly favoritesRevision = signal(0);
+     /** The subscription the sound comes from; null = the picture's own. */
 diff --git a/libs/shared/interfaces/src/index.ts b/libs/shared/interfaces/src/index.ts
 index 344f1bf..ca7a95e 100644
 --- a/libs/shared/interfaces/src/index.ts
@@ -8738,7 +9752,7 @@ index 8b40b03..7c6fc59 100644
  
      private notAvailableMessage(): string {
 diff --git a/libs/ui/playback/src/lib/player-controls/controls-split-audio.ts b/libs/ui/playback/src/lib/player-controls/controls-split-audio.ts
-index de5a577..9335fbc 100644
+index de5a577..d4d6b5b 100644
 --- a/libs/ui/playback/src/lib/player-controls/controls-split-audio.ts
 +++ b/libs/ui/playback/src/lib/player-controls/controls-split-audio.ts
 @@ -1,3 +1,4 @@
@@ -8746,7 +9760,41 @@ index de5a577..9335fbc 100644
  import {
      computed,
      DestroyRef,
-@@ -174,7 +175,7 @@ export class ControlsSplitAudio {
+@@ -84,14 +85,31 @@ export class ControlsSplitAudio {
+      * is still working out what it plays. Other players need the channel list.
+      */
+     readonly available = computed(() => {
+-        const hasContext = this.splitAudio.context() !== null;
++        const hasContext =
++            this.splitAudio.context() !== null ||
++            this.splitAudio.catalog() !== null;
+         if (this.usesPanel()) return this.state().isLive || hasContext;
+         return this.openDialog !== null && hasContext && this.state().isLive;
+     });
+ 
+     /** False when the page that started the channel published no list. */
+     readonly hasChannelList = computed(
+-        () => this.splitAudio.context() !== null
++        () =>
++            this.splitAudio.context() !== null ||
++            this.splitAudio.catalog() !== null
++    );
++
++    /** The app offers every saved subscription's channels at once (iPhone app). */
++    readonly hasCatalog = computed(() => this.splitAudio.catalog() !== null);
++    readonly catalogLoading = computed(
++        () => this.splitAudio.catalog()?.loading() ?? false
++    );
++    readonly catalogFailed = computed(
++        () => this.splitAudio.catalog()?.failed() ?? 0
++    );
++    /** Channels of all subscriptions; built only while the panel is open. */
++    readonly catalogChannels = computed(() =>
++        this.panelOpen() ? (this.splitAudio.catalog()?.channels() ?? []) : []
+     );
+ 
+     /** The channels audio can come from. Built only while the panel is open. */
+@@ -174,7 +192,7 @@ export class ControlsSplitAudio {
       * picture and of the audio channel and suggests the delay.
       */
      readonly sync = new AudioSyncController({
@@ -8755,6 +9803,127 @@ index de5a577..9335fbc 100644
          audio: this.activeAudio,
          videoUrl: this.videoUrl,
          setDelay: (seconds) => this.setDelay(seconds),
+@@ -234,7 +252,10 @@ export class ControlsSplitAudio {
+     open(): void {
+         if (this.usesPanel()) {
+             this.panelOpen.update((open) => !open);
+-            if (this.panelOpen()) this.onPanelOpened?.();
++            if (this.panelOpen()) {
++                this.onPanelOpened?.();
++                this.splitAudio.catalog()?.ensureLoaded();
++            }
+             return;
+         }
+         const context = this.splitAudio.context();
+diff --git a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html
+index 688a3ed..526a7a4 100644
+--- a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html
++++ b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html
+@@ -31,7 +31,7 @@
+         </button>
+     </header>
+ 
+-    @if (controls().sourceOptions().length > 0) {
++    @if (controls().sourceOptions().length > 0 && !controls().hasCatalog()) {
+         <label class="split-audio__source">
+             <span>{{ 'CHANNELS.SPLIT_AUDIO.SOURCE_LABEL' | translate }}</span>
+             <select
+@@ -108,6 +108,18 @@
+         />
+     }
+ 
++    @if (controls().hasCatalog() && searching()) {
++        @if (controls().catalogLoading()) {
++            <p class="split-audio__hints" role="status" data-test-id="split-audio-catalog-loading">
++                Loading channels from all subscriptions…
++            </p>
++        } @else if (controls().catalogFailed() > 0) {
++            <p class="split-audio__error" role="status" data-test-id="split-audio-catalog-failed">
++                {{ controls().catalogFailed() }} subscription(s) could not be loaded.
++            </p>
++        }
++    }
++
+     @if (!controls().hasChannelList()) {
+         <p
+             class="split-audio__error"
+@@ -142,6 +154,9 @@
+                         >
+                     }
+                     <span class="split-audio__name">{{ channel.name }}</span>
++                    @if (sourceOf(channel)) {
++                        <span class="split-audio__source-tag" data-test-id="split-audio-channel-source">{{ sourceOf(channel) }}</span>
++                    }
+                 </button>
+                 @if (controls().canCheck()) {
+                     @if (checkOf(channel); as check) {
+diff --git a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.scss b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.scss
+index a1ac048..2a81dcb 100644
+--- a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.scss
++++ b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.scss
+@@ -483,3 +483,16 @@
+ .split-audio__check-result--bad {
+     color: #ffd0cc;
+ }
++
++// Subscription a channel belongs to, shown when the picker lists several subscriptions at once.
++.split-audio__source-tag {
++    flex: none;
++    max-width: 38%;
++    margin-inline-start: auto;
++    padding-inline-start: 8px;
++    overflow: hidden;
++    text-overflow: ellipsis;
++    white-space: nowrap;
++    font-size: 0.72rem;
++    opacity: 0.62;
++}
+diff --git a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.ts b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.ts
+index 1ab7542..d1bd3a9 100644
+--- a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.ts
++++ b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.ts
+@@ -53,9 +53,15 @@ export class SplitAudioPanelComponent {
+     protected readonly rows = computed<readonly Channel[]>(() => {
+         const controls = this.controls();
+         const videoUrl = controls.videoUrl();
+-        const channels = controls
+-            .channels()
+-            .filter((channel) => channel.url !== videoUrl);
++        const own = controls.channels();
++        // Every saved subscription's channels, after the page's own list (no duplicates).
++        const seen = new Set(own.map((channel) => channel.url));
++        const others = controls
++            .catalogChannels()
++            .filter((channel) => !seen.has(channel.url));
++        const channels = [...own, ...others].filter(
++            (channel) => channel.url !== videoUrl
++        );
+         const needle = foldSearchText(this.query().trim());
+         let rows: Channel[];
+         if (needle) {
+@@ -87,6 +93,22 @@ export class SplitAudioPanelComponent {
+         return `${delay > 0 ? '+' : ''}${delay}`;
+     });
+ 
++    /** The subscription a catalog channel belongs to; empty for the page's own list. */
++    protected sourceOf(channel: Channel): string {
++        const own = (channel as { sourceTitle?: string }).sourceTitle;
++        if (own) return own;
++        // A channel of the page's own list: name its subscription too (same stream URL).
++        return this.sourceByUrl().get(channel.url) ?? '';
++    }
++
++    private readonly sourceByUrl = computed(() => {
++        const map = new Map<string, string>();
++        for (const channel of this.controls().catalogChannels()) {
++            map.set(channel.url, channel.sourceTitle);
++        }
++        return map;
++    });
++
+     protected toggleSearch(): void {
+         const next = !this.searching();
+         this.searching.set(next);
 diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-header/workspace-shell-header.component.html b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-header/workspace-shell-header.component.html
 index 7ac2c4a..47a768e 100644
 --- a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-header/workspace-shell-header.component.html
@@ -8952,9 +10121,17 @@ index d2d082f..7db9df5 100644
 +/** Last URL segments of the pages the bottom bar opens directly. */
 +const TAB_ROOTS = new Set(['dashboard', 'vod', 'series', 'live', 'search']);
 diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html
-index 4e89c2e..1085595 100644
+index 4e89c2e..132ca32 100644
 --- a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html
 +++ b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html
+@@ -1,6 +1,6 @@
+ <!-- No brand mark: it linked to the page the first workspace link opens.
+      The page's Back lives in the header's leading slot. -->
+-<aside class="app-rail" [class.is-macos]="isMacOS()">
++<aside class="app-rail" [class.is-macos]="isMacOS()" [class.tabs-ready]="tabsReady()">
+     <app-workspace-shell-rail-links [links]="workspaceLinks()" />
+ 
+     @if (primaryContextLinks().length > 0) {
 @@ -22,6 +22,139 @@
          </div>
      }
@@ -8965,14 +10142,14 @@ index 4e89c2e..1085595 100644
 +        [class.is-active]="moreOpen()"
 +        [attr.aria-label]="'More'"
 +        [attr.aria-expanded]="moreOpen()"
-+        (click)="moreOpen.set(!moreOpen())"
++        (click)="toggleMore()"
 +    >
 +        <mat-icon aria-hidden="true">more_horiz</mat-icon>
 +    </button>
 +
 +    @if (moreOpen()) {
-+        <div class="rail-more-scrim" (click)="moreOpen.set(false)"></div>
-+        <div class="rail-more-sheet" role="menu" data-test-id="more-sheet">
++        <div class="rail-more-scrim" [class.is-closing]="moreClosing()" (click)="closeMore()"></div>
++        <div class="rail-more-sheet" [class.is-closing]="moreClosing()" role="menu" data-test-id="more-sheet">
 +            <div class="rail-more-grabber" aria-hidden="true"></div>
 +            <div class="rail-more-title">More</div>
 +
@@ -8987,7 +10164,7 @@ index 4e89c2e..1085595 100644
 +                            accountInfoForPlaylistRequested.emit($event)
 +                        "
 +                        (addPlaylistRequested)="
-+                            moreOpen.set(false);
++                            closeMore();
 +                            addPlaylistRequested.emit()
 +                        "
 +                    />
@@ -9031,7 +10208,7 @@ index 4e89c2e..1085595 100644
 +                    class="rail-more-item"
 +                    role="menuitem"
 +                    data-test-id="more-add-playlist"
-+                    (click)="moreOpen.set(false); addPlaylistRequested.emit()"
++                    (click)="closeMore(); addPlaylistRequested.emit()"
 +                >
 +                    <mat-icon aria-hidden="true">add</mat-icon>
 +                    <span>{{ 'WORKSPACE.SHELL.ADD_PLAYLIST' | translate }}</span>
@@ -9042,7 +10219,7 @@ index 4e89c2e..1085595 100644
 +                    role="menuitem"
 +                    data-test-id="more-command-palette"
 +                    (click)="
-+                        moreOpen.set(false); commandPaletteRequested.emit()
++                        closeMore(); commandPaletteRequested.emit()
 +                    "
 +                >
 +                    <mat-icon aria-hidden="true">bolt</mat-icon>
@@ -9057,7 +10234,7 @@ index 4e89c2e..1085595 100644
 +                        role="menuitem"
 +                        data-test-id="more-parental-lock"
 +                        (click)="
-+                            moreOpen.set(false);
++                            closeMore();
 +                            parentalLockToggleRequested.emit()
 +                        "
 +                    >
@@ -9112,11 +10289,15 @@ index 839d26b..76abf2f 100644
 +    display: none;
 +}
 diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts
-index 92fce1a..50d019b 100644
+index 92fce1a..8c89a90 100644
 --- a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts
 +++ b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts
-@@ -4,10 +4,16 @@ import {
+@@ -2,12 +2,20 @@ import {
+     ChangeDetectionStrategy,
+     Component,
      computed,
++    effect,
++    ElementRef,
      inject,
      input,
 +    output,
@@ -9133,7 +10314,7 @@ index 92fce1a..50d019b 100644
  import { TranslatePipe } from '@ngx-translate/core';
  import {
      PortalRailLink,
-@@ -24,6 +30,7 @@ import { WorkspaceShellRailLinksComponent } from '../workspace-shell-rail-links/
+@@ -24,6 +32,7 @@ import { WorkspaceShellRailLinksComponent } from '../workspace-shell-rail-links/
      imports: [
          MatIcon,
          MatTooltip,
@@ -9141,7 +10322,7 @@ index 92fce1a..50d019b 100644
          RouterLink,
          TranslatePipe,
          WorkspaceShellRailLinksComponent,
-@@ -42,6 +49,54 @@ export class WorkspaceShellRailComponent {
+@@ -42,6 +51,124 @@ export class WorkspaceShellRailComponent {
      >(null);
      readonly railProviderClass = input('rail-context-region');
      readonly isSettingsRoute = input(false);
@@ -9162,7 +10343,77 @@ index 92fce1a..50d019b 100644
 +                filter((event) => event instanceof NavigationEnd),
 +                takeUntilDestroyed()
 +            )
-+            .subscribe(() => this.moreOpen.set(false));
++            .subscribe(() => {
++                this.closeMore();
++                this.scheduleIndicator();
++            });
++        if (this.isIosApp) {
++            effect(() => {
++                this.moreOpen();
++                this.workspaceLinks();
++                this.primaryContextLinks();
++                this.scheduleIndicator();
++            });
++            window.addEventListener('resize', () => this.scheduleIndicator());
++        }
++    }
++
++    private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
++    private readonly isIosApp = !!(window as unknown as { d7tNative?: unknown })
++        .d7tNative;
++    /** The first position is set without animating from the left edge. */
++    readonly tabsReady = signal(false);
++    readonly moreClosing = signal(false);
++    private frame = 0;
++
++    toggleMore(): void {
++        if (this.moreOpen() && !this.moreClosing()) this.closeMore();
++        else if (!this.moreOpen()) this.moreOpen.set(true);
++    }
++
++    /** The sheet slides down and the scrim fades before it leaves the DOM. */
++    closeMore(): void {
++        if (!this.moreOpen() || this.moreClosing()) return;
++        this.moreClosing.set(true);
++        window.setTimeout(() => {
++            this.moreOpen.set(false);
++            this.moreClosing.set(false);
++        }, 240);
++    }
++
++    /**
++     * iPhone app: the highlight behind the active tab is one element that slides to the new tab
++     * (position and width published as CSS variables on the bar), instead of each tab
++     * switching its own background on and off.
++     */
++    private scheduleIndicator(): void {
++        if (!this.isIosApp) return;
++        cancelAnimationFrame(this.frame);
++        // Router classes are applied after navigation ends: measure two frames later.
++        this.frame = requestAnimationFrame(() =>
++            requestAnimationFrame(() => this.placeIndicator())
++        );
++    }
++
++    private placeIndicator(): void {
++        const bar = this.host.nativeElement.querySelector<HTMLElement>('.app-rail');
++        if (!bar) return;
++        const active = bar.querySelector<HTMLElement>(
++            this.moreOpen() && !this.moreClosing()
++                ? 'button.rail-more'
++                : 'a.nav-item.is-active, a.nav-item.active'
++        );
++        if (!active || active.offsetWidth === 0) {
++            bar.style.setProperty('--tab-o', '0');
++            return;
++        }
++        bar.style.setProperty('--tab-x', `${active.offsetLeft}px`);
++        bar.style.setProperty('--tab-w', `${active.offsetWidth}px`);
++        bar.style.setProperty('--tab-o', '1');
++        if (!this.tabsReady()) {
++            // Turn the transition on only after the first position is in place.
++            requestAnimationFrame(() => this.tabsReady.set(true));
++        }
 +    }
 +
 +    /**
