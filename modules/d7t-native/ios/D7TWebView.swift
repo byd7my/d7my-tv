@@ -119,6 +119,11 @@ final class D7TWebView: ExpoView, WKURLSchemeHandler {
           self?.resolve(id, ok: true, value: ["status": 502, "location": "", "contentType": "", "body": "\(error.localizedDescription)"])
         }
       }
+    case "ui.sheet":
+      // A system sheet (Liquid Glass on iOS 26) built from the page's description of its rows.
+      D7TSheetPresenter.present(args) { [weak self] picked in
+        self?.resolve(id, ok: true, value: picked ?? NSNull())
+      }
     case "tempDir":
       resolve(id, ok: true, value: NSTemporaryDirectory())
     default:

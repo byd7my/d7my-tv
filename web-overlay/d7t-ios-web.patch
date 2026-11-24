@@ -3265,10 +3265,10 @@ index 0000000..7880bdf
 +}
 diff --git a/apps/web/src/app/ios/ios-native-tabs.ts b/apps/web/src/app/ios/ios-native-tabs.ts
 new file mode 100644
-index 0000000..d0b3fec
+index 0000000..8522ed8
 --- /dev/null
 +++ b/apps/web/src/app/ios/ios-native-tabs.ts
-@@ -0,0 +1,93 @@
+@@ -0,0 +1,95 @@
 +import { getD7tNative } from './ios-bridge';
 +
 +/**
@@ -3304,7 +3304,9 @@ index 0000000..d0b3fec
 +        const hidden =
 +            html.classList.contains('d7t-has-fullscreen') ||
 +            !!document.querySelector('.d7t-fullscreen');
-+        const moreOpen = document.querySelector('.rail-more-sheet:not(.is-closing)');
++        const moreOpen = document.querySelector(
++            '.rail-more-sheet:not(.is-closing), .app-rail.native-more-open'
++        );
 +        let active = 'more';
 +        if (!moreOpen) {
 +            for (const [id, suffix] of Object.entries(TAB_LINKS)) {
@@ -10121,14 +10123,14 @@ index d2d082f..7db9df5 100644
 +/** Last URL segments of the pages the bottom bar opens directly. */
 +const TAB_ROOTS = new Set(['dashboard', 'vod', 'series', 'live', 'search']);
 diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html
-index 4e89c2e..132ca32 100644
+index 4e89c2e..eb8adcf 100644
 --- a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html
 +++ b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html
 @@ -1,6 +1,6 @@
  <!-- No brand mark: it linked to the page the first workspace link opens.
       The page's Back lives in the header's leading slot. -->
 -<aside class="app-rail" [class.is-macos]="isMacOS()">
-+<aside class="app-rail" [class.is-macos]="isMacOS()" [class.tabs-ready]="tabsReady()">
++<aside class="app-rail" [class.is-macos]="isMacOS()" [class.tabs-ready]="tabsReady()" [class.native-more-open]="nativeMoreOpen()">
      <app-workspace-shell-rail-links [links]="workspaceLinks()" />
  
      @if (primaryContextLinks().length > 0) {
@@ -10289,7 +10291,7 @@ index 839d26b..76abf2f 100644
 +    display: none;
 +}
 diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts
-index 92fce1a..8c89a90 100644
+index 92fce1a..d31be6b 100644
 --- a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts
 +++ b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts
 @@ -2,12 +2,20 @@ import {
@@ -10314,7 +10316,15 @@ index 92fce1a..8c89a90 100644
  import { TranslatePipe } from '@ngx-translate/core';
  import {
      PortalRailLink,
-@@ -24,6 +32,7 @@ import { WorkspaceShellRailLinksComponent } from '../workspace-shell-rail-links/
+@@ -17,6 +25,7 @@ import {
+     type ServerConnectionState,
+     ServerStorageStatusService,
+ } from '@iptvnator/services';
++import { PlaylistContextFacade } from '@iptvnator/playlist/shared/util';
+ import { WorkspaceShellRailLinksComponent } from '../workspace-shell-rail-links/workspace-shell-rail-links.component';
+ 
+ @Component({
+@@ -24,6 +33,7 @@ import { WorkspaceShellRailLinksComponent } from '../workspace-shell-rail-links/
      imports: [
          MatIcon,
          MatTooltip,
@@ -10322,7 +10332,7 @@ index 92fce1a..8c89a90 100644
          RouterLink,
          TranslatePipe,
          WorkspaceShellRailLinksComponent,
-@@ -42,6 +51,124 @@ export class WorkspaceShellRailComponent {
+@@ -42,6 +52,229 @@ export class WorkspaceShellRailComponent {
      >(null);
      readonly railProviderClass = input('rail-context-region');
      readonly isSettingsRoute = input(false);
@@ -10366,9 +10376,114 @@ index 92fce1a..8c89a90 100644
 +    readonly moreClosing = signal(false);
 +    private frame = 0;
 +
++    private readonly router = inject(Router);
++    private readonly playlistContext = inject(PlaylistContextFacade);
++    /** True while the system "More" sheet is on screen (iPhone app). */
++    readonly nativeMoreOpen = signal(false);
++
 +    toggleMore(): void {
++        if (this.isIosApp) {
++            void this.openNativeMore();
++            return;
++        }
 +        if (this.moreOpen() && !this.moreClosing()) this.closeMore();
 +        else if (!this.moreOpen()) this.moreOpen.set(true);
++    }
++
++    /**
++     * iPhone app: "More" is the system's own sheet (Liquid Glass on iOS 26), described here and
++     * drawn by the phone. The page performs whatever row the user picks.
++     */
++    private async openNativeMore(): Promise<void> {
++        const native = (
++            window as unknown as {
++                d7tNative?: {
++                    call<T>(method: string, args?: unknown): Promise<T>;
++                };
++            }
++        ).d7tNative;
++        if (!native || this.nativeMoreOpen()) return;
++
++        const actions = new Map<string, () => void>();
++        const linkRow = (link: PortalRailLink, icon: string) => {
++            const id = `link:${link.path.join('/')}`;
++            actions.set(id, () => void this.router.navigate(link.path));
++            return { id, title: String(link.tooltip ?? ''), icon };
++        };
++        const symbolFor = (link: PortalRailLink): string => {
++            const path = link.path.join('/');
++            if (/favorites/.test(path)) return 'heart.fill';
++            if (/recently-added/.test(path)) return 'sparkles';
++            if (/recent/.test(path)) return 'clock.arrow.circlepath';
++            if (/sources/.test(path)) return 'list.bullet.rectangle';
++            return 'circle';
++        };
++
++        const groups: unknown[] = [];
++        const playlists = this.playlistContext.playlists();
++        const current = this.playlistContext.resolvedPlaylistId();
++        if (!this.hasNoPlaylists() && playlists.length) {
++            groups.push({
++                heading: 'Source',
++                items: [
++                    ...playlists.map((playlist) => {
++                        const id = `playlist:${playlist._id}`;
++                        actions.set(id, () =>
++                            this.playlistContext.selectPlaylist(playlist)
++                        );
++                        return {
++                            id,
++                            title: playlist.title,
++                            icon: 'play.rectangle.on.rectangle',
++                            checked: playlist._id === current,
++                        };
++                    }),
++                    ...this.otherLinks().map((link) =>
++                        linkRow(link, symbolFor(link))
++                    ),
++                ],
++            });
++        }
++        groups.push({
++            heading: 'Library',
++            items: this.libraryLinks().map((link) =>
++                linkRow(link, symbolFor(link))
++            ),
++        });
++        const tools: unknown[] = [];
++        actions.set('add', () => this.addPlaylistRequested.emit());
++        tools.push({ id: 'add', title: 'Add playlist', icon: 'plus' });
++        actions.set('palette', () => this.commandPaletteRequested.emit());
++        tools.push({ id: 'palette', title: 'Open command palette', icon: 'bolt.fill' });
++        if (this.parentalLockState() !== 'off') {
++            actions.set('lock', () => this.parentalLockToggleRequested.emit());
++            tools.push({
++                id: 'lock',
++                title:
++                    this.parentalLockState() === 'locked'
++                        ? 'Unlock parental lock'
++                        : 'Lock with parental lock',
++                icon: this.parentalLockState() === 'locked' ? 'lock.fill' : 'lock.open.fill',
++            });
++        }
++        groups.push({ heading: 'Tools', items: tools });
++        actions.set('settings', () => void this.router.navigate(['/workspace/settings']));
++        groups.push({
++            items: [{ id: 'settings', title: 'Settings', icon: 'gearshape.fill' }],
++        });
++
++        this.nativeMoreOpen.set(true);
++        try {
++            const picked = await native.call<string | null>('ui.sheet', {
++                title: 'More',
++                groups,
++            });
++            if (picked) actions.get(picked)?.();
++        } catch {
++            // The sheet could not be shown; nothing to do.
++        } finally {
++            this.nativeMoreOpen.set(false);
++        }
 +    }
 +
 +    /** The sheet slides down and the scrim fades before it leaves the DOM. */
