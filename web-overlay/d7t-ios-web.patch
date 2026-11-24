@@ -1,9 +1,9 @@
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..beb3166
+index 0000000..e67e164
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,467 @@
+@@ -0,0 +1,513 @@
 +@mixin phone-controls {
 +            grid-template-columns: auto minmax(0, 1fr) !important;
 +            grid-template-areas:
@@ -471,6 +471,69 @@ index 0000000..beb3166
 +    display: none !important;
 +    pointer-events: none !important;
 +}
++
++// "Audio from another channel": on a phone the panel opens as a sheet over the page (the inline
++// picture is far too short to hold a channel list) and, in fullscreen, over the whole picture.
++@media (max-width: 640px) {
++    html.d7t-ios .player-controls__split-audio-panel {
++        position: fixed !important;
++        inset: auto 12px calc(92px + env(safe-area-inset-bottom)) 12px !important;
++        z-index: 2147483000 !important;
++        display: flex;
++        justify-content: center;
++
++        .split-audio {
++            width: 100% !important;
++            max-width: 520px;
++            max-height: 62vh !important;
++        }
++    }
++
++    html.d7t-ios.d7t-has-fullscreen .player-controls__split-audio-panel {
++        bottom: calc(12px + env(safe-area-inset-bottom)) !important;
++    }
++}
++
++// The clock-picking window: a sheet over the top of the screen on a phone; the audio list
++// steps aside while it is open (both would otherwise cover the 200 px picture).
++@media (max-width: 640px) {
++    html.d7t-ios app-audio-sync-window {
++        position: fixed !important;
++        left: 10px !important;
++        right: 10px !important;
++        top: calc(env(safe-area-inset-top) + 52px) !important;
++        width: auto !important;
++        z-index: 2147483001 !important;
++
++        > * {
++            width: 100% !important;
++            max-width: none !important;
++            max-height: calc(100vh - 190px - env(safe-area-inset-top)) !important;
++            box-sizing: border-box;
++        }
++    }
++
++    html.d7t-ios:has(app-audio-sync-window) .player-controls__split-audio-panel {
++        display: none !important;
++    }
++}
+diff --git a/apps/web/src/app/app.component.ts b/apps/web/src/app/app.component.ts
+index 3f52add..7aef310 100644
+--- a/apps/web/src/app/app.component.ts
++++ b/apps/web/src/app/app.component.ts
+@@ -194,7 +194,11 @@ export class AppComponent implements OnInit {
+      * Applies the operating system color scheme when no explicit theme is set
+      */
+     detectDarkMode(): void {
+-        this.settingsService.changeTheme(Theme.SystemTheme);
++        // The iPhone app starts in the pure-black look (the reference apps); a theme the user picks is kept.
++        const phoneApp = !!(window as unknown as { d7tNative?: unknown }).d7tNative;
++        this.settingsService.changeTheme(
++            phoneApp ? Theme.BlackOledTheme : Theme.SystemTheme
++        );
+     }
+ 
+     /**
 diff --git a/apps/web/src/app/app.config.ts b/apps/web/src/app/app.config.ts
 index 1b79f58..79854e2 100644
 --- a/apps/web/src/app/app.config.ts
@@ -1012,18 +1075,23 @@ index 0000000..2cc1c96
 +}
 diff --git a/apps/web/src/app/ios/ios-mpv-host.ts b/apps/web/src/app/ios/ios-mpv-host.ts
 new file mode 100644
-index 0000000..51db722
+index 0000000..67010c2
 --- /dev/null
 +++ b/apps/web/src/app/ios/ios-mpv-host.ts
-@@ -0,0 +1,392 @@
+@@ -0,0 +1,734 @@
 +import type {
 +    ElectronBridgeApi,
 +    EmbeddedMpvBounds,
++    EmbeddedMpvFrameCapture,
++    EmbeddedMpvFrameRegion,
 +    EmbeddedMpvSession,
 +    EmbeddedMpvSupport,
 +    ResolvedPortalPlayback,
++    SplitAudioSyncAction,
 +} from '@iptvnator/shared/interfaces';
 +import { getD7tNative } from './ios-bridge';
++import type { SplitAudioAddon } from './split/embedded-mpv-split-audio-addon';
++import { EmbeddedMpvSplitAudioManager } from './split/embedded-mpv-split-audio-manager';
 +
 +/**
 + * The embedded-MPV half of the desktop bridge, for the iPhone app.
@@ -1054,16 +1122,154 @@ index 0000000..51db722
 +
 +const POSITION_PUBLISH_MS = 500;
 +
++interface FrameSlot {
++    sid: string | null;
++    region: EmbeddedMpvFrameRegion | null;
++    maxWidth: number;
++    busy: boolean;
++    timer: number | null;
++    last: (EmbeddedMpvFrameCapture & { at: number; region: EmbeddedMpvFrameRegion | null }) | null;
++    seq: number;
++    askedAt?: number;
++}
++
++const FRAME_PUMP_MS = 350;
++const FRAME_IDLE_MS = 4000;
++const noop = (): void => undefined;
++
++const newSlot = (): FrameSlot => ({
++    sid: null,
++    region: null,
++    maxWidth: 640,
++    busy: false,
++    timer: null,
++    last: null,
++    seq: 0,
++});
++
++const sameRegion = (
++    a: EmbeddedMpvFrameRegion | null,
++    b: EmbeddedMpvFrameRegion | null
++): boolean =>
++    a === null || b === null
++        ? a === b
++        : Math.abs(a.x - b.x) < 1e-3 &&
++          Math.abs(a.y - b.y) < 1e-3 &&
++          Math.abs(a.width - b.width) < 1e-3 &&
++          Math.abs(a.height - b.height) < 1e-3;
++
 +class IosMpvHost {
 +    private readonly listeners = new Set<Listener>();
 +    private readonly sessions = new Map<string, EmbeddedMpvSession>();
 +    private readonly lastPublish = new Map<string, number>();
++    private readonly lastStatus = new Map<string, string>();
++    /** The hidden "sound" sessions of the two-session audio mode (the page never sees them). */
++    private readonly hidden = new Set<string>();
++    private mainSessionId: string | null = null;
++    private soundRegion: EmbeddedMpvFrameRegion | null = null;
 +    private counter = 0;
++    private readonly frames: Record<'main' | 'preview', FrameSlot> = {
++        main: newSlot(),
++        preview: newSlot(),
++    };
++
++    /** What the two-session pair reads and drives (the manager is the desktop's own code). */
++    private readonly splitAddon: SplitAudioAddon = {
++        setPaused: (id, paused) => {
++            // The pair reads the session's status right away (a freeze checks that it really holds).
++            const session = this.sessions.get(id);
++            if (session && session.status !== 'loading') session.status = paused ? 'paused' : 'playing';
++            void this.native('mpv.paused', { sid: id, paused }).catch(noop);
++        },
++        seek: (id, seconds) =>
++            void this.native('mpv.seek', { sid: id, seconds }).catch(noop),
++        seekBy: (id, delta) =>
++            void this.native('mpv.seekBy', { sid: id, seconds: delta }).catch(noop),
++        setSpeed: (id, speed) => {
++            const session = this.sessions.get(id);
++            if (session) session.playbackSpeed = speed;
++            void this.native('mpv.speed', { sid: id, speed }).catch(noop);
++        },
++        setVolume: (id, volume) => {
++            const session = this.sessions.get(id);
++            if (session) session.volume = volume;
++            void this.native('mpv.volume', { sid: id, volume: toMpvVolume(volume) }).catch(noop);
++        },
++        getSessionSnapshot: (id) => {
++            const s = this.sessions.get(id);
++            if (!s) return null;
++            return {
++                status: s.status,
++                positionSeconds: s.positionSeconds,
++                volume: s.volume,
++                playbackSpeed: s.playbackSpeed,
++                stats: {
++                    bufferedAheadSeconds: s.stats?.bufferedAheadSeconds,
++                },
++            };
++        },
++    };
++
++    private readonly split = new EmbeddedMpvSplitAudioManager({
++        addon: () => this.splitAddon,
++        usesFrameCopy: () => true,
++        now: () => Date.now(),
++        createSession: (bounds, title, volume) =>
++            this.createHiddenSession(bounds, title, volume),
++        loadPlayback: (id, playback) => void this.loadEmbeddedMpvPlayback(id, playback),
++        setPaused: (id, paused) => void this.setEmbeddedMpvPaused(id, paused),
++        seekBy: (id, delta) => void this.seekEmbeddedMpvBy(id, delta),
++        disposeSession: (id) => void this.disposeEmbeddedMpvSession(id),
++        warn: (message, error) => console.warn(`[split-audio] ${message}`, error),
++    });
 +
 +    constructor() {
 +        getD7tNative()?.on('mpv', (payload) =>
 +            this.onEvent(payload as MpvEventPayload)
 +        );
++        window.setInterval(() => this.tickSplit(), 500);
++    }
++
++    /** About twice a second, like the desktop's polling: the pair steers, the page gets its status. */
++    private tickSplit(): void {
++        this.split.tick();
++        for (const id of this.sessions.keys()) {
++            if (!this.hidden.has(id) && this.split.pairOf(id)) this.publish(id, true);
++        }
++    }
++
++    private createHiddenSession(
++        _bounds: EmbeddedMpvBounds,
++        title: string,
++        volume: number
++    ): string {
++        const id = `ios-s-${Date.now().toString(36)}-${++this.counter}`;
++        const now = new Date().toISOString();
++        this.hidden.add(id);
++        this.sessions.set(id, {
++            id,
++            title,
++            streamUrl: '',
++            status: 'loading',
++            positionSeconds: 0,
++            durationSeconds: null,
++            volume,
++            audioTracks: [],
++            selectedAudioTrackId: null,
++            subtitleTracks: [],
++            selectedSubtitleTrackId: null,
++            playbackSpeed: 1,
++            aspectOverride: 'auto',
++            startedAt: now,
++            updatedAt: now,
++        });
++        void this.native('mpv.create', {
++            sid: id,
++            bounds: { x: 0, y: 0, width: 2, height: 2 },
++            hidden: true,
++            volume: toMpvVolume(volume),
++        }).catch((error) => console.warn('[split-audio] sound session failed', error));
++        return id;
 +    }
 +
 +    private native(method: string, args: Record<string, unknown>) {
@@ -1085,7 +1291,14 @@ index 0000000..51db722
 +        }
 +        this.lastPublish.set(id, now);
 +        session.updatedAt = new Date(now).toISOString();
++        const previous = this.lastStatus.get(id) ?? null;
++        if (previous !== session.status) {
++            this.lastStatus.set(id, session.status);
++            this.split.onStatus(id, session.status, previous, false, session.error);
++        }
 +        const copy = { ...session };
++        if (this.hidden.has(id)) return copy;
++        this.split.decorate(copy);
 +        this.listeners.forEach((listener) => listener(copy));
 +        return copy;
 +    }
@@ -1213,8 +1426,11 @@ index 0000000..51db722
 +    getEmbeddedMpvSupport = async (): Promise<EmbeddedMpvSupport> => ({
 +        supported: true,
 +        platform: 'ios',
-+        engine: 'native',
-+        frameCopyAvailable: false,
++        // The phone shows the same player chrome as the desktop's frame-copy engine (it carries the
++        // "audio from another channel" panel and the clock-sync window); the picture itself is still
++        // drawn by the native view behind the page, so the page canvas stays empty.
++        engine: 'frame-copy',
++        frameCopyAvailable: true,
 +        capabilities: {
 +            subtitles: true,
 +            playbackSpeed: true,
@@ -1251,14 +1467,22 @@ index 0000000..51db722
 +            updatedAt: now,
 +        };
 +        this.sessions.set(id, session);
-+        await this.native('mpv.create', { sid: id, bounds, volume: initialVolume });
-+        return { ...session };
++        this.mainSessionId = id;
++        // Two-session audio is always available on the phone: the clock of the other channel is read
++        // from its hidden player (see the frame calls below).
++        this.split.allow(id, { extraOptions: [], autoReconnect: true, splitAudio: true }, 0);
++        await this.native('mpv.create', { sid: id, bounds, volume: toMpvVolume(initialVolume) });
++        const copy = { ...session };
++        this.split.decorate(copy);
++        return copy;
 +    };
 +
 +    loadEmbeddedMpvPlayback = async (
 +        sessionId: string,
 +        playback: ResolvedPortalPlayback
 +    ): Promise<void> => {
++        // A new picture ends the audio channel that belonged to the old one.
++        this.split.onUserLoad(sessionId);
 +        this.update(sessionId, {
 +            streamUrl: playback.streamUrl,
 +            title: playback.title,
@@ -1281,26 +1505,33 @@ index 0000000..51db722
 +
 +    setEmbeddedMpvPaused = async (sessionId: string, paused: boolean) => {
 +        await this.native('mpv.paused', { sid: sessionId, paused });
++        this.split.onSetPaused(sessionId, paused);
 +        return this.update(sessionId, { status: paused ? 'paused' : 'playing' });
 +    };
 +
 +    seekEmbeddedMpv = async (sessionId: string, seconds: number) => {
++        this.split.onSeekTo(sessionId, seconds);
 +        await this.native('mpv.seek', { sid: sessionId, seconds });
 +        return this.update(sessionId, { positionSeconds: seconds });
 +    };
 +
 +    seekEmbeddedMpvBy = async (sessionId: string, deltaSeconds: number) => {
++        this.split.onSeekBy(sessionId, deltaSeconds);
 +        await this.native('mpv.seekBy', { sid: sessionId, seconds: deltaSeconds });
 +        return this.sessions.get(sessionId) ?? null;
 +    };
 +
 +    setEmbeddedMpvVolume = async (sessionId: string, volume: number) => {
-+        await this.native('mpv.volume', { sid: sessionId, volume });
++        if (!this.split.onSetVolume(sessionId, volume)) {
++            await this.native('mpv.volume', { sid: sessionId, volume: toMpvVolume(volume) });
++        }
 +        return this.update(sessionId, { volume });
 +    };
 +
 +    setEmbeddedMpvSpeed = async (sessionId: string, speed: number) => {
-+        await this.native('mpv.speed', { sid: sessionId, speed });
++        if (!this.split.onSetSpeed(sessionId, speed)) {
++            await this.native('mpv.speed', { sid: sessionId, speed });
++        }
 +        return this.update(sessionId, { playbackSpeed: speed });
 +    };
 +
@@ -1337,9 +1568,16 @@ index 0000000..51db722
 +    };
 +
 +    disposeEmbeddedMpvSession = async (sessionId: string) => {
++        this.split.onDispose(sessionId);
 +        const session = this.sessions.get(sessionId) ?? null;
 +        this.sessions.delete(sessionId);
 +        this.lastPublish.delete(sessionId);
++        this.lastStatus.delete(sessionId);
++        this.hidden.delete(sessionId);
++        if (this.mainSessionId === sessionId) this.mainSessionId = null;
++        for (const slot of Object.values(this.frames)) {
++            if (slot.sid === sessionId) this.stopSlot(slot);
++        }
 +        try {
 +            await this.native('mpv.dispose', { sid: sessionId });
 +        } catch {
@@ -1362,6 +1600,11 @@ index 0000000..51db722
 +    ) => {
 +        const session = this.sessions.get(sessionId);
 +        if (!session) return null;
++        if (playback) this.soundRegion = playback.clockRegion ?? null;
++        // Two sessions: the other channel plays in its own hidden player, kept in step with the picture.
++        if (this.split.setExternalAudio(sessionId, playback, delaySeconds)) {
++            return this.publish(sessionId);
++        }
 +        if (!playback) {
 +            const own = this.ownAudio.get(sessionId);
 +            this.ownAudio.delete(sessionId);
@@ -1395,18 +1638,3358 @@ index 0000000..51db722
 +    };
 +
 +    setEmbeddedMpvExternalAudioDelay = async (sessionId: string, seconds: number) => {
++        const delay = Math.max(-60, Math.min(60, seconds));
++        if (this.split.setExternalAudioDelay(sessionId, delay)) {
++            return this.publish(sessionId);
++        }
 +        await this.native('mpv.prop', { sid: sessionId, name: 'audio-delay', value: seconds });
 +        return this.sessions.get(sessionId) ?? null;
 +    };
 +
-+    detachEmbeddedMpvFrameView = (): void => undefined;
++    // ------------------------------------------------------------ two-session audio + clock frames
++
++    reportEmbeddedMpvSplitAudioLateness = async (
++        sessionId: string,
++        latenessSeconds: number,
++        manual = false
++    ): Promise<boolean> => this.split.report(sessionId, latenessSeconds, manual);
++
++    setEmbeddedMpvSplitAudioAuto = async (sessionId: string, on: boolean): Promise<boolean> =>
++        this.split.setAuto(sessionId, on);
++
++    setEmbeddedMpvSplitAudioSyncMode = async (
++        sessionId: string,
++        mode: 'auto' | 'manual'
++    ): Promise<boolean> => {
++        const done = this.split.setSyncMode(sessionId, mode);
++        if (done) this.publish(sessionId);
++        return done;
++    };
++
++    splitEmbeddedMpvAudioSyncAction = async (
++        sessionId: string,
++        action: SplitAudioSyncAction
++    ): Promise<boolean> => {
++        const known = ['start', 'cancel', 'quick', 'original-audio-on', 'original-audio-off'];
++        if (!known.includes(action)) return false;
++        const done = this.split.syncAction(sessionId, action);
++        if (done) this.publish(sessionId);
++        return done;
++    };
++
++    /** The standalone clock preview is a third connection; the two-session mode replaces it. */
++    createEmbeddedMpvPreviewSession = async (): Promise<EmbeddedMpvSession> => {
++        throw new Error('The clock preview is not available while the two-session audio mode is on.');
++    };
++
++    attachEmbeddedMpvFrameView = async (
++        sessionId: string,
++        role: 'main' | 'preview' = 'main'
++    ): Promise<boolean> => {
++        if (!this.sessions.has(sessionId)) return false;
++        const slot = this.frames[role];
++        slot.sid = sessionId;
++        slot.last = null;
++        // The player attaches its main session just by playing; reading pictures is costly, so the
++        // pump runs only while somebody (the clock sync) keeps asking for frames.
++        if (role !== 'main') this.startSlot(role);
++        return true;
++    };
++
++    detachEmbeddedMpvFrameView = (role: 'main' | 'preview' = 'main'): void => {
++        this.stopSlot(this.frames[role]);
++    };
++
++    /** The newest picture of a role (cropped to `region`), read from the player the last time it was asked. */
++    captureEmbeddedMpvFrame = (
++        role: 'main' | 'preview',
++        region?: EmbeddedMpvFrameRegion,
++        maxWidth?: number
++    ): EmbeddedMpvFrameCapture | null => {
++        const slot = this.frames[role];
++        slot.askedAt = Date.now();
++        if (role === 'main') {
++            slot.region = region ?? null;
++            slot.maxWidth = maxWidth ?? 640;
++            if (!slot.sid && this.mainSessionId) slot.sid = this.mainSessionId;
++            this.startSlot('main');
++        }
++        const last = slot.last;
++        if (!last || !sameRegion(last.region, role === 'main' ? slot.region : this.soundRegion)) {
++            return null;
++        }
++        return {
++            width: last.width,
++            height: last.height,
++            data: last.data,
++            ageMs: Date.now() - last.at,
++            seq: last.seq,
++        };
++    };
++
++    private startSlot(role: 'main' | 'preview'): void {
++        const slot = this.frames[role];
++        if (slot.timer !== null) return;
++        slot.timer = window.setInterval(() => void this.pumpFrame(role), FRAME_PUMP_MS);
++    }
++
++    private stopSlot(slot: FrameSlot): void {
++        if (slot.timer !== null) window.clearInterval(slot.timer);
++        slot.timer = null;
++        slot.sid = null;
++        slot.last = null;
++        slot.busy = false;
++    }
++
++    private async pumpFrame(role: 'main' | 'preview'): Promise<void> {
++        const slot = this.frames[role];
++        const sid = slot.sid;
++        if (role === 'main' && Date.now() - (slot.askedAt ?? 0) > FRAME_IDLE_MS) {
++            if (slot.timer !== null) window.clearInterval(slot.timer);
++            slot.timer = null;
++            return;
++        }
++        if (!sid || slot.busy || !this.sessions.has(sid)) return;
++        const region = role === 'main' ? slot.region : this.soundRegion;
++        slot.busy = true;
++        try {
++            const result = (await this.native('mpv.frame', {
++                sid,
++                region,
++                maxWidth: role === 'main' ? slot.maxWidth : 640,
++            })) as { width: number; height: number; base64: string };
++            if (slot.sid !== sid) return;
++            const binary = atob(result.base64);
++            const data = new Uint8ClampedArray(binary.length);
++            for (let i = 0; i < binary.length; i++) data[i] = binary.charCodeAt(i);
++            slot.last = {
++                width: result.width,
++                height: result.height,
++                data,
++                ageMs: 0,
++                seq: ++slot.seq,
++                at: Date.now(),
++                region,
++            };
++            if (role === 'preview') paintPreview(slot.last);
++        } catch {
++            /* the player has no picture yet */
++        } finally {
++            slot.busy = false;
++        }
++    }
 +}
++
++/**
++ * The clock window and the sync bar show the sound channel's picture on their own canvases; on the
++ * desktop the preload script paints them, here the frames that were just read are drawn.
++ */
++function paintPreview(frame: { width: number; height: number; data: Uint8ClampedArray }): void {
++    const canvases = document.querySelectorAll<HTMLCanvasElement>('canvas[data-embedded-mpv-preview]');
++    canvases.forEach((canvas) => {
++        const context = canvas.getContext('2d');
++        if (!context) return;
++        if (canvas.width !== frame.width || canvas.height !== frame.height) {
++            canvas.width = frame.width;
++            canvas.height = frame.height;
++        }
++        context.putImageData(new ImageData(frame.data as Uint8ClampedArray<ArrayBuffer>, frame.width, frame.height), 0, 0);
++    });
++}
++
++/** The player's volume is 0..1; mpv wants 0..100 (1 would be 1 % — practically silent). */
++const toMpvVolume = (value: number): number =>
++    Math.round(Math.max(0, Math.min(1, Number.isFinite(value) ? value : 1)) * 100);
 +
 +export function installIosMpvHost(): void {
 +    if (typeof window === 'undefined' || !getD7tNative()) return;
 +    const host = window as unknown as { d7tMpv?: unknown };
 +    if (host.d7tMpv) return;
 +    host.d7tMpv = new IosMpvHost() as unknown as ElectronBridgeApi;
++    // The clock window asks for the frame-copy canvas before it offers itself; the phone reads frames
++    // from the players instead, so a hidden stand-in satisfies that check.
++    const canvas = document.createElement('canvas');
++    canvas.setAttribute('data-embedded-mpv-frame', '');
++    canvas.hidden = true;
++    (document.body ?? document.documentElement).appendChild(canvas);
++}
+diff --git a/apps/web/src/app/ios/ios-touch.ts b/apps/web/src/app/ios/ios-touch.ts
+new file mode 100644
+index 0000000..431a44d
+--- /dev/null
++++ b/apps/web/src/app/ios/ios-touch.ts
+@@ -0,0 +1,80 @@
++/**
++ * iPhone WebKit never fires `contextmenu` for a long press, and the app opens its channel menu
++ * (add to favourites, audio from this channel, ...) from that event. A press held for about half a
++ * second without moving now raises the same event at the finger, and the tap that ends it is
++ * swallowed so the item is not also opened.
++ */
++export function installIosLongPress(): void {
++    if (typeof window === 'undefined' || !(window as unknown as { d7tNative?: unknown }).d7tNative) {
++        return;
++    }
++    const HOLD_MS = 500;
++    const MOVE_LIMIT = 10;
++    let timer: number | null = null;
++    let startX = 0;
++    let startY = 0;
++    let target: EventTarget | null = null;
++    let fired = false;
++
++    const clear = () => {
++        if (timer !== null) window.clearTimeout(timer);
++        timer = null;
++    };
++
++    document.addEventListener(
++        'touchstart',
++        (event) => {
++            clear();
++            fired = false;
++            if (event.touches.length !== 1) return;
++            const touch = event.touches[0];
++            startX = touch.clientX;
++            startY = touch.clientY;
++            target = event.target;
++            timer = window.setTimeout(() => {
++                timer = null;
++                fired = true;
++                target?.dispatchEvent(
++                    new MouseEvent('contextmenu', {
++                        bubbles: true,
++                        cancelable: true,
++                        clientX: startX,
++                        clientY: startY,
++                        button: 2,
++                        view: window,
++                    })
++                );
++            }, HOLD_MS);
++        },
++        { passive: true }
++    );
++    document.addEventListener(
++        'touchmove',
++        (event) => {
++            const touch = event.touches[0];
++            if (
++                timer !== null &&
++                touch &&
++                Math.hypot(touch.clientX - startX, touch.clientY - startY) > MOVE_LIMIT
++            ) {
++                clear();
++            }
++        },
++        { passive: true }
++    );
++    const end = () => clear();
++    document.addEventListener('touchend', end, { passive: true });
++    document.addEventListener('touchcancel', end, { passive: true });
++    // The click that follows a long press must not open the item as well.
++    document.addEventListener(
++        'click',
++        (event) => {
++            if (fired) {
++                fired = false;
++                event.stopPropagation();
++                event.preventDefault();
++            }
++        },
++        true
++    );
++}
+diff --git a/apps/web/src/app/ios/split/embedded-mpv-preview-session.ts b/apps/web/src/app/ios/split/embedded-mpv-preview-session.ts
+new file mode 100644
+index 0000000..b767a13
+--- /dev/null
++++ b/apps/web/src/app/ios/split/embedded-mpv-preview-session.ts
+@@ -0,0 +1,95 @@
++import type {
++    EmbeddedMpvBounds,
++    EmbeddedMpvFrameRegion,
++    EmbeddedMpvPreviewRequest,
++} from '@iptvnator/shared/interfaces';
++
++/**
++ * Recipe for the silent preview session of the audio-sync window: the
++ * helper decodes the audio channel's picture, but only the scoreboard region
++ * is cropped out, only a few frames per second are produced, and nothing is
++ * played. All of it is mpv options, so the helper binary stays unchanged.
++ */
++
++const DEFAULT_OUTPUT_WIDTH = 480;
++const MIN_OUTPUT_WIDTH = 160;
++const MAX_OUTPUT_WIDTH = 960;
++const MIN_OUTPUT_HEIGHT = 24;
++const MAX_OUTPUT_HEIGHT = 540;
++/** Smallest region edge (fraction of the frame) that is still a region. */
++const MIN_REGION_EDGE = 0.02;
++/** Frames per second of the crop: enough for a once-a-second clock. */
++const PREVIEW_FRAMES_PER_SECOND = 4;
++/** Broadcast pictures are 16:9; the region's aspect is derived from it. */
++const SOURCE_ASPECT = 16 / 9;
++
++export interface EmbeddedMpvPreviewPlan {
++    bounds: EmbeddedMpvBounds;
++    /** mpv `key=value` lines, applied after the user's own options. */
++    options: string[];
++    region: EmbeddedMpvFrameRegion | null;
++}
++
++export function clampPreviewRegion(
++    region: EmbeddedMpvFrameRegion | undefined
++): EmbeddedMpvFrameRegion | null {
++    if (!region) return null;
++    const values = [region.x, region.y, region.width, region.height];
++    if (!values.every((value) => Number.isFinite(value))) return null;
++    const width = Math.min(1, Math.max(MIN_REGION_EDGE, region.width));
++    const height = Math.min(1, Math.max(MIN_REGION_EDGE, region.height));
++    return {
++        x: Math.min(1 - width, Math.max(0, region.x)),
++        y: Math.min(1 - height, Math.max(0, region.y)),
++        width,
++        height,
++    };
++}
++
++function fraction(value: number): string {
++    return value.toFixed(4);
++}
++
++export function buildEmbeddedMpvPreviewPlan(
++    request: EmbeddedMpvPreviewRequest | undefined
++): EmbeddedMpvPreviewPlan {
++    const region = clampPreviewRegion(request?.region);
++    const requestedWidth = Number.isFinite(request?.outputWidth)
++        ? Math.round(request?.outputWidth as number)
++        : DEFAULT_OUTPUT_WIDTH;
++    const width = Math.min(
++        MAX_OUTPUT_WIDTH,
++        Math.max(MIN_OUTPUT_WIDTH, requestedWidth)
++    );
++    const aspect = region
++        ? (region.width * SOURCE_ASPECT) / region.height
++        : SOURCE_ASPECT;
++    const height = Math.min(
++        MAX_OUTPUT_HEIGHT,
++        Math.max(MIN_OUTPUT_HEIGHT, Math.round(width / aspect))
++    );
++
++    const filters = region
++        ? [
++              `crop=iw*${fraction(region.width)}:ih*${fraction(region.height)}:iw*${fraction(region.x)}:ih*${fraction(region.y)}`,
++              `fps=${PREVIEW_FRAMES_PER_SECOND}`,
++          ]
++        : [`fps=${PREVIEW_FRAMES_PER_SECOND}`];
++
++    return {
++        bounds: { x: 0, y: 0, width, height },
++        region,
++        options: [
++            // Nothing is heard from this session and no audio is decoded.
++            'ao=null',
++            'aid=no',
++            'mute=yes',
++            // Software filters need frames in system memory.
++            'hwdec=auto-copy',
++            `vf=lavfi=[${filters.join(',')}]`,
++            // A tiny picture must not hold large buffers.
++            'demuxer-max-bytes=8MiB',
++            'demuxer-max-back-bytes=1MiB',
++        ],
++    };
++}
+diff --git a/apps/web/src/app/ios/split/embedded-mpv-session-options.ts b/apps/web/src/app/ios/split/embedded-mpv-session-options.ts
+new file mode 100644
+index 0000000..8213580
+--- /dev/null
++++ b/apps/web/src/app/ios/split/embedded-mpv-session-options.ts
+@@ -0,0 +1,7 @@
++/** The per-session knobs the two-session audio manager reads (the desktop reads them from its settings mirror). */
++export interface EmbeddedMpvSessionOptions {
++    extraOptions: string[];
++    autoReconnect: boolean;
++    splitAudio?: boolean;
++    splitAudioDBaseSeconds?: number;
++}
+diff --git a/apps/web/src/app/ios/split/embedded-mpv-split-audio-addon.ts b/apps/web/src/app/ios/split/embedded-mpv-split-audio-addon.ts
+new file mode 100644
+index 0000000..05637e4
+--- /dev/null
++++ b/apps/web/src/app/ios/split/embedded-mpv-split-audio-addon.ts
+@@ -0,0 +1,52 @@
++import type {
++    EmbeddedMpvBounds,
++    ResolvedPortalPlayback,
++} from '@iptvnator/shared/interfaces';
++import { buildEmbeddedMpvPreviewPlan } from './embedded-mpv-preview-session';
++
++/** Pause between closing a provider connection and opening the next one. */
++export const SOUND_REPLACE_SETTLE_MS = 2500;
++/** Options of the preview recipe that would silence or starve the sound. */
++const SILENCING_OPTIONS =
++    /^(ao|aid|mute|demuxer-max-bytes|demuxer-max-back-bytes)=/;
++
++/**
++ * The hidden sound session paints only the other channel's match clock (the
++ * crop the renderer asked for, a few frames a second), so reading the clock
++ * needs no third session. Everything else is the preview recipe, minus what
++ * would mute it.
++ */
++export function soundSessionPlan(playback: ResolvedPortalPlayback): {
++    bounds: EmbeddedMpvBounds;
++    options: string[];
++} {
++    const plan = buildEmbeddedMpvPreviewPlan({ region: playback.clockRegion });
++    return {
++        bounds: plan.bounds,
++        options: plan.options.filter(
++            (option) => !SILENCING_OPTIONS.test(option)
++        ),
++    };
++}
++
++/** The slice of the raw addon the manager reads and writes directly. */
++export interface SplitAudioAddon {
++    /** Below the service: the sync freeze must not look like the user's pause. */
++    setPaused(sessionId: string, paused: boolean): void;
++    seek(sessionId: string, seconds: number): void;
++    seekBy?(sessionId: string, deltaSeconds: number): void;
++    setSpeed(sessionId: string, speed: number): void;
++    setVolume(sessionId: string, volume: number): void;
++    getSessionSnapshot(sessionId: string): {
++        status: string;
++        positionSeconds: number;
++        volume: number;
++        playbackSpeed?: number;
++        stats?: {
++            bufferedAheadSeconds?: number;
++            droppedFrames?: number;
++            videoBitrateBps?: number;
++            audioBitrateBps?: number;
++        };
++    } | null;
++}
+diff --git a/apps/web/src/app/ios/split/embedded-mpv-split-audio-host.ts b/apps/web/src/app/ios/split/embedded-mpv-split-audio-host.ts
+new file mode 100644
+index 0000000..926f6ca
+--- /dev/null
++++ b/apps/web/src/app/ios/split/embedded-mpv-split-audio-host.ts
+@@ -0,0 +1,61 @@
++import type { EmbeddedMpvBounds } from '@iptvnator/shared/interfaces';
++import type { EmbeddedMpvSessionOptions } from './embedded-mpv-session-options';
++import type { SoundSnapshot, SplitAudioHost } from './embedded-mpv-split-audio';
++import type { SplitAudioManagerDeps } from './embedded-mpv-split-audio-manager';
++
++/**
++ * The pair's way to the sessions (see SplitAudioHost): every call goes
++ * through the service's own session functions, so the sound session is a
++ * session like any other (reconnect, snapshots, disposal) and the manager is
++ * the only owner of when it exists.
++ */
++export function createSplitAudioHost(
++    deps: SplitAudioManagerDeps,
++    permitOptions: EmbeddedMpvSessionOptions,
++    plan: { bounds: EmbeddedMpvBounds; options: string[] }
++): SplitAudioHost {
++    const readSound = (id: string): SoundSnapshot | null => {
++        const snap = deps.addon().getSessionSnapshot(id);
++        if (!snap) return null;
++        return {
++            status: snap.status,
++            positionSeconds: snap.positionSeconds,
++            bufferedAheadSeconds: snap.stats?.bufferedAheadSeconds ?? null,
++            droppedFrames: snap.stats?.droppedFrames ?? null,
++            bitrateBps:
++                snap.stats?.videoBitrateBps !== undefined ||
++                snap.stats?.audioBitrateBps !== undefined
++                    ? (snap.stats?.videoBitrateBps ?? 0) +
++                      (snap.stats?.audioBitrateBps ?? 0)
++                    : null,
++        };
++    };
++    const soundOptions = [...permitOptions.extraOptions, ...plan.options];
++    let soundId: string | null = null;
++    return {
++        now: () => deps.now(),
++        createSoundSession: () => {
++            soundId = deps.createSession(plan.bounds, '', 0, {
++                extraOptions: soundOptions,
++                autoReconnect: true,
++            });
++            return soundId;
++        },
++        load: (id, playback) => deps.loadPlayback(id, playback),
++        setPaused: (id, paused) => deps.setPaused(id, paused),
++        seekBy: (id, delta) => deps.seekBy(id, delta),
++        hold: (id, on) => deps.addon().setPaused(id, on),
++        jump: (id, delta) => {
++            const addon = deps.addon();
++            if (addon.seekBy) return addon.seekBy(id, delta);
++            const at = addon.getSessionSnapshot(id)?.positionSeconds ?? 0;
++            addon.seek(id, Math.max(0, at + delta));
++        },
++        cacheOptions: (id) =>
++            id === soundId ? soundOptions : permitOptions.extraOptions,
++        setSpeed: (id, speed) => deps.addon().setSpeed(id, speed),
++        setVolume: (id, volume) => deps.addon().setVolume(id, volume),
++        disposeSession: (id) => deps.disposeSession(id),
++        snapshot: (id) => readSound(id),
++    };
++}
+diff --git a/apps/web/src/app/ios/split/embedded-mpv-split-audio-manager.ts b/apps/web/src/app/ios/split/embedded-mpv-split-audio-manager.ts
+new file mode 100644
+index 0000000..3eabdb0
+--- /dev/null
++++ b/apps/web/src/app/ios/split/embedded-mpv-split-audio-manager.ts
+@@ -0,0 +1,513 @@
++import type {
++    EmbeddedMpvBounds,
++    EmbeddedMpvFrameRegion,
++    EmbeddedMpvSession,
++    EmbeddedMpvSplitAudioNotice,
++    ResolvedPortalPlayback,
++    SplitAudioSyncAction,
++} from '@iptvnator/shared/interfaces';
++import {
++    SOUND_REPLACE_SETTLE_MS,
++    soundSessionPlan,
++    type SplitAudioAddon,
++} from './embedded-mpv-split-audio-addon';
++import type { EmbeddedMpvSessionOptions } from './embedded-mpv-session-options';
++import {
++    SplitAudioPair,
++    type SplitAudioSyncMode,
++} from './embedded-mpv-split-audio';
++import { decoratePayload } from './split-audio-pair-status';
++import { createSplitAudioHost } from './embedded-mpv-split-audio-host';
++
++export { SOUND_REPLACE_SETTLE_MS } from './embedded-mpv-split-audio-addon';
++export type { SplitAudioAddon } from './embedded-mpv-split-audio-addon';
++
++/**
++ * Owns the main-session -> sound-session pairs of the two-session "audio from
++ * another channel" mode and is the only place the native service talks to
++ * about it. The service passes each user command through here; a command that
++ * belongs to a pair is handled (and the service skips its own handling), any
++ * other returns false and takes the unchanged audio-add path.
++ */
++
++/** Delay the frame-copy picture path adds to the picture, seconds (estimate). */
++export const DEFAULT_SPLIT_AUDIO_D_BASE_SECONDS = 0.08;
++
++export interface SplitAudioManagerDeps {
++    addon(): SplitAudioAddon;
++    /** True when the frame-copy engine is the active one. */
++    usesFrameCopy(): boolean;
++    now(): number;
++    createSession(
++        bounds: EmbeddedMpvBounds,
++        title: string,
++        initialVolume: number,
++        options: EmbeddedMpvSessionOptions
++    ): string;
++    loadPlayback(sessionId: string, playback: ResolvedPortalPlayback): void;
++    setPaused(sessionId: string, paused: boolean): void;
++    seekBy(sessionId: string, deltaSeconds: number): void;
++    disposeSession(sessionId: string): void;
++    warn(message: string, error?: unknown): void;
++}
++
++interface Permit {
++    /** The user's choice of the picture's own audio while the sound is frozen. */
++    freezeAudio?: boolean;
++    dBaseSeconds: number;
++    options: EmbeddedMpvSessionOptions;
++}
++
++export class EmbeddedMpvSplitAudioManager {
++    private readonly permits = new Map<string, Permit>();
++    private readonly pairs = new Map<string, SplitAudioPair>();
++    private readonly soundToMain = new Map<string, string>();
++    private readonly failures = new Map<
++        string,
++        { message: string; notice: EmbeddedMpvSplitAudioNotice }
++    >();
++    /** Sync mode the user chose per main session; survives a replaced sound. */
++    private readonly modes = new Map<string, SplitAudioSyncMode>();
++    private readonly pending = new Map<string, ReturnType<typeof setTimeout>>();
++    private readonly regions = new Map<string, EmbeddedMpvFrameRegion | null>();
++    /**
++     * The user's volume and speed while a replacement sound is on its way. The picture session is muted (and may be slowed by the
++     * sync factor) in that gap, so its snapshot is not what the user chose.
++     */
++    /** Pictures whose Auto Sync run must start again on the pair that is about to replace the current one. */
++    private readonly restartSync = new Set<string>();
++    private readonly carried = new Map<
++        string,
++        { volume: number; speed: number }
++    >();
++
++    constructor(private readonly deps: SplitAudioManagerDeps) {}
++
++    /** Called when a main session is created with the feature switched on. */
++    allow(
++        mainId: string,
++        options: EmbeddedMpvSessionOptions,
++        dBaseSeconds = DEFAULT_SPLIT_AUDIO_D_BASE_SECONDS
++    ): void {
++        this.permits.set(mainId, { dBaseSeconds, options });
++    }
++
++    pairOf(sessionId: string): SplitAudioPair | undefined {
++        return this.pairs.get(sessionId);
++    }
++
++    isSoundSession(sessionId: string): boolean {
++        return this.soundToMain.has(sessionId);
++    }
++
++    /** What a reload of `sessionId` must leave it: paused only for the user's pause. */
++    pausedAfterReload(sessionId: string): boolean {
++        const pair = this.pairs.get(
++            this.soundToMain.get(sessionId) ?? sessionId
++        );
++        return pair?.paused ?? false;
++    }
++
++    // ------------------------------------------------------------ audio add
++
++    /** Returns true when the pair handled the request (audio-add must not). */
++    setExternalAudio(
++        mainId: string,
++        playback: ResolvedPortalPlayback | null,
++        delaySeconds: number
++    ): boolean {
++        const permit = this.permits.get(mainId);
++        const existing = this.pairs.get(mainId);
++        if (!playback) {
++            if (!existing) return false;
++            this.stop(mainId);
++            return true;
++        }
++        if (!permit || !this.deps.usesFrameCopy()) return false;
++        this.failures.delete(mainId);
++        this.cancelPending(mainId);
++        if (existing) {
++            // Another channel, or the same one cropped differently: the old
++            // connection closes first, the picture stays muted meanwhile.
++            this.carried.set(mainId, {
++                volume: existing.volume,
++                speed: existing.speed,
++            });
++            // The clock window reopens the sound (cropped to the picked clock) while Auto Sync is on:
++            // the run goes on with the new session instead of silently ending.
++            if (existing.syncRunning) this.restartSync.add(mainId);
++            this.stop(mainId, false);
++            this.pending.set(
++                mainId,
++                setTimeout(() => {
++                    this.pending.delete(mainId);
++                    if (
++                        !this.startPair(mainId, permit, playback, delaySeconds)
++                    ) {
++                        this.restoreCarried(mainId);
++                        this.failOpen(mainId);
++                    }
++                }, SOUND_REPLACE_SETTLE_MS)
++            );
++            return true;
++        }
++        if (this.soundSessionOf(mainId) !== null) {
++            // Never a second sound session, and never the audio-add path
++            // (it opens its own connections) while the pair mode is on.
++            this.failOpen(mainId);
++            return true;
++        }
++        return this.startPair(mainId, permit, playback, delaySeconds);
++    }
++
++    private startPair(
++        mainId: string,
++        permit: Permit,
++        playback: ResolvedPortalPlayback,
++        delaySeconds: number
++    ): boolean {
++        // One sound session per picture, always: the connections are the
++        // picture's and the sound's, and a replacement closes the old one
++        // before this runs.
++        if (this.pairs.has(mainId) || this.soundSessionOf(mainId) !== null) {
++            this.deps.warn(
++                `Two-session audio refused a second sound session for ${mainId}.`
++            );
++            return false;
++        }
++        const host = createSplitAudioHost(
++            this.deps,
++            permit.options,
++            soundSessionPlan(playback)
++        );
++        const snap = this.deps.addon().getSessionSnapshot(mainId);
++        const carry = this.carried.get(mainId);
++        this.carried.delete(mainId);
++        const pair = new SplitAudioPair(
++            host,
++            {
++                mainId,
++                syncMode: this.modes.get(mainId) ?? 'auto',
++                userSpeed: carry?.speed ?? snap?.playbackSpeed ?? 1,
++                userVolume: carry?.volume ?? snap?.volume ?? 1,
++                paused: snap?.status === 'paused',
++                dBaseSeconds: permit.dBaseSeconds,
++                trimSeconds: delaySeconds,
++            },
++            {
++                // Not inside the pair's own tick: the pair is taken apart.
++                giveUp: () =>
++                    setTimeout(
++                        () =>
++                            this.fail(
++                                mainId,
++                                'The audio channel stalled twice within five minutes; the original channel audio was restored.',
++                                'stalled'
++                            ),
++                        0
++                    ),
++            }
++        );
++        pair.setOriginalAudioDuringFreeze(permit.freezeAudio ?? false);
++        try {
++            const soundId = pair.start(playback);
++            this.regions.set(mainId, playback.clockRegion ?? null);
++            this.pairs.set(mainId, pair);
++            this.soundToMain.set(soundId, mainId);
++            if (this.restartSync.delete(mainId)) pair.startCarriedRun();
++            return true;
++        } catch (error) {
++            this.deps.warn(
++                'Two-session audio could not start; using the audio-add path.',
++                error
++            );
++            this.abandon(pair);
++            return false;
++        }
++    }
++
++    setExternalAudioDelay(mainId: string, delaySeconds: number): boolean {
++        const pair = this.pairs.get(mainId);
++        if (!pair) return false;
++        pair.setTrim(delaySeconds);
++        return true;
++    }
++
++    // ------------------------------------------------------- user commands
++
++    onSetPaused(mainId: string, paused: boolean): void {
++        this.pairs.get(mainId)?.onPause(paused);
++    }
++
++    onSeekBy(mainId: string, deltaSeconds: number): void {
++        this.pairs.get(mainId)?.onSeekBy(deltaSeconds);
++    }
++
++    onSeekTo(mainId: string, targetSeconds: number): void {
++        const pair = this.pairs.get(mainId);
++        if (!pair) return;
++        const snap = this.deps.addon().getSessionSnapshot(mainId);
++        pair.onSeekBy(targetSeconds - (snap?.positionSeconds ?? targetSeconds));
++    }
++
++    /** True when the pair applied the speed (user speed x sync factor). */
++    onSetSpeed(mainId: string, speed: number): boolean {
++        const carry = this.carried.get(mainId);
++        if (carry) {
++            carry.speed = speed;
++            return true;
++        }
++        const pair = this.pairs.get(mainId);
++        if (!pair) return false;
++        pair.setUserSpeed(speed);
++        return true;
++    }
++
++    /** True when the pair applied the volume (the sound session plays it). */
++    onSetVolume(mainId: string, volume: number): boolean {
++        const carry = this.carried.get(mainId);
++        if (carry) {
++            carry.volume = volume;
++            return true;
++        }
++        const pair = this.pairs.get(mainId);
++        if (!pair) return false;
++        pair.setUserVolume(volume);
++        return true;
++    }
++
++    /** A user-driven load replaces the picture the sound belonged to. */
++    onUserLoad(mainId: string): void {
++        this.cancelPending(mainId);
++        if (this.pairs.has(mainId)) this.stop(mainId);
++    }
++
++    onDispose(sessionId: string): void {
++        const mainId = this.soundToMain.get(sessionId);
++        if (mainId) {
++            // The sound session is gone: the pair cannot go on.
++            this.soundToMain.delete(sessionId);
++            const pair = this.pairs.get(mainId);
++            if (pair) pair.soundId = null;
++            this.fail(
++                mainId,
++                'The audio channel session ended.',
++                'channel-lost'
++            );
++            return;
++        }
++        this.cancelPending(sessionId);
++        if (this.pairs.has(sessionId)) this.stop(sessionId);
++        this.regions.delete(sessionId);
++        this.permits.delete(sessionId);
++        this.failures.delete(sessionId);
++        this.modes.delete(sessionId);
++    }
++
++    /** Measurement from the renderer: lateness of the sound, seconds. */
++    report(mainId: string, lateness: number, manual: boolean): boolean {
++        const pair = this.pairs.get(mainId);
++        if (!pair) return false;
++        pair[manual ? 'reportManualLateness' : 'reportLateness'](lateness);
++        return true;
++    }
++
++    /** Auto (clock readings) or manual (typed offset): the one decision source. */
++    setSyncMode(mainId: string, mode: SplitAudioSyncMode): boolean {
++        if (!this.permits.has(mainId)) return false;
++        this.modes.set(mainId, mode);
++        this.pairs.get(mainId)?.setSyncMode(mode);
++        return true;
++    }
++
++    /**
++     * The clock preview is a third session. While the two-session mode is on
++     * the sound session already shows the clock, so no preview may open: the
++     * limit is the picture and the sound, two connections.
++     */
++    previewAllowed(): boolean {
++        return this.permits.size === 0 && this.pairs.size === 0;
++    }
++
++    /** The user's sync buttons: Auto Sync (start/cancel) and Quick sync. */
++    syncAction(mainId: string, action: SplitAudioSyncAction): boolean {
++        const pair = this.pairs.get(mainId);
++        if (!pair) {
++            // The sound is being replaced right now: Sync pressed in that moment is kept, not refused.
++            if (this.pending.has(mainId)) {
++                if (action === 'start') this.restartSync.add(mainId);
++                else if (action === 'cancel') this.restartSync.delete(mainId);
++                return true;
++            }
++            return false;
++        }
++        if (action === 'cancel') this.restartSync.delete(mainId);
++        const permit = this.permits.get(mainId);
++        if (permit && action.startsWith('original-audio')) {
++            // Kept with the permit: it survives a replaced sound.
++            permit.freezeAudio = action === 'original-audio-on';
++        }
++        return pair.syncAction(action);
++    }
++
++    setAuto(mainId: string, on: boolean): boolean {
++        const pair = this.pairs.get(mainId);
++        if (!pair) return false;
++        pair.setAutoCorrection(on);
++        return true;
++    }
++
++    // ---------------------------------------------------------- observation
++
++    /** Every poll (about twice a second). */
++    tick(): void {
++        for (const [mainId, pair] of this.pairs) {
++            try {
++                pair.tick();
++            } catch (error) {
++                this.deps.warn(
++                    `Two-session audio tick failed for ${mainId}.`,
++                    error
++                );
++            }
++        }
++    }
++
++    /** From each session's refresh: status transitions drive resets. */
++    onStatus(
++        sessionId: string,
++        status: string,
++        previous: string | null,
++        hasReconnect: boolean,
++        error?: string
++    ): void {
++        const mainId = this.soundToMain.get(sessionId);
++        if (mainId) {
++            if (status === 'error' && !hasReconnect) {
++                // What mpv said is the only way to tell a provider that
++                // refuses a second connection from a stream that cannot be
++                // decoded, so it travels with the failure (and the log).
++                const reason = error?.trim().slice(0, 300);
++                this.deps.warn(
++                    `The sound session of ${mainId} failed${reason ? `: ${reason}` : ' without a reason from mpv.'}`
++                );
++                // Not inside the sound session's own refresh: it is disposed.
++                setTimeout(
++                    () =>
++                        this.fail(
++                            mainId,
++                            `The audio channel stopped and could not be reloaded${reason ? `: ${reason}` : '.'}`,
++                            'channel-lost'
++                        ),
++                    0
++                );
++            } else if (status === 'playing' && previous !== 'playing') {
++                const pair = this.pairs.get(mainId);
++                // The sound's own resume after a sync freeze is not a reload.
++                if (!pair?.ownsTransition('sound')) pair?.onSoundReloaded();
++            }
++            return;
++        }
++        if (status === 'playing' && previous !== 'playing') {
++            const pair = this.pairs.get(sessionId);
++            // Likewise the picture's resume after a sync freeze.
++            if (!pair?.ownsTransition('picture')) pair?.onMainReloaded();
++        }
++    }
++
++    /** Overrides what the picture session reports with what the pair means. */
++    decorate(payload: EmbeddedMpvSession): void {
++        const pair = this.pairs.get(payload.id);
++        if (pair) {
++            decoratePayload(
++                pair,
++                payload,
++                this.regions.get(payload.id) ?? null
++            );
++        }
++        if (this.permits.has(payload.id)) payload.splitAudioEnabled = true;
++        const failure = this.failures.get(payload.id);
++        if (failure) {
++            payload.splitAudioNotice = failure.notice;
++            if (!payload.externalAudioError) {
++                payload.externalAudioError = failure.message;
++            }
++        }
++    }
++
++    // ------------------------------------------------------------ internals
++
++    /** Ends the pair and hands the main session back its sound and speed. */
++    private stop(mainId: string, restoreMain = true): void {
++        if (restoreMain) this.restartSync.delete(mainId);
++        const pair = this.pairs.get(mainId);
++        if (!pair) return;
++        this.pairs.delete(mainId);
++        if (pair.soundId) this.soundToMain.delete(pair.soundId);
++        try {
++            pair.stop(restoreMain);
++        } catch (error) {
++            this.deps.warn(
++                `Two-session audio stop failed for ${mainId}.`,
++                error
++            );
++        }
++    }
++
++    /** The sound is gone for good: give the picture its own sound back. */
++    private fail(
++        mainId: string,
++        message: string,
++        notice: EmbeddedMpvSplitAudioNotice
++    ): void {
++        this.failures.set(mainId, { message, notice });
++        this.stop(mainId);
++    }
++
++    private failOpen(mainId: string): void {
++        this.fail(
++            mainId,
++            'The audio channel could not be opened.',
++            'open-failed'
++        );
++    }
++
++    private soundSessionOf(mainId: string): string | null {
++        for (const [soundId, owner] of this.soundToMain) {
++            if (owner === mainId) return soundId;
++        }
++        return null;
++    }
++
++    private cancelPending(mainId: string): void {
++        const timer = this.pending.get(mainId);
++        if (timer === undefined) return;
++        clearTimeout(timer);
++        this.pending.delete(mainId);
++        this.carried.delete(mainId);
++    }
++
++    /** A replacement that never started: the muted picture gets the user's volume and speed back. */
++    private restoreCarried(mainId: string): void {
++        const carry = this.carried.get(mainId);
++        this.carried.delete(mainId);
++        if (!carry) return;
++        try {
++            this.deps.addon().setVolume(mainId, carry.volume);
++            this.deps.addon().setSpeed(mainId, carry.speed);
++        } catch {
++            // the picture session may already be gone
++        }
++    }
++
++    private abandon(pair: SplitAudioPair): void {
++        const soundId = pair.soundId;
++        if (!soundId) return;
++        this.soundToMain.delete(soundId);
++        try {
++            pair.stop();
++        } catch {
++            // already reported by the caller
++        }
++    }
++}
+diff --git a/apps/web/src/app/ios/split/embedded-mpv-split-audio.ts b/apps/web/src/app/ios/split/embedded-mpv-split-audio.ts
+new file mode 100644
+index 0000000..28fe9cb
+--- /dev/null
++++ b/apps/web/src/app/ios/split/embedded-mpv-split-audio.ts
+@@ -0,0 +1,551 @@
++import type {
++    EmbeddedMpvSplitAudioStatus,
++    ResolvedPortalPlayback,
++    SplitAudioSyncAction,
++} from '@iptvnator/shared/interfaces';
++import { FreezeHolds, RESUME_GRACE_MS } from './split-audio-freeze-holds';
++import { runQuickSync } from './split-audio-quick-sync';
++import { SoundWatch } from './split-audio-sound-watch';
++import { createRunIO } from './split-audio-run-io';
++import { SyncCorrector } from './split-audio-corrector';
++import type { AudioIssue } from './split-audio-health';
++import { AutoSyncRun, type SyncSide } from './split-audio-sync-run';
++import { buildSplitAudioStatus } from './split-audio-pair-status';
++
++/**
++ * "Audio from another channel" with two sessions: the main session keeps the
++ * picture (muted) and a second, hidden session plays the other channel's
++ * sound. This class owns the link between them:
++ *
++ *  - every control the user gives the player reaches both (pause, seek, speed,
++ *    volume), so the pair behaves like one player;
++ *  - the user's speed and the sync correction are separate numbers. The speed
++ *    each session really gets is `userSpeed x factor` (factor: 1 or a small
++ *    slowdown from the corrector), so a correction never changes what the
++ *    user chose and the user's choice never cancels a correction;
++ *  - the target the correction aims at is `D_base + trim`: D_base is the fixed
++ *    delay of the frame-copy picture path, trim is the user's fine delay. The
++ *    sound session's own `audio-delay` is never used (it moves the hidden
++ *    picture, not what is heard);
++ *  - pause, seek, reload and reconnect void the measurement: factors go back
++ *    to 1 and the lateness is measured again;
++ *  - the pair has ONE decision source, chosen by `syncMode`: in 'auto' only
++ *    the readings taken off the two match clocks steer the corrector, in
++ *    'manual' only the offset the user typed does. The other source is
++ *    ignored, and the corrector is the only thing that ever changes a speed
++ *    (the user's trim moves its target, never a speed);
++ *  - the sound is watched all the time. The first reliable fault (a stall, a
++ *    starved buffer, a speed mpv does not follow, dropped frames) voids the
++ *    measurement and gives both sessions the user's speed back, whichever one
++ *    was slowed. A second one within the policy window gives the external
++ *    sound up: `hooks.giveUp` makes the owner close the sound session and hand
++ *    the picture its own audio back.
++ *
++ * It talks to mpv only through `SplitAudioHost`, so the whole thing is unit
++ * tested without a helper process.
++ */
++export interface SoundSnapshot {
++    status: string;
++    positionSeconds: number;
++    bufferedAheadSeconds: number | null;
++    droppedFrames: number | null;
++    /** Video + audio bitrate mpv measured, bits per second. */
++    bitrateBps?: number | null;
++}
++
++export interface SplitAudioHost {
++    now(): number;
++    createSoundSession(): string;
++    load(sessionId: string, playback: ResolvedPortalPlayback): void;
++    setPaused(sessionId: string, paused: boolean): void;
++    /**
++     * Pauses/resumes a session for the sync freeze only. It never goes through
++     * the user's pause path (the pair would take it for the user's pause).
++     */
++    hold(sessionId: string, on: boolean): void;
++    /** `key=value` options the session was started with (cache limits). */
++    cacheOptions(sessionId: string): readonly string[];
++    seekBy(sessionId: string, deltaSeconds: number): void;
++    /** A jump of one session only, not the user's seek (it never reaches the pair). */
++    jump(sessionId: string, deltaSeconds: number): void;
++    setSpeed(sessionId: string, speed: number): void;
++    setVolume(sessionId: string, volume: number): void;
++    disposeSession(sessionId: string): void;
++    snapshot(sessionId: string): SoundSnapshot | null;
++}
++
++export type SplitAudioSyncMode = 'auto' | 'manual';
++
++export interface SplitAudioHooks {
++    /** The sound kept failing: the owner must end the pair. */
++    giveUp(issue: AudioIssue): void;
++}
++
++export interface SplitAudioInit {
++    mainId: string;
++    syncMode?: SplitAudioSyncMode;
++    userSpeed: number;
++    userVolume: number;
++    paused: boolean;
++    /** Fixed delay of the frame-copy picture path, seconds. */
++    dBaseSeconds: number;
++    trimSeconds: number;
++}
++
++/** Quiet time before the lateness is judged again, by cause. */
++export { RESUME_GRACE_MS };
++export const SETTLE_MS = { pause: 3000, seek: 4000, reload: 5000 } as const;
++const QUICK_SHOWN_MS = 15000;
++const MIN_SPEED = 0.25;
++const MAX_SPEED = 4;
++
++export function clampSpeed(speed: number): number {
++    return Math.min(MAX_SPEED, Math.max(MIN_SPEED, speed));
++}
++
++function round5(value: number): number {
++    return Math.round(value * 1e5) / 1e5;
++}
++
++export class SplitAudioPair {
++    readonly mainId: string;
++    soundId: string | null = null;
++    private userSpeed: number;
++    private userVolume: number;
++    private userPaused: boolean;
++    private carriedRun = false;
++    private trimSeconds: number;
++    private readonly dBaseSeconds: number;
++    private appliedMain = NaN;
++    private appliedSound = NaN;
++    private speedChangedAt = 0;
++    private syncMode: SplitAudioSyncMode;
++    private autoOn = true;
++    private disabledReason: string | null = null;
++    private readonly corrector = new SyncCorrector();
++    private readonly watch = new SoundWatch();
++    private readonly run: AutoSyncRun;
++    private fineOn = false;
++    private readonly holds: FreezeHolds;
++    private lastReading: { value: number; at: number } | null = null;
++    private manualVoided: EmbeddedMpvSplitAudioStatus['manualVoided'] = null;
++    private quick: EmbeddedMpvSplitAudioStatus['quickSync'] = null;
++    private quickAt = 0;
++    private startedAt = 0;
++
++    constructor(
++        private readonly host: SplitAudioHost,
++        init: SplitAudioInit,
++        private readonly hooks: SplitAudioHooks = { giveUp: () => undefined }
++    ) {
++        this.mainId = init.mainId;
++        this.syncMode = init.syncMode ?? 'auto';
++        this.userSpeed = clampSpeed(init.userSpeed);
++        this.userVolume = init.userVolume;
++        this.userPaused = init.paused;
++        this.trimSeconds = init.trimSeconds;
++        this.dBaseSeconds = init.dBaseSeconds;
++        this.corrector.setTarget(this.target());
++        this.corrector.setSpeed(this.userSpeed, host.now());
++        this.holds = new FreezeHolds(
++            host,
++            this.mainId,
++            () => this.soundId,
++            () => this.userVolume,
++            () => this.userPaused
++        );
++        this.run = new AutoSyncRun(
++            createRunIO({
++                host,
++                mainId: this.mainId,
++                soundId: () => this.soundId,
++                target: () => this.target(),
++                userSpeed: () => this.userSpeed,
++                corrector: this.corrector,
++                hold: (side, on) => this.holds.hold(side, on),
++                setFine: (on, now) => this.setFine(on, now),
++                giveUp: () => this.hooks.giveUp('stall'),
++            })
++        );
++    }
++
++    // ------------------------------------------------------------ lifecycle
++
++    start(playback: ResolvedPortalPlayback): string {
++        const id = this.host.createSoundSession();
++        this.soundId = id;
++        this.host.setVolume(id, this.userVolume);
++        this.host.load(id, playback);
++        this.speedChangedAt = this.host.now();
++        this.startedAt = this.speedChangedAt;
++        // The picture is muted for as long as the pair lives.
++        this.host.setVolume(this.mainId, 0);
++        this.applySpeeds(true);
++        if (this.userPaused) this.host.setPaused(id, true);
++        this.resetSync('reload');
++        return id;
++    }
++
++    /**
++     * Hands the session back as it was: its own speed and volume. With
++     * `restoreMain` false the picture stays muted (a replacement sound is on
++     * its way).
++     */
++    stop(restoreMain = true): void {
++        // A frozen picture must never be left frozen.
++        this.run.cancel(null);
++        const id = this.soundId;
++        this.soundId = null;
++        try {
++            this.host.setSpeed(this.mainId, this.userSpeed);
++            if (restoreMain) this.host.setVolume(this.mainId, this.userVolume);
++        } catch {
++            // the main session may already be gone
++        }
++        if (id) this.host.disposeSession(id);
++    }
++
++    // ------------------------------------------------------------- controls
++
++    setUserSpeed(speed: number): void {
++        this.userSpeed = clampSpeed(speed);
++        this.corrector.setSpeed(this.userSpeed, this.host.now());
++        this.applySpeeds(true);
++    }
++
++    setUserVolume(volume: number): void {
++        this.userVolume = volume;
++        if (this.soundId) this.host.setVolume(this.soundId, volume);
++        this.holds.onVolume(volume);
++    }
++
++    get volume(): number {
++        return this.userVolume;
++    }
++
++    get speed(): number {
++        return this.userSpeed;
++    }
++
++    get paused(): boolean {
++        return this.userPaused;
++    }
++
++    setTrim(seconds: number): void {
++        this.trimSeconds = Number.isFinite(seconds) ? seconds : 0;
++        this.corrector.setTarget(this.target());
++    }
++
++    /**
++     * Auto or manual. A change throws away what the other source measured and
++     * lets the speeds go; the new source starts from nothing.
++     */
++    setSyncMode(mode: SplitAudioSyncMode): void {
++        if (mode === this.syncMode) return;
++        this.syncMode = mode;
++        this.manualVoided = null;
++        this.resetSync('reload');
++    }
++
++    get mode(): SplitAudioSyncMode {
++        return this.syncMode;
++    }
++
++    setAutoCorrection(on: boolean): void {
++        this.autoOn = on;
++        if (on) {
++            this.disabledReason = null;
++            this.watch.policy.reset();
++            this.resetSync('reload');
++        } else {
++            this.run.cancel(null);
++            this.releaseFactors();
++        }
++    }
++
++    onPause(paused: boolean): void {
++        this.userPaused = paused;
++        if (this.soundId) this.host.setPaused(this.soundId, paused);
++        this.resetSync('pause');
++    }
++
++    /** The main picture jumped by `deltaSeconds`; the sound follows it. */
++    onSeekBy(deltaSeconds: number): void {
++        if (
++            this.soundId &&
++            Number.isFinite(deltaSeconds) &&
++            deltaSeconds !== 0
++        ) {
++            this.host.seekBy(this.soundId, deltaSeconds);
++        }
++        this.resetSync('seek');
++    }
++
++    /** The main session loaded a stream, by the user or by a reconnect. */
++    onMainReloaded(): void {
++        this.resetSync('reload');
++    }
++
++    /**
++     * The sound session reloaded after a drop. mpv's keep-open parks it paused
++     * at the end of the old stream and the reload would inherit that: it has
++     * to be unpaused, but only when the user is not paused.
++     */
++    onSoundReloaded(): void {
++        if (!this.soundId) return;
++        this.host.setPaused(this.soundId, this.userPaused);
++        this.applySpeeds(true);
++        // The first start of a sound that replaced another while Auto Sync was on is no interruption.
++        if (this.carriedRun) {
++            this.carriedRun = false;
++            return;
++        }
++        this.resetSync('reload');
++    }
++
++    /** Auto Sync goes on with this (replacement) pair: started now, kept through the sound's first start. */
++    startCarriedRun(): void {
++        if (this.startAutoSync()) this.carriedRun = true;
++    }
++
++    // ----------------------------------------------------------- correction
++
++    /**
++     * Lateness read off the two match clocks: positive when the sound is
++     * behind. Only the automatic mode listens to it, and only a started run
++     * (or its fine correction) acts on it.
++     */
++    reportLateness(seconds: number): void {
++        if (this.syncMode !== 'auto' || !this.autoOn || this.userPaused) return;
++        this.lastReading = { value: seconds, at: this.host.now() };
++        this.run.addReading(seconds);
++        if (this.fineOn) this.corrector.addReading(seconds, this.host.now());
++    }
++
++    /** One lateness the user typed; steers by dead reckoning. Manual mode only. */
++    reportManualLateness(seconds: number): void {
++        if (this.syncMode === 'manual' && this.autoOn && !this.userPaused) {
++            this.manualVoided = null;
++            this.corrector.setManual(seconds, this.host.now());
++        }
++    }
++
++    // ---------------------------------------------------- the automatic run
++
++    /** The user pressed Sync: one run, from measuring to "synced" or "failed". */
++    startAutoSync(): boolean {
++        if (
++            this.syncMode !== 'auto' ||
++            !this.autoOn ||
++            this.userPaused ||
++            !this.soundId
++        ) {
++            return false;
++        }
++        const now = this.host.now();
++        this.corrector.reset(now, 0);
++        this.releaseFactors();
++        this.fineOn = false;
++        this.quick = null;
++        return this.run.start();
++    }
++
++    /** An Auto Sync run is working (or has just been asked for). */
++    get syncRunning(): boolean {
++        return this.run.active;
++    }
++
++    cancelAutoSync(): void {
++        this.run.cancel(null);
++    }
++
++    /** The user's sync buttons (see `SplitAudioSyncAction`). */
++    syncAction(action: SplitAudioSyncAction): boolean {
++        switch (action) {
++            case 'start':
++                return this.startAutoSync();
++            case 'cancel':
++                this.cancelAutoSync();
++                break;
++            case 'quick':
++                this.quickSync();
++                break;
++            default:
++                this.setOriginalAudioDuringFreeze(
++                    action === 'original-audio-on'
++                );
++        }
++        return true;
++    }
++
++    /** True while a freeze (or the resume of one) explains a session's status. */
++    ownsTransition(side: SyncSide): boolean {
++        return this.holds.owns(side);
++    }
++
++    /** The picture is held on purpose: it must not look paused. */
++    get pictureFrozen(): boolean {
++        return this.run.pictureFrozen;
++    }
++
++    /** The user's choice: the picture's own audio plays while the sound is frozen. */
++    setOriginalAudioDuringFreeze(on: boolean): void {
++        this.holds.setOriginalAudio(on);
++    }
++
++    /**
++     * "Quick sync", only ever on the user's button: the session that is ahead
++     * jumps back by the difference. It needs a reading, the history to jump
++     * into and a cache that really keeps that much behind the playhead.
++     */
++    quickSync(): NonNullable<EmbeddedMpvSplitAudioStatus['quickSync']> {
++        const now = this.host.now();
++        const fresh = this.lastReading && now - this.lastReading.at <= 6000;
++        const result = runQuickSync({
++            host: this.host,
++            mainId: this.mainId,
++            soundId: this.soundId,
++            userPaused: this.userPaused,
++            lateness:
++                this.syncMode === 'manual'
++                    ? this.corrector.state.lateness
++                    : fresh
++                      ? (this.lastReading?.value ?? null)
++                      : null,
++            target: this.target(),
++            startedAt: this.startedAt,
++            beforeJump: () => this.run.cancel(null),
++            afterJump: () => this.resetSync('seek'),
++        });
++        this.quick = result;
++        this.quickAt = now;
++        return result;
++    }
++
++    /** Called about twice a second. */
++    tick(): void {
++        const id = this.soundId;
++        if (!id) return;
++        const now = this.host.now();
++        this.watchSound(id, now);
++        if (!this.autoOn || this.userPaused) return;
++        if (this.syncMode === 'auto') this.run.tick();
++        if (
++            (this.syncMode === 'manual' || this.fineOn) &&
++            this.corrector.step(now)
++        ) {
++            this.applySpeeds(false);
++        }
++    }
++
++    status(): EmbeddedMpvSplitAudioStatus {
++        const now = this.host.now();
++        return buildSplitAudioStatus({
++            syncMode: this.syncMode,
++            autoOn: this.autoOn,
++            userPaused: this.userPaused,
++            correction: this.corrector.state,
++            factors: this.corrector.factors,
++            run: this.run.status(),
++            soundId: this.soundId ?? '',
++            userSpeed: this.userSpeed,
++            clamp: clampSpeed,
++            targetSeconds: this.target(),
++            dBaseSeconds: this.dBaseSeconds,
++            trimSeconds: this.trimSeconds,
++            audioRate: this.watch.audioRate,
++            issue: this.watch.shownIssue(now),
++            disabledReason: this.disabledReason,
++            manualVoided: this.manualVoided,
++            originalAudioDuringFreeze: this.holds.originalAudio,
++            quick: now - this.quickAt < QUICK_SHOWN_MS ? (this.quick ?? null) : null,
++        });
++    }
++
++    // ------------------------------------------------------------ internals
++
++    private target(): number {
++        return this.dBaseSeconds + this.trimSeconds;
++    }
++
++    private resetSync(cause: keyof typeof SETTLE_MS): void {
++        this.voidManual(cause);
++        this.run.cancel('interrupted');
++        this.fineOn = false;
++        this.corrector.reset(this.host.now(), SETTLE_MS[cause]);
++        this.watch.reset();
++        this.releaseFactors();
++    }
++
++    /**
++     * A manual correction that was under way ends here. It is not applied
++     * again by itself: the user is told and decides (the value is still typed).
++     */
++    private voidManual(
++        cause: NonNullable<EmbeddedMpvSplitAudioStatus['manualVoided']>
++    ): void {
++        if (
++            this.syncMode === 'manual' &&
++            this.corrector.state.active !== null
++        ) {
++            this.manualVoided = cause;
++        }
++    }
++
++    /** The fine correction of a run starts or stops (stopping gives the user's speed back). */
++    private setFine(on: boolean, now: number): void {
++        this.fineOn = on;
++        this.corrector.reset(now, 0);
++        if (on) this.applySpeeds(false);
++        else this.releaseFactors();
++    }
++
++    private releaseFactors(): void {
++        this.applySpeeds(false);
++    }
++
++    /** Sends `userSpeed x factor` to both sessions, only what changed. */
++    private applySpeeds(force: boolean): void {
++        const f = this.autoOn ? this.corrector.factors : { main: 1, sound: 1 };
++        const main = round5(clampSpeed(this.userSpeed * f.main));
++        const sound = round5(clampSpeed(this.userSpeed * f.sound));
++        if (force || main !== this.appliedMain) {
++            this.appliedMain = main;
++            this.host.setSpeed(this.mainId, main);
++            this.speedChangedAt = this.host.now();
++        }
++        if (this.soundId && (force || sound !== this.appliedSound)) {
++            this.appliedSound = sound;
++            this.host.setSpeed(this.soundId, sound);
++            this.speedChangedAt = this.host.now();
++        }
++    }
++
++    private watchSound(id: string, now: number): void {
++        const snap = this.host.snapshot(id);
++        if (!snap) return;
++        const issue = this.watch.observe(snap, {
++            now,
++            speed: this.appliedSound,
++            held: this.holds.isHeld('sound'),
++            userPaused: this.userPaused,
++            steadySeconds: (now - this.speedChangedAt) / 1000,
++        });
++        if (!issue) return;
++        // A reliable fault, whichever session is the slowed one: what was
++        // measured no longer holds, so it is voided (the corrector stops and
++        // waits) and both sessions get the user's speed back.
++        const action = this.watch.policy.onIssue(now);
++        this.voidManual('fault');
++        this.run.cancel('faulted');
++        this.fineOn = false;
++        this.corrector.reset(now, this.watch.policy.holdMs);
++        this.watch.clearHealth();
++        this.applySpeeds(true);
++        if (action === 'give-up') {
++            this.autoOn = false;
++            this.disabledReason = issue;
++            this.hooks.giveUp(issue);
++        }
++    }
++}
+diff --git a/apps/web/src/app/ios/split/split-audio-cache.ts b/apps/web/src/app/ios/split/split-audio-cache.ts
+new file mode 100644
+index 0000000..32e02f2
+--- /dev/null
++++ b/apps/web/src/app/ios/split/split-audio-cache.ts
+@@ -0,0 +1,99 @@
++/**
++ * How much media a session may hold in its demuxer cache, worked out from what
++ * the session was really started with. mpv's own defaults (150 MiB ahead,
++ * 50 MiB behind) are only the fallback and are marked `assumed`: they are not
++ * a guarantee, so the freeze also watches the real growth of the cache while
++ * it runs (see split-audio-sync-run.ts).
++ */
++const MIB = 1024 * 1024;
++/** mpv defaults (0.37 and 0.42): demuxer-max-bytes / demuxer-max-back-bytes. */
++export const MPV_DEFAULT_MAX_BYTES = 150 * MIB;
++export const MPV_DEFAULT_MAX_BACK_BYTES = 50 * MIB;
++/** Used when mpv has not measured a bitrate yet: a heavy live HD stream. */
++export const FALLBACK_BITRATE_BPS = 12_000_000;
++
++export interface CacheBudget {
++    /** Most bytes the cache may hold in this direction; 0 when it is off. */
++    bytes: number;
++    /** Seconds of media that is, at the stream's bitrate. */
++    seconds: number;
++    /** True when the number is mpv's default, not something the options set. */
++    assumed: boolean;
++    /** True when the bitrate was not measured and a fallback was used. */
++    bitrateAssumed: boolean;
++}
++
++const UNITS: Record<string, number> = {
++    '': 1,
++    b: 1,
++    kib: 1024,
++    mib: MIB,
++    gib: 1024 * MIB,
++    kb: 1000,
++    mb: 1_000_000,
++    gb: 1_000_000_000,
++};
++
++/** `150MiB`, `64M`, `500000` -> bytes; null when it is not a size. */
++export function parseByteSize(value: string): number | null {
++    const match = /^\s*([0-9]+(?:\.[0-9]+)?)\s*([a-z]*)\s*$/i.exec(value);
++    if (!match) return null;
++    const unit = match[2].toLowerCase().replace(/^([kmg])$/, '$1ib');
++    const factor = UNITS[unit];
++    return factor === undefined ? null : Math.floor(Number(match[1]) * factor);
++}
++
++function lastOption(options: readonly string[], key: string): string | null {
++    let found: string | null = null;
++    for (const option of options) {
++        const at = option.indexOf('=');
++        if (at > 0 && option.slice(0, at).trim() === key) {
++            found = option.slice(at + 1).trim();
++        }
++    }
++    return found;
++}
++
++/**
++ * The cache budget of a session started with `options` (`key=value` lines,
++ * later lines win) for a stream of `bitrateBps` (null: not measured).
++ * `direction` is the part the caller needs: media buffered ahead of the
++ * playhead (a freeze) or kept behind it (a jump back).
++ */
++export function cacheBudget(
++    options: readonly string[],
++    bitrateBps: number | null,
++    direction: 'ahead' | 'back'
++): CacheBudget {
++    const bitrateAssumed = !bitrateBps || bitrateBps <= 0;
++    const bitrate = bitrateAssumed ? FALLBACK_BITRATE_BPS : bitrateBps;
++    const bytesPerSecond = bitrate / 8;
++    const off = lastOption(options, 'cache') === 'no';
++    const key =
++        direction === 'ahead' ? 'demuxer-max-bytes' : 'demuxer-max-back-bytes';
++    const set = lastOption(options, key);
++    const parsed = set === null ? null : parseByteSize(set);
++    let bytes =
++        parsed ??
++        (direction === 'ahead'
++            ? MPV_DEFAULT_MAX_BYTES
++            : MPV_DEFAULT_MAX_BACK_BYTES);
++    let seconds = bytes / bytesPerSecond;
++    if (direction === 'ahead') {
++        // `cache-secs` caps the read-ahead in time, whatever the bytes allow.
++        const capSecs = Number(lastOption(options, 'cache-secs'));
++        if (Number.isFinite(capSecs) && capSecs > 0) {
++            seconds = Math.min(seconds, capSecs);
++        }
++    }
++    if (off) {
++        bytes = 0;
++        seconds = 0;
++    }
++    return {
++        bytes,
++        seconds,
++        assumed: parsed === null && !off,
++        bitrateAssumed,
++    };
++}
+diff --git a/apps/web/src/app/ios/split/split-audio-corrector.ts b/apps/web/src/app/ios/split/split-audio-corrector.ts
+new file mode 100644
+index 0000000..15711b8
+--- /dev/null
++++ b/apps/web/src/app/ios/split/split-audio-corrector.ts
+@@ -0,0 +1,356 @@
++/**
++ * Closed-loop corrector of the two-session "audio from another channel" mode.
++ *
++ * The picture (main session, muted) and the sound (second session, picture
++ * hidden) come from two different streams, so the heard sound is `lateness`
++ * seconds behind the picture (negative: ahead). The corrector never speeds
++ * anything up (a live stream cannot run past its live edge); it slows down
++ * the session that is AHEAD by a small, bounded rate until the lateness meets
++ * the target, then lets go:
++ *
++ *  - sound too late  -> slow the main picture (muted: nothing is heard),
++ *  - sound too early -> slow the sound session (pitch kept by mpv's scaletempo).
++ *
++ * The result is a pair of factors (1 = untouched). They are kept apart from
++ * the user's own playback speed: the service multiplies them.
++ *
++ * Pure and clock-injected: it only ever sees readings and `now`.
++ */
++export interface CorrectorConfig {
++    /** Seconds the rate aims to close an error in (rate = |error| / tc). */
++    tcSeconds: number;
++    /** Start correcting above this many seconds of error. */
++    enterSeconds: number;
++    /** Stop correcting below this many seconds of error. */
++    exitSeconds: number;
++    /** Largest slowdown of the muted main picture (0.06 = 6 %). */
++    maxMainRate: number;
++    /** Largest slowdown of the sound session (kept small: it is heard). */
++    maxSoundRate: number;
++    /** Smallest slowdown worth applying. */
++    minRate: number;
++    /** Readings older than this leave the median window. */
++    windowMs: number;
++    minReadings: number;
++    /** A window whose spread exceeds this (seconds) is not trusted. */
++    madLimitSeconds: number;
++    /**
++     * A single manual reading that is NOT being steered (idle, locked, held)
++     * is dropped after this long.
++     */
++    manualHorizonMs: number;
++    /**
++     * Longest a manual reading may steer. While a correction is under way the
++     * reading stays: closing a 10 s gap at 3 % takes over five minutes, far
++     * more than `manualHorizonMs`, and a reading that expired half way left
++     * the rest of the gap in place without a word.
++     */
++    manualMaxMs: number;
++    /** Direction changes allowed in `lockWindowMs` before correction stops. */
++    maxFlips: number;
++    lockWindowMs: number;
++}
++
++export const DEFAULT_CORRECTOR_CONFIG: CorrectorConfig = {
++    tcSeconds: 25,
++    enterSeconds: 0.12,
++    exitSeconds: 0.06,
++    maxMainRate: 0.06,
++    maxSoundRate: 0.03,
++    minRate: 0.01,
++    windowMs: 9000,
++    minReadings: 4,
++    madLimitSeconds: 0.35,
++    manualHorizonMs: 150000,
++    manualMaxMs: 30 * 60000,
++    maxFlips: 3,
++    lockWindowMs: 90000,
++};
++
++export type CorrectionTarget = 'main' | 'sound';
++
++export interface CorrectionState {
++    /** Which session is being slowed, null while idle. */
++    active: CorrectionTarget | null;
++    /** Slowdown of the active session (0.03 = 3 % slower). */
++    rate: number;
++    /** Estimated lateness of the sound now, null without a usable reading. */
++    lateness: number | null;
++    /** Lateness minus target, null without an estimate. */
++    error: number | null;
++    /** Too many direction changes: no more correction until `reset`. */
++    locked: boolean;
++    /** Why there is no estimate: `none`, `settling`, `noisy`, `stale`. */
++    reason: 'ok' | 'none' | 'settling' | 'noisy' | 'stale';
++}
++
++interface Reading {
++    at: number;
++    value: number;
++    /** Cumulative applied slope when the reading was taken. */
++    cum: number;
++    manual: boolean;
++}
++
++function median(values: number[]): number {
++    const sorted = [...values].sort((a, b) => a - b);
++    const mid = sorted.length >> 1;
++    return sorted.length % 2
++        ? sorted[mid]
++        : (sorted[mid - 1] + sorted[mid]) / 2;
++}
++
++export class SyncCorrector {
++    private readings: Reading[] = [];
++    private target = 0;
++    private active: CorrectionTarget | null = null;
++    private rate = 0;
++    private holdUntil = 0;
++    private locked = false;
++    private lockedAt = 0;
++    private flips: number[] = [];
++    private lastDirection: CorrectionTarget | null = null;
++    /** Integral of dLateness/dt caused by the factors applied so far. */
++    private cum = 0;
++    private cumAt = 0;
++    /** The user's playback speed: lateness is in content seconds, which pass this much faster. */
++    private speedScale = 1;
++    private lastState: CorrectionState = this.blank('none');
++
++    constructor(
++        private readonly config: CorrectorConfig = DEFAULT_CORRECTOR_CONFIG
++    ) {}
++
++    setTarget(seconds: number): void {
++        this.target = Number.isFinite(seconds) ? seconds : 0;
++    }
++
++    /**
++     * The user's playback speed. Both sessions run at `speed x factor`, so a
++     * slowdown closes the gap `speed` times faster per wall second; the dead
++     * reckoning has to know, or it believes the gap closed at 1x.
++     */
++    setSpeed(speed: number, now: number): void {
++        this.advance(now);
++        this.speedScale = Number.isFinite(speed) && speed > 0 ? speed : 1;
++    }
++
++    /** A measured lateness (positive: the sound is behind the picture). */
++    addReading(lateness: number, now: number): void {
++        if (!Number.isFinite(lateness)) return;
++        this.advance(now);
++        this.readings.push({
++            at: now,
++            value: lateness,
++            cum: this.cum,
++            manual: false,
++        });
++        this.trim(now);
++    }
++
++    /**
++     * One trusted reading (typed by the user): replaces the window and steers
++     * by dead reckoning, since no further reading may follow.
++     */
++    setManual(lateness: number, now: number): void {
++        if (!Number.isFinite(lateness)) return;
++        this.advance(now);
++        this.readings = [
++            { at: now, value: lateness, cum: this.cum, manual: true },
++        ];
++        this.locked = false;
++        this.flips = [];
++    }
++
++    /**
++     * Pause, seek, reload, reconnect: what was measured is void. Readings are
++     * dropped, correction stops (the caller restores the speeds) and nothing
++     * is decided for `settleMs`.
++     */
++    reset(now: number, settleMs: number): void {
++        this.readings = [];
++        this.active = null;
++        this.rate = 0;
++        this.holdUntil = now + settleMs;
++        this.locked = false;
++        this.flips = [];
++        this.lastDirection = null;
++        this.cum = 0;
++        this.cumAt = now;
++        this.lastState = this.blank('settling');
++    }
++
++    /** Releases the correction at once (the caller restores the speeds). */
++    release(now: number, holdMs: number): void {
++        this.advance(now);
++        this.active = null;
++        this.rate = 0;
++        this.holdUntil = Math.max(this.holdUntil, now + holdMs);
++    }
++
++    get state(): CorrectionState {
++        return this.lastState;
++    }
++
++    /** Factors for (main, sound); (1, 1) while idle. */
++    get factors(): { main: number; sound: number } {
++        const slowed = 1 / (1 + this.rate);
++        return {
++            main: this.active === 'main' ? slowed : 1,
++            sound: this.active === 'sound' ? slowed : 1,
++        };
++    }
++
++    /** Decides from the readings; returns true when the factors changed. */
++    step(now: number): boolean {
++        this.advance(now);
++        this.trim(now);
++        const before = `${this.active}:${this.rate.toFixed(4)}`;
++        const estimate = this.estimate();
++        if (now < this.holdUntil) {
++            this.lastState = this.blank('settling');
++        } else if (estimate.value === null) {
++            this.lastState = this.blank(estimate.reason);
++            // No trustworthy number: do not keep steering on a stale guess.
++            if (estimate.reason !== 'none' || this.readings.length === 0) {
++                this.stop();
++            }
++        } else {
++            this.decide(estimate.value - this.target, estimate.value, now);
++        }
++        return before !== `${this.active}:${this.rate.toFixed(4)}`;
++    }
++
++    // ------------------------------------------------------------- internals
++
++    private blank(reason: CorrectionState['reason']): CorrectionState {
++        return {
++            active: this.active,
++            rate: this.rate,
++            lateness: null,
++            error: null,
++            locked: this.locked,
++            reason,
++        };
++    }
++
++    private stop(): void {
++        this.active = null;
++        this.rate = 0;
++    }
++
++    /** Folds the slope applied since the last call into the running integral. */
++    private advance(now: number): void {
++        if (now > this.cumAt) {
++            this.cum += this.slope() * ((now - this.cumAt) / 1000);
++            this.cumAt = now;
++        }
++    }
++
++    /**
++     * dLateness/dt: slowing the picture lowers it, slowing the sound raises it.
++     * A session slowed by `rate` runs at 1 / (1 + rate), so the gap moves by
++     * rate / (1 + rate) per second, not by `rate` (6 % slower closes 5.66 %).
++     */
++    private slope(): number {
++        if (this.active === null) return 0;
++        const closing = (this.rate / (1 + this.rate)) * this.speedScale;
++        return this.active === 'main' ? -closing : closing;
++    }
++
++    private trim(now: number): void {
++        const { windowMs, manualHorizonMs, manualMaxMs } = this.config;
++        this.readings = this.readings.filter((r) => {
++            const age = now - r.at;
++            if (!r.manual) return age <= windowMs;
++            // Steering on it: it stays until the gap is closed (or the cap).
++            return age <= (this.active !== null ? manualMaxMs : manualHorizonMs);
++        });
++    }
++
++    private estimate(): {
++        value: number | null;
++        reason: CorrectionState['reason'];
++    } {
++        if (this.readings.length === 0) return { value: null, reason: 'none' };
++        const manual = this.readings.find((r) => r.manual);
++        const compensated = this.readings.map(
++            (r) => r.value + (this.cum - r.cum)
++        );
++        if (manual && this.readings.length === 1) {
++            return { value: compensated[0], reason: 'ok' };
++        }
++        if (this.readings.length < this.config.minReadings) {
++            return { value: null, reason: 'none' };
++        }
++        const m = median(compensated);
++        const mad = median(compensated.map((v) => Math.abs(v - m)));
++        if (mad > this.config.madLimitSeconds) {
++            return { value: null, reason: 'noisy' };
++        }
++        return { value: m, reason: 'ok' };
++    }
++
++    private decide(error: number, lateness: number, now: number): void {
++        const { enterSeconds, exitSeconds, tcSeconds, minRate } = this.config;
++        // The lock is a pause for an unstable stretch, not a verdict for the rest of the playback.
++        if (this.locked && now - this.lockedAt >= this.config.lockWindowMs) {
++            this.locked = false;
++            this.flips = [];
++            this.lastDirection = null;
++        }
++        let want: CorrectionTarget | null | 'none' = null;
++        if (this.active === null) {
++            if (Math.abs(error) > enterSeconds)
++                want = error > 0 ? 'main' : 'sound';
++        } else {
++            const sameSide = error > 0 === (this.active === 'main');
++            // Overshoot or inside the dead band: let go, never reverse at once.
++            want =
++                Math.abs(error) < exitSeconds || !sameSide
++                    ? 'none'
++                    : this.active;
++        }
++        if (want === 'none') {
++            this.stop();
++        } else if (want !== null && !this.locked) {
++            if (this.lastDirection !== null && want !== this.lastDirection) {
++                this.flips = this.flips.filter(
++                    (t) => now - t < this.config.lockWindowMs
++                );
++                this.flips.push(now);
++                if (this.flips.length >= this.config.maxFlips) {
++                    this.locked = true;
++                    this.lockedAt = now;
++                }
++            }
++            if (!this.locked) {
++                this.lastDirection = want;
++                const cap =
++                    want === 'main'
++                        ? this.config.maxMainRate
++                        : this.config.maxSoundRate;
++                const rate = Math.min(
++                    cap,
++                    Math.max(minRate, Math.abs(error) / tcSeconds)
++                );
++                if (
++                    want !== this.active ||
++                    Math.abs(rate - this.rate) >= 0.003
++                ) {
++                    this.active = want;
++                    this.rate = rate;
++                }
++            }
++        }
++        if (this.locked) this.stop();
++        this.lastState = {
++            active: this.active,
++            rate: this.rate,
++            lateness,
++            error,
++            locked: this.locked,
++            reason: 'ok',
++        };
++    }
++}
+diff --git a/apps/web/src/app/ios/split/split-audio-freeze-holds.ts b/apps/web/src/app/ios/split/split-audio-freeze-holds.ts
+new file mode 100644
+index 0000000..eb82bc9
+--- /dev/null
++++ b/apps/web/src/app/ios/split/split-audio-freeze-holds.ts
+@@ -0,0 +1,80 @@
++import type { SplitAudioHost } from './embedded-mpv-split-audio';
++import type { SyncSide } from './split-audio-sync-run';
++
++/** A session resumed by the freeze reports `playing` again for this long. */
++export const RESUME_GRACE_MS = 3000;
++
++/**
++ * The sync freeze of one session: it pauses below the user's pause (the host
++ * `hold`), never resumes what the user paused, and - when the user chose it -
++ * lets the picture's own audio play while the external sound is frozen, with
++ * the two never audible together.
++ */
++export class FreezeHolds {
++    private held: Record<SyncSide, boolean> = { picture: false, sound: false };
++    private releasedAt: Record<SyncSide, number> = {
++        picture: -1e9,
++        sound: -1e9,
++    };
++    private audible = false;
++    private original = false;
++
++    constructor(
++        private readonly host: SplitAudioHost,
++        private readonly mainId: string,
++        private readonly soundId: () => string | null,
++        private readonly volume: () => number,
++        private readonly userPaused: () => boolean
++    ) {}
++
++    get originalAudio(): boolean {
++        return this.original;
++    }
++
++    isHeld(side: SyncSide): boolean {
++        return this.held[side];
++    }
++
++    /** True while a freeze, or the resume that ends it, explains a status change. */
++    owns(side: SyncSide): boolean {
++        return (
++            this.held[side] ||
++            this.host.now() - this.releasedAt[side] < RESUME_GRACE_MS
++        );
++    }
++
++    setOriginalAudio(on: boolean): void {
++        this.original = on;
++        if (!on && this.audible) this.setAudible(false);
++    }
++
++    /** The user moved the volume: the picture's audio, if on, follows it. */
++    onVolume(volume: number): void {
++        if (this.audible) this.host.setVolume(this.mainId, volume);
++    }
++
++    hold(side: SyncSide, on: boolean): void {
++        const id = side === 'picture' ? this.mainId : this.soundId();
++        if (!id) return;
++        this.held[side] = on;
++        if (!on) this.releasedAt[side] = this.host.now();
++        if (side === 'sound' && this.original) {
++            // Never both at once: the sound goes quiet before the picture's
++            // own audio comes up, and the picture is muted before the sound
++            // resumes (the commands reach the session in this order).
++            if (on) {
++                this.host.hold(id, true);
++                this.setAudible(true);
++                return;
++            }
++            this.setAudible(false);
++        }
++        // The user's pause wins: a release never resumes what they paused.
++        if (on || !this.userPaused()) this.host.hold(id, on);
++    }
++
++    private setAudible(on: boolean): void {
++        this.audible = on;
++        this.host.setVolume(this.mainId, on ? this.volume() : 0);
++    }
++}
+diff --git a/apps/web/src/app/ios/split/split-audio-health.ts b/apps/web/src/app/ios/split/split-audio-health.ts
+new file mode 100644
+index 0000000..32955dc
+--- /dev/null
++++ b/apps/web/src/app/ios/split/split-audio-health.ts
+@@ -0,0 +1,235 @@
++/**
++ * Watches the SOUND session while it is being slowed down. What is heard is
++ * what the user judges, so the check is on the sound's own clock: does the
++ * position advance at the speed that was asked for, is the buffer full, are
++ * frames being dropped? A stall, a starved buffer or a speed that mpv does not
++ * follow is what a listener hears as a gap, a stutter or a wobble.
++ *
++ * Pure: it only sees samples. The pair decides what to do with the verdicts.
++ */
++export type AudioIssue = 'stall' | 'starving' | 'rate' | 'drops';
++
++export interface HealthSample {
++    now: number;
++    status: string;
++    /** mpv's position of the sound session, seconds (fractional). */
++    positionSeconds: number;
++    /** Speed commanded to the sound session right now. */
++    speed: number;
++    bufferedAheadSeconds: number | null;
++    droppedFrames: number | null;
++    /** The user paused: no movement is expected. */
++    userPaused: boolean;
++    /** Seconds since the speed last changed (rate checks need a steady speed). */
++    steadySeconds: number;
++}
++
++export interface HealthConfig {
++    stallWindowMs: number;
++    /** Below this share of the expected advance counts as a stall. */
++    stallRatio: number;
++    starveBelowSeconds: number;
++    starveForMs: number;
++    rateWindowMs: number;
++    /** Relative error of the measured rate that counts as a mismatch. */
++    rateTolerance: number;
++    dropWindowMs: number;
++    dropLimit: number;
++}
++
++export const DEFAULT_HEALTH_CONFIG: HealthConfig = {
++    stallWindowMs: 2500,
++    stallRatio: 0.2,
++    starveBelowSeconds: 0.25,
++    starveForMs: 3000,
++    // The sound session's position moves in quarter-second steps, so a rate over a short window is only good to about +-2%
++    // (measured on a real Windows helper). 24 s brings that to under 1%, and 2% still catches a speed mpv ignores (3% or more).
++    rateWindowMs: 24000,
++    rateTolerance: 0.02,
++    dropWindowMs: 5000,
++    dropLimit: 10,
++};
++
++export interface HealthVerdict {
++    issue: AudioIssue | null;
++    /** Position advance per wall second over the rate window; null if unknown. */
++    measuredRate: number | null;
++}
++
++export class AudioHealthMonitor {
++    private samples: HealthSample[] = [];
++    private starvingSince: number | null = null;
++
++    constructor(
++        private readonly config: HealthConfig = DEFAULT_HEALTH_CONFIG
++    ) {}
++
++    /** Forget everything (pause, seek, reload: positions are not comparable). */
++    reset(): void {
++        this.samples = [];
++        this.starvingSince = null;
++    }
++
++    observe(sample: HealthSample): HealthVerdict {
++        const { config } = this;
++        // Only a playing, unpaused session says anything about its sound.
++        if (sample.status !== 'playing' || sample.userPaused) {
++            this.reset();
++            return { issue: null, measuredRate: null };
++        }
++        this.samples.push(sample);
++        const horizon = Math.max(
++            config.rateWindowMs,
++            config.stallWindowMs,
++            config.dropWindowMs
++        );
++        this.samples = this.samples.filter(
++            (s) => sample.now - s.now <= horizon
++        );
++        // A jump back or forward is a seek or reload, not a stall.
++        const previous = this.samples[this.samples.length - 2];
++        if (
++            previous &&
++            Math.abs(sample.positionSeconds - previous.positionSeconds) > 5
++        ) {
++            this.samples = [sample];
++            this.starvingSince = null;
++            return { issue: null, measuredRate: null };
++        }
++
++        const measuredRate = this.rateOver(config.rateWindowMs, sample);
++
++        const stall = this.advanceRatio(config.stallWindowMs, sample);
++        if (stall !== null && stall < config.stallRatio) {
++            return { issue: 'stall', measuredRate };
++        }
++
++        const buffered = sample.bufferedAheadSeconds;
++        if (buffered !== null && buffered < config.starveBelowSeconds) {
++            this.starvingSince ??= sample.now;
++            if (sample.now - this.starvingSince >= config.starveForMs) {
++                return { issue: 'starving', measuredRate };
++            }
++        } else {
++            this.starvingSince = null;
++        }
++
++        const dropped = this.droppedOver(config.dropWindowMs, sample);
++        if (dropped >= config.dropLimit)
++            return { issue: 'drops', measuredRate };
++
++        if (
++            measuredRate !== null &&
++            sample.steadySeconds * 1000 >= config.rateWindowMs &&
++            Math.abs(measuredRate - sample.speed) / sample.speed >
++                config.rateTolerance
++        ) {
++            return { issue: 'rate', measuredRate };
++        }
++        return { issue: null, measuredRate };
++    }
++
++    private oldest(
++        windowMs: number,
++        sample: HealthSample
++    ): HealthSample | null {
++        const found = this.samples.find((s) => sample.now - s.now <= windowMs);
++        return found && found !== sample ? found : null;
++    }
++
++    /**
++     * Advance of the position per wall second over the window, as the slope of
++     * a least-squares line. The sound session's position moves in steps (the
++     * hidden picture runs at a few frames a second, so mpv's position only
++     * changes per frame): two end points could be off by a whole step, a
++     * fitted line is not.
++     */
++    private rateOver(windowMs: number, sample: HealthSample): number | null {
++        const points = this.samples.filter(
++            (s) => sample.now - s.now <= windowMs
++        );
++        const first = points[0];
++        if (!first || sample.now - first.now < windowMs * 0.8) return null;
++        const n = points.length;
++        if (n < 4) return null;
++        const mx = points.reduce((a, p) => a + p.now / 1000, 0) / n;
++        const my = points.reduce((a, p) => a + p.positionSeconds, 0) / n;
++        let num = 0;
++        let den = 0;
++        for (const p of points) {
++            num += (p.now / 1000 - mx) * (p.positionSeconds - my);
++            den += (p.now / 1000 - mx) ** 2;
++        }
++        return den > 0 ? num / den : null;
++    }
++
++    /** Measured advance divided by the advance the commanded speed predicts. */
++    private advanceRatio(
++        windowMs: number,
++        sample: HealthSample
++    ): number | null {
++        const first = this.oldest(windowMs, sample);
++        if (!first || sample.now - first.now < windowMs * 0.8) return null;
++        const seconds = (sample.now - first.now) / 1000;
++        return (
++            (sample.positionSeconds - first.positionSeconds) /
++            (seconds * sample.speed)
++        );
++    }
++
++    private droppedOver(windowMs: number, sample: HealthSample): number {
++        const first = this.oldest(windowMs, sample);
++        if (
++            !first ||
++            first.droppedFrames === null ||
++            sample.droppedFrames === null
++        )
++            return 0;
++        return Math.max(0, sample.droppedFrames - first.droppedFrames);
++    }
++}
++
++/**
++ * What to do about verdicts: let go of the correction on the first one, and
++ * give the external sound up when a second one follows within the window.
++ */
++export interface IssuePolicyConfig {
++    /** Issues inside this window count towards giving up (5 minutes). */
++    windowMs: number;
++    maxIssues: number;
++    /** Seconds the correction stays released after an issue. */
++    holdMs: number;
++}
++
++export const DEFAULT_ISSUE_POLICY: IssuePolicyConfig = {
++    windowMs: 300000,
++    maxIssues: 2,
++    holdMs: 20000,
++};
++
++export type IssueAction = 'release' | 'give-up';
++
++export class AudioIssuePolicy {
++    private times: number[] = [];
++
++    constructor(
++        private readonly config: IssuePolicyConfig = DEFAULT_ISSUE_POLICY
++    ) {}
++
++    get holdMs(): number {
++        return this.config.holdMs;
++    }
++
++    /** Every reliable issue counts, whichever session is the slowed one. */
++    onIssue(now: number): IssueAction {
++        this.times = this.times.filter((t) => now - t < this.config.windowMs);
++        this.times.push(now);
++        return this.times.length >= this.config.maxIssues
++            ? 'give-up'
++            : 'release';
++    }
++
++    reset(): void {
++        this.times = [];
++    }
++}
+diff --git a/apps/web/src/app/ios/split/split-audio-pair-status.ts b/apps/web/src/app/ios/split/split-audio-pair-status.ts
+new file mode 100644
+index 0000000..9c732c6
+--- /dev/null
++++ b/apps/web/src/app/ios/split/split-audio-pair-status.ts
+@@ -0,0 +1,117 @@
++import type {
++    EmbeddedMpvFrameRegion,
++    EmbeddedMpvSession,
++    EmbeddedMpvSplitAudioQuickResult,
++    EmbeddedMpvSplitAudioStatus,
++} from '@iptvnator/shared/interfaces';
++import type { CorrectionState } from './split-audio-corrector';
++import type { SyncRunStatus } from './split-audio-sync-run';
++
++type State = EmbeddedMpvSplitAudioStatus['state'];
++
++export interface PairStatusInput {
++    syncMode: 'auto' | 'manual';
++    autoOn: boolean;
++    userPaused: boolean;
++    correction: CorrectionState;
++    factors: { main: number; sound: number };
++    run: SyncRunStatus;
++    soundId: string;
++    userSpeed: number;
++    clamp(speed: number): number;
++    targetSeconds: number;
++    dBaseSeconds: number;
++    trimSeconds: number;
++    audioRate: number | null;
++    issue: EmbeddedMpvSplitAudioStatus['issue'];
++    disabledReason: string | null;
++    manualVoided: EmbeddedMpvSplitAudioStatus['manualVoided'];
++    originalAudioDuringFreeze: boolean;
++    quick: EmbeddedMpvSplitAudioQuickResult | null;
++}
++
++const RUN_STATE: Record<SyncRunStatus['phase'], State> = {
++    idle: 'idle',
++    measuring: 'measuring',
++    announcing: 'announcing',
++    freezing: 'freezing',
++    resuming: 'resuming',
++    settling: 'settling',
++    fine: 'measuring',
++    done: 'synced',
++    failed: 'failed',
++};
++
++function round5(value: number): number {
++    return Math.round(value * 1e5) / 1e5;
++}
++
++function stateOf(i: PairStatusInput): State {
++    const s = i.correction;
++    if (!i.autoOn) return 'off';
++    if (i.userPaused) return 'paused';
++    if (i.syncMode === 'auto') {
++        if (i.run.phase === 'fine') {
++            if (s.locked) return 'locked';
++            if (s.active) return 'correcting';
++            if (s.reason === 'noisy') return 'noisy';
++            return 'measuring';
++        }
++        return RUN_STATE[i.run.phase];
++    }
++    if (s.locked) return 'locked';
++    if (s.active) return 'correcting';
++    if (s.reason === 'settling') return 'settling';
++    if (s.reason === 'noisy') return 'noisy';
++    return s.lateness !== null ? 'synced' : 'measuring';
++}
++
++/** What the pair reports to the controls (see `SplitAudioPair.status`). */
++export function buildSplitAudioStatus(
++    i: PairStatusInput
++): EmbeddedMpvSplitAudioStatus {
++    const f = i.factors;
++    return {
++        mode: 'dual-session',
++        syncMode: i.syncMode,
++        soundSessionId: i.soundId,
++        state: stateOf(i),
++        userSpeed: i.userSpeed,
++        mainSpeed: round5(i.clamp(i.userSpeed * f.main)),
++        soundSpeed: round5(i.clamp(i.userSpeed * f.sound)),
++        correcting: i.correction.active,
++        rate: i.correction.rate,
++        lateness: i.correction.lateness,
++        targetSeconds: i.targetSeconds,
++        dBaseSeconds: i.dBaseSeconds,
++        trimSeconds: i.trimSeconds,
++        audioRate: i.audioRate,
++        issue: i.issue,
++        ...(i.disabledReason ? { autoDisabledReason: i.disabledReason } : {}),
++        ...(i.syncMode === 'auto' ? { sync: i.run } : {}),
++        manualVoided: i.syncMode === 'manual' ? i.manualVoided : null,
++        originalAudioDuringFreeze: i.originalAudioDuringFreeze,
++        quickSync: i.quick,
++    };
++}
++
++/** Overrides what the picture session reports with what the pair means. */
++export function decoratePayload(
++    pair: {
++        volume: number;
++        speed: number;
++        pictureFrozen: boolean;
++        status(): EmbeddedMpvSplitAudioStatus;
++    },
++    payload: EmbeddedMpvSession,
++    clockRegion: EmbeddedMpvFrameRegion | null
++): void {
++    payload.volume = pair.volume;
++    payload.playbackSpeed = pair.speed;
++    // A freeze of the sync is not the user's pause: the picture keeps saying
++    // "playing" (the countdown says why it stands still).
++    if (pair.pictureFrozen && payload.status === 'paused') {
++        payload.status = 'playing';
++    }
++    payload.splitAudio = { ...pair.status(), clockRegion };
++}
+diff --git a/apps/web/src/app/ios/split/split-audio-quick-sync.ts b/apps/web/src/app/ios/split/split-audio-quick-sync.ts
+new file mode 100644
+index 0000000..dd043c2
+--- /dev/null
++++ b/apps/web/src/app/ios/split/split-audio-quick-sync.ts
+@@ -0,0 +1,87 @@
++import type { EmbeddedMpvSplitAudioStatus } from '@iptvnator/shared/interfaces';
++import type { SplitAudioHost } from './embedded-mpv-split-audio';
++import { cacheBudget } from './split-audio-cache';
++import type { SyncSide } from './split-audio-sync-types';
++
++type Quick = NonNullable<EmbeddedMpvSplitAudioStatus['quickSync']>;
++
++/** Longest a quick jump back may be, and the history it needs on top. */
++const MAX_JUMP_SECONDS = 30;
++const HISTORY_SECONDS = 5;
++const MIN_JUMP_SECONDS = 0.3;
++const CACHE_HEADROOM = 1.25;
++
++export interface QuickInput {
++    /** Lateness now (positive: sound behind); null when nothing is known. */
++    lateness: number | null;
++    target: number;
++    /** How long the pair has been playing: the history that can be jumped into. */
++    playedSeconds: number;
++    /** Seconds the side's cache keeps behind the playhead. */
++    backSeconds(side: SyncSide): number;
++}
++
++/**
++ * What the "quick sync" button may do: the side that is ahead jumps back by
++ * the difference, if there is a reading, history to jump into and a cache that
++ * really keeps that much behind the playhead. Pure; the pair does the jump.
++ */
++export function planQuickJump(
++    input: QuickInput
++): Quick | { kind: 'jump'; side: SyncSide; seconds: number } {
++    if (input.lateness === null) {
++        return { kind: 'unavailable', why: 'no-reading' };
++    }
++    const gap = input.lateness - input.target;
++    const seconds = Math.round(Math.abs(gap) * 10) / 10;
++    if (seconds < MIN_JUMP_SECONDS) return { kind: 'nothing' };
++    if (seconds > MAX_JUMP_SECONDS) {
++        return { kind: 'unavailable', why: 'too-far' };
++    }
++    if (input.playedSeconds < seconds + HISTORY_SECONDS) {
++        return { kind: 'unavailable', why: 'no-history' };
++    }
++    const side: SyncSide = gap > 0 ? 'picture' : 'sound';
++    if (input.backSeconds(side) < seconds * CACHE_HEADROOM + HISTORY_SECONDS) {
++        return { kind: 'unavailable', why: 'cache' };
++    }
++    return { kind: 'jump', side, seconds };
++}
++
++export interface QuickContext {
++    host: SplitAudioHost;
++    mainId: string;
++    soundId: string | null;
++    userPaused: boolean;
++    lateness: number | null;
++    target: number;
++    startedAt: number;
++    /** Before the jump: an automatic run in progress must end. */
++    beforeJump(): void;
++    /** After the jump: what was measured is void. */
++    afterJump(): void;
++}
++
++/** Plans the quick sync and, when it can, does the jump of the one side. */
++export function runQuickSync(c: QuickContext): Quick {
++    const id = c.soundId;
++    if (!id || c.userPaused) return { kind: 'unavailable', why: 'no-reading' };
++    const plan = planQuickJump({
++        lateness: c.lateness,
++        target: c.target,
++        playedSeconds: (c.host.now() - c.startedAt) / 1000,
++        backSeconds: (side) => {
++            const sid = side === 'picture' ? c.mainId : id;
++            return cacheBudget(
++                c.host.cacheOptions(sid),
++                c.host.snapshot(sid)?.bitrateBps ?? null,
++                'back'
++            ).seconds;
++        },
++    });
++    if (plan.kind !== 'jump') return plan;
++    c.beforeJump();
++    c.host.jump(plan.side === 'picture' ? c.mainId : id, -plan.seconds);
++    c.afterJump();
++    return { kind: 'jumped', side: plan.side, seconds: plan.seconds };
++}
+diff --git a/apps/web/src/app/ios/split/split-audio-run-io.ts b/apps/web/src/app/ios/split/split-audio-run-io.ts
+new file mode 100644
+index 0000000..32d45a6
+--- /dev/null
++++ b/apps/web/src/app/ios/split/split-audio-run-io.ts
+@@ -0,0 +1,61 @@
++import type { SplitAudioHost } from './embedded-mpv-split-audio';
++import { cacheBudget } from './split-audio-cache';
++import type { SyncCorrector } from './split-audio-corrector';
++import type { SyncRunIO, SyncSide } from './split-audio-sync-run';
++
++export interface RunIOContext {
++    host: SplitAudioHost;
++    mainId: string;
++    soundId(): string | null;
++    target(): number;
++    userSpeed(): number;
++    corrector: SyncCorrector;
++    hold(side: SyncSide, on: boolean): void;
++    /** Starts / stops the fine correction (and gives the user's speed back). */
++    setFine(on: boolean, now: number): void;
++    giveUp(): void;
++}
++
++/** What the sync run may ask of the pair, in terms of its sessions. */
++export function createRunIO(c: RunIOContext): SyncRunIO {
++    const idOf = (side: SyncSide) =>
++        side === 'picture' ? c.mainId : c.soundId();
++    return {
++        now: () => c.host.now(),
++        target: () => c.target(),
++        userSpeed: () => c.userSpeed(),
++        hold: (side, on) => c.hold(side, on),
++        probe: (side) => {
++            const id = idOf(side);
++            const snap = id ? c.host.snapshot(id) : null;
++            return snap
++                ? {
++                      status: snap.status,
++                      positionSeconds: snap.positionSeconds,
++                      bufferedAheadSeconds: snap.bufferedAheadSeconds,
++                      bitrateBps: snap.bitrateBps ?? null,
++                  }
++                : null;
++        },
++        cacheAhead: (side, bitrate) => {
++            const id = idOf(side);
++            return cacheBudget(
++                id ? c.host.cacheOptions(id) : [],
++                bitrate,
++                'ahead'
++            );
++        },
++        beginFine: (now) => c.setFine(true, now),
++        endFine: (now) => c.setFine(false, now),
++        fine: () => {
++            const s = c.corrector.state;
++            return {
++                active: s.active,
++                lateness: s.lateness,
++                reason: s.reason,
++                locked: s.locked,
++            };
++        },
++        giveUp: () => c.giveUp(),
++    };
++}
+diff --git a/apps/web/src/app/ios/split/split-audio-sound-watch.ts b/apps/web/src/app/ios/split/split-audio-sound-watch.ts
+new file mode 100644
+index 0000000..aa2fcf6
+--- /dev/null
++++ b/apps/web/src/app/ios/split/split-audio-sound-watch.ts
+@@ -0,0 +1,102 @@
++import type { SoundSnapshot } from './embedded-mpv-split-audio';
++import {
++    AudioHealthMonitor,
++    AudioIssuePolicy,
++    type AudioIssue,
++} from './split-audio-health';
++
++/** How long the last fault stays in the status (display only). */
++export const ISSUE_SHOWN_MS = 30000;
++/** The sound has to advance this long before a new fault is a new incident. */
++const RECOVERED_AFTER_MS = 3000;
++
++export interface WatchSample {
++    now: number;
++    /** The speed the sound session was asked for. */
++    speed: number;
++    /** The user (or the sync freeze) holds the sound still on purpose. */
++    held: boolean;
++    userPaused: boolean;
++    steadySeconds: number;
++}
++
++/**
++ * Watches the sound session while it is slowed or frozen: stall, starved
++ * buffer, a speed mpv does not follow, dropped frames. One continuous fault is
++ * one incident, reported once, until the sound has moved on for a while.
++ */
++export class SoundWatch {
++    readonly policy = new AudioIssuePolicy();
++    private readonly health = new AudioHealthMonitor();
++    issue: AudioIssue | null = null;
++    issueAt = 0;
++    audioRate: number | null = null;
++    private incident = false;
++    private lastPosition = NaN;
++    private lastMoveAt = 0;
++    private movingSince: number | null = null;
++
++    reset(): void {
++        this.health.reset();
++        this.issue = null;
++        this.incident = false;
++        this.movingSince = null;
++        this.audioRate = null;
++    }
++
++    /** The last fault, while it is still worth showing. */
++    shownIssue(now: number): AudioIssue | null {
++        return this.issue && now - this.issueAt < ISSUE_SHOWN_MS
++            ? this.issue
++            : null;
++    }
++
++    /** Returns the fault when this sample starts a new incident, else null. */
++    observe(snap: SoundSnapshot, s: WatchSample): AudioIssue | null {
++        const verdict = this.health.observe({
++            now: s.now,
++            status: snap.status,
++            positionSeconds: snap.positionSeconds,
++            speed: s.speed,
++            bufferedAheadSeconds: snap.bufferedAheadSeconds,
++            droppedFrames: snap.droppedFrames,
++            userPaused: s.userPaused || s.held,
++            steadySeconds: s.steadySeconds,
++        });
++        this.audioRate = verdict.measuredRate;
++        this.trackMotion(snap, s);
++        if (this.incident) {
++            if (
++                !verdict.issue &&
++                this.movingSince !== null &&
++                s.now - this.movingSince >= RECOVERED_AFTER_MS
++            ) {
++                this.incident = false;
++            }
++            return null;
++        }
++        if (!verdict.issue) return null;
++        this.incident = true;
++        this.issue = verdict.issue;
++        this.issueAt = s.now;
++        return verdict.issue;
++    }
++
++    /** What was measured no longer holds: start over. */
++    clearHealth(): void {
++        this.health.reset();
++    }
++
++    private trackMotion(snap: SoundSnapshot, s: WatchSample): void {
++        if (snap.status !== 'playing' || s.userPaused) {
++            this.movingSince = null;
++            return;
++        }
++        if (snap.positionSeconds !== this.lastPosition) {
++            this.lastPosition = snap.positionSeconds;
++            this.lastMoveAt = s.now;
++        }
++        if (s.now - this.lastMoveAt <= 1000) this.movingSince ??= s.now;
++        else this.movingSince = null;
++    }
++}
+diff --git a/apps/web/src/app/ios/split/split-audio-sync-config.ts b/apps/web/src/app/ios/split/split-audio-sync-config.ts
+new file mode 100644
+index 0000000..be7381b
+--- /dev/null
++++ b/apps/web/src/app/ios/split/split-audio-sync-config.ts
+@@ -0,0 +1,35 @@
++/** Tuning of the automatic sync run (see split-audio-sync-run.ts). */
++export const SYNC_CONFIG = {
++    /** Up to here only the fine correction acts. */
++    smallGapSeconds: 2,
++    /** Inside this the run is done (the clock reading is whole seconds). */
++    toleranceSeconds: 0.5,
++    windowMs: 10000,
++    minReadings: 6,
++    /** A reading farther than this from the median is an outlier. */
++    inlierBand: 1,
++    maxOutlierShare: 0.2,
++    /** Largest spread of the inliers for a window to count as stable. */
++    maxSpread: 1.5,
++    /** The stable window must hold this long before anything is decided. */
++    confirmMs: 4000,
++    measureTimeoutMs: 45000,
++    pictureAnnounceMs: 3000,
++    pictureMaxSeconds: 30,
++    soundMaxSeconds: 60,
++    /** The freeze stops short of the gap by this much; the fine part finishes. */
++    marginSeconds: 0.3,
++    /** The cache has to hold the freeze plus its own buffer, with this headroom. */
++    cacheHeadroom: 1.25,
++    cacheExtraSeconds: 5,
++    /** After this long frozen the cache must have grown by `growthShare` of it. */
++    growthCheckAfterMs: 3000,
++    growthShare: 0.4,
++    cacheFullShare: 0.9,
++    resumeRetryMs: 2500,
++    resumeFailMs: 6000,
++    /** The sound is not trusted while the readings still show the old gap. */
++    settleAfterFreezeMs: 10000,
++    fineTimeoutMs: 240000,
++    successHoldMs: 6000,
++} as const;
+diff --git a/apps/web/src/app/ios/split/split-audio-sync-measure.ts b/apps/web/src/app/ios/split/split-audio-sync-measure.ts
+new file mode 100644
+index 0000000..2655ab1
+--- /dev/null
++++ b/apps/web/src/app/ios/split/split-audio-sync-measure.ts
+@@ -0,0 +1,38 @@
++import { SYNC_CONFIG } from './split-audio-sync-config';
++
++export function median(values: number[]): number {
++    const sorted = [...values].sort((a, b) => a - b);
++    const mid = sorted.length >> 1;
++    return sorted.length % 2
++        ? sorted[mid]
++        : (sorted[mid - 1] + sorted[mid]) / 2;
++}
++
++export interface StableWindow {
++    median: number;
++    inliers: number[];
++}
++
++/**
++ * The window of readings is stable when enough of them agree: few outliers
++ * (a glitch among steady readings does not count), and the ones that agree
++ * lie within a narrow spread. Null: not stable (yet).
++ */
++export function stableWindow(values: number[]): StableWindow | null {
++    if (values.length < SYNC_CONFIG.minReadings) return null;
++    const med = median(values);
++    const inliers = values.filter(
++        (v) => Math.abs(v - med) <= SYNC_CONFIG.inlierBand
++    );
++    if (
++        values.length - inliers.length >
++        values.length * SYNC_CONFIG.maxOutlierShare
++    ) {
++        return null;
++    }
++    if (inliers.length < SYNC_CONFIG.minReadings - 1) return null;
++    if (Math.max(...inliers) - Math.min(...inliers) > SYNC_CONFIG.maxSpread) {
++        return null;
++    }
++    return { median: med, inliers };
++}
+diff --git a/apps/web/src/app/ios/split/split-audio-sync-run.ts b/apps/web/src/app/ios/split/split-audio-sync-run.ts
+new file mode 100644
+index 0000000..e8e77ab
+--- /dev/null
++++ b/apps/web/src/app/ios/split/split-audio-sync-run.ts
+@@ -0,0 +1,414 @@
++/**
++ * One automatic sync, started by the user and ended by itself.
++ *
++ *   measuring -> (announcing -> freezing -> resuming -> settling) -> fine -> done
++ *
++ * The run reads the clock readings until they are stable, then
++ *  - a gap of at most 2 s is left to the fine correction (the corrector);
++ *  - a bigger one is closed by ONE freeze of the session that is ahead (the
++ *    picture is announced first), followed by the fine correction for what is
++ *    left.
++ * When the difference is inside the accuracy margin the run is `done`: from
++ * then on nothing here touches a speed or a session again, whatever the
++ * clocks say, until the user starts another run. A run that cannot get there
++ * ends `failed` with the difference that is left; it never freezes twice.
++ *
++ * It owns no mpv state: it asks `SyncRunIO` for everything, so it is unit
++ * tested with a fake.
++ */
++import { SYNC_CONFIG } from './split-audio-sync-config';
++import { stableWindow, type StableWindow } from './split-audio-sync-measure';
++
++export { SYNC_CONFIG };
++export type * from './split-audio-sync-types';
++import type {
++    FreezeCut,
++    SyncFailure,
++    SyncPhase,
++    SyncRunIO,
++    SyncRunStatus,
++    SyncSide,
++} from './split-audio-sync-types';
++
++export class AutoSyncRun {
++    private phase: SyncPhase = 'idle';
++    private readings: { at: number; value: number }[] = [];
++    private startedAt = 0;
++    private stableSince: number | null = null;
++    private side: SyncSide | null = null;
++    private freezeSeconds = 0;
++    private capped = false;
++    private cut: FreezeCut | null = null;
++    private failure: SyncFailure | null = null;
++    private residual: number | null = null;
++    private phaseAt = 0;
++    private frozenAt = 0;
++    private base: { buffered: number; position: number } | null = null;
++    private retried = false;
++    private fineAt = 0;
++    private okSince: number | null = null;
++    private epoch = 0;
++
++    constructor(private readonly io: SyncRunIO) {}
++
++    get active(): boolean {
++        return !['idle', 'done', 'failed'].includes(this.phase);
++    }
++
++    get current(): SyncPhase {
++        return this.phase;
++    }
++
++    /** The session whose pause belongs to the run (and its reconnect grace). */
++    get held(): SyncSide | null {
++        return this.phase === 'freezing' ? this.side : null;
++    }
++
++    /** True while the picture is frozen on purpose (the UI must not show a pause). */
++    get pictureFrozen(): boolean {
++        return this.phase === 'freezing' && this.side === 'picture';
++    }
++
++    // ------------------------------------------------------------ commands
++
++    start(): boolean {
++        if (this.active) return false;
++        const now = this.io.now();
++        this.phase = 'measuring';
++        this.phaseAt = now;
++        this.startedAt = now;
++        this.readings = [];
++        this.stableSince = null;
++        this.side = null;
++        this.freezeSeconds = 0;
++        this.capped = false;
++        this.cut = null;
++        this.failure = null;
++        this.residual = null;
++        this.retried = false;
++        this.okSince = null;
++        return true;
++    }
++
++    /**
++     * Ends the run. `failure` null: the user cancelled (back to idle).
++     * Whatever was held is released and the speeds are the user's again.
++     */
++    cancel(failure: SyncFailure | null): void {
++        if (!this.active) return;
++        const now = this.io.now();
++        this.releaseHolds();
++        this.io.endFine(now);
++        this.phase = failure ? 'failed' : 'idle';
++        this.failure = failure;
++        this.phaseAt = now;
++    }
++
++    addReading(value: number): void {
++        if (this.phase !== 'measuring' || !Number.isFinite(value)) return;
++        const now = this.io.now();
++        this.readings.push({ at: now, value });
++        const from = now - SYNC_CONFIG.windowMs;
++        this.readings = this.readings.filter((r) => r.at >= from);
++    }
++
++    /** About twice a second. */
++    tick(): void {
++        const now = this.io.now();
++        switch (this.phase) {
++            case 'measuring':
++                return this.tickMeasuring(now);
++            case 'announcing':
++                if (now - this.phaseAt >= SYNC_CONFIG.pictureAnnounceMs) {
++                    this.beginFreeze(now);
++                }
++                return;
++            case 'freezing':
++                return this.tickFreezing(now);
++            case 'resuming':
++                return this.tickResuming(now);
++            case 'settling':
++                if (now - this.phaseAt >= SYNC_CONFIG.settleAfterFreezeMs) {
++                    this.beginFine(now);
++                }
++                return;
++            case 'fine':
++                return this.tickFine(now);
++            default:
++                return;
++        }
++    }
++
++    status(): SyncRunStatus {
++        const now = this.io.now();
++        const frozenFor = (now - this.frozenAt) / 1000;
++        return {
++            phase: this.phase,
++            side: this.side,
++            freezeSeconds: round1(this.freezeSeconds),
++            remainingSeconds:
++                this.phase === 'freezing'
++                    ? Math.max(0, round1(this.freezeSeconds - frozenFor))
++                    : 0,
++            announceSeconds:
++                this.phase === 'announcing'
++                    ? Math.max(
++                          0,
++                          round1(
++                              (SYNC_CONFIG.pictureAnnounceMs -
++                                  (now - this.phaseAt)) /
++                                  1000
++                          )
++                      )
++                    : 0,
++            capped: this.capped,
++            freezeCut: this.cut,
++            failure: this.failure,
++            residualSeconds: this.residual,
++            epoch: this.epoch,
++        };
++    }
++
++    // --------------------------------------------------------------- phases
++
++    private tickMeasuring(now: number): void {
++        const st = stableWindow(this.readings.map((r) => r.value));
++        if (st) {
++            this.stableSince ??= now;
++            this.residual = round2(st.median - this.io.target());
++            if (now - this.stableSince >= SYNC_CONFIG.confirmMs) {
++                return this.decide(st, now);
++            }
++        } else {
++            this.stableSince = null;
++        }
++        if (now - this.startedAt >= SYNC_CONFIG.measureTimeoutMs) {
++            this.fail(
++                this.readings.length < SYNC_CONFIG.minReadings
++                    ? 'no-clock'
++                    : 'unstable'
++            );
++        }
++    }
++
++    private decide(st: StableWindow, now: number): void {
++        const target = this.io.target();
++        const gap = st.median - target;
++        this.residual = round2(gap);
++        if (Math.abs(gap) <= SYNC_CONFIG.toleranceSeconds)
++            return this.finish(now);
++        const direction = Math.sign(gap);
++        // Every inlier agrees on the side of the target, not just the median.
++        const agree = st.inliers.every(
++            (v) => Math.sign(v - target) === direction
++        );
++        if (Math.abs(gap) <= SYNC_CONFIG.smallGapSeconds || !agree) {
++            return this.beginFine(now);
++        }
++        this.planFreeze(gap, now);
++    }
++
++    private planFreeze(gap: number, now: number): void {
++        // Lateness positive: the sound is behind, so the picture is ahead.
++        this.side = gap > 0 ? 'picture' : 'sound';
++        const cap =
++            this.side === 'picture'
++                ? SYNC_CONFIG.pictureMaxSeconds
++                : SYNC_CONFIG.soundMaxSeconds;
++        // The player on the other side moves `userSpeed` content seconds per
++        // second, so the wait is the gap divided by that.
++        const wanted =
++            Math.max(1, Math.abs(gap) - SYNC_CONFIG.marginSeconds) /
++            Math.max(0.25, this.io.userSpeed());
++        this.capped = wanted > cap;
++        this.freezeSeconds = Math.min(cap, wanted);
++        const verdict = this.cacheVerdict(this.side, this.freezeSeconds);
++        if (verdict) {
++            this.cut = verdict;
++            this.freezeSeconds = 0;
++            this.side = null;
++            return this.beginFine(now);
++        }
++        this.phase = 'announcing';
++        this.phaseAt = now;
++        if (this.side === 'sound') this.beginFreeze(now);
++    }
++
++    /** Checked before the freeze: the real cache, not a default's promise. */
++    private cacheVerdict(side: SyncSide, seconds: number): FreezeCut | null {
++        const probe = this.io.probe(side);
++        if (!probe || probe.bufferedAheadSeconds === null) {
++            return 'cache-insufficient';
++        }
++        const budget = this.io.cacheAhead(side, probe.bitrateBps);
++        const need =
++            probe.bufferedAheadSeconds +
++            seconds +
++            SYNC_CONFIG.cacheExtraSeconds;
++        return budget.seconds < need * SYNC_CONFIG.cacheHeadroom
++            ? 'cache-insufficient'
++            : null;
++    }
++
++    private beginFreeze(now: number): void {
++        const side = this.side;
++        if (!side) return this.beginFine(now);
++        // The probe may have changed in the announce time: check again.
++        const verdict = this.cacheVerdict(side, this.freezeSeconds);
++        if (verdict) {
++            this.cut = verdict;
++            this.side = null;
++            return this.beginFine(now);
++        }
++        const probe = this.io.probe(side);
++        this.base = {
++            buffered: probe?.bufferedAheadSeconds ?? 0,
++            position: probe?.positionSeconds ?? 0,
++        };
++        this.phase = 'freezing';
++        this.phaseAt = now;
++        this.frozenAt = now;
++        this.io.hold(side, true);
++    }
++
++    private tickFreezing(now: number): void {
++        const side = this.side;
++        if (!side) return;
++        const elapsed = now - this.frozenAt;
++        if (elapsed >= this.freezeSeconds * 1000)
++            return this.release(now, null);
++        const probe = this.io.probe(side);
++        if (!probe) return;
++        if (probe.status === 'playing' && elapsed > 1500) {
++            // Somebody else resumed it (the user, a reload): not ours to hold.
++            return this.cancel('interrupted');
++        }
++        if (elapsed >= SYNC_CONFIG.growthCheckAfterMs && this.base) {
++            if (probe.bufferedAheadSeconds === null) {
++                return this.release(now, 'cache-stalled');
++            }
++            const grown = probe.bufferedAheadSeconds - this.base.buffered;
++            if (grown < (elapsed / 1000) * SYNC_CONFIG.growthShare) {
++                return this.release(now, 'cache-stalled');
++            }
++            const budget = this.io.cacheAhead(side, probe.bitrateBps);
++            if (
++                budget.bytes > 0 &&
++                (probe.bufferedAheadSeconds * (probe.bitrateBps ?? 0)) / 8 >
++                    budget.bytes * SYNC_CONFIG.cacheFullShare
++            ) {
++                return this.release(now, 'cache-full');
++            }
++            if (
++                probe.status !== 'paused' &&
++                elapsed >= SYNC_CONFIG.growthCheckAfterMs
++            ) {
++                return this.release(now, 'stream-lost');
++            }
++        }
++    }
++
++    /** The freeze ends (on time or cut short): the side is resumed. */
++    private release(now: number, cut: FreezeCut | null): void {
++        const side = this.side;
++        if (cut) this.cut = cut;
++        if (!side) return;
++        this.phase = 'resuming';
++        this.phaseAt = now;
++        this.retried = false;
++        this.base = {
++            buffered: 0,
++            position: this.io.probe(side)?.positionSeconds ?? 0,
++        };
++        this.io.hold(side, false);
++    }
++
++    private tickResuming(now: number): void {
++        const side = this.side;
++        if (!side) return;
++        const probe = this.io.probe(side);
++        const moved =
++            probe &&
++            probe.status === 'playing' &&
++            probe.positionSeconds - (this.base?.position ?? 0) >= 0.5;
++        if (moved) {
++            this.epoch += 1;
++            this.phase = 'settling';
++            this.phaseAt = now;
++            return;
++        }
++        const waited = now - this.phaseAt;
++        if (!this.retried && waited >= SYNC_CONFIG.resumeRetryMs) {
++            this.retried = true;
++            this.io.hold(side, false);
++        } else if (waited >= SYNC_CONFIG.resumeFailMs) {
++            this.fail('resume-failed');
++            this.io.giveUp();
++        }
++    }
++
++    private beginFine(now: number): void {
++        this.phase = 'fine';
++        this.phaseAt = now;
++        this.fineAt = now;
++        this.okSince = null;
++        this.io.beginFine(now);
++    }
++
++    private tickFine(now: number): void {
++        const fine = this.io.fine();
++        if (fine.lateness !== null) {
++            this.residual = round2(fine.lateness - this.io.target());
++        }
++        if (fine.locked) return this.fail('unstable');
++        const inside =
++            fine.lateness !== null &&
++            fine.active === null &&
++            fine.reason === 'ok' &&
++            Math.abs(fine.lateness - this.io.target()) <=
++                SYNC_CONFIG.toleranceSeconds;
++        if (inside) {
++            this.okSince ??= now;
++            if (now - this.okSince >= SYNC_CONFIG.successHoldMs) {
++                return this.finish(now);
++            }
++        } else {
++            this.okSince = null;
++        }
++        if (now - this.fineAt >= SYNC_CONFIG.fineTimeoutMs)
++            this.fail('timeout');
++    }
++
++    private finish(now: number): void {
++        this.io.endFine(now);
++        this.phase = 'done';
++        this.phaseAt = now;
++        this.failure = null;
++    }
++
++    private fail(failure: SyncFailure): void {
++        const now = this.io.now();
++        this.releaseHolds();
++        this.io.endFine(now);
++        this.phase = 'failed';
++        this.failure = failure;
++        this.phaseAt = now;
++    }
++
++    private releaseHolds(): void {
++        if (
++            this.side &&
++            (this.phase === 'freezing' || this.phase === 'resuming')
++        ) {
++            this.io.hold(this.side, false);
++        }
++    }
++}
++
++function round1(v: number): number {
++    return Math.round(v * 10) / 10;
++}
++
++function round2(v: number): number {
++    return Math.round(v * 100) / 100;
++}
+diff --git a/apps/web/src/app/ios/split/split-audio-sync-types.ts b/apps/web/src/app/ios/split/split-audio-sync-types.ts
+new file mode 100644
+index 0000000..0c8ed87
+--- /dev/null
++++ b/apps/web/src/app/ios/split/split-audio-sync-types.ts
+@@ -0,0 +1,81 @@
++/** Shapes of the automatic sync run (see split-audio-sync-run.ts). */
++export type SyncSide = 'picture' | 'sound';
++export type SyncPhase =
++    | 'idle'
++    | 'measuring'
++    | 'announcing'
++    | 'freezing'
++    | 'resuming'
++    | 'settling'
++    | 'fine'
++    | 'done'
++    | 'failed';
++export type SyncFailure =
++    | 'no-clock'
++    | 'unstable'
++    | 'timeout'
++    | 'interrupted'
++    | 'resume-failed'
++    | 'faulted';
++/** Why a freeze did not run its course (the run went on gradually). */
++export type FreezeCut =
++    'cache-insufficient' | 'cache-stalled' | 'cache-full' | 'stream-lost';
++
++export interface SideProbe {
++    status: string;
++    positionSeconds: number;
++    bufferedAheadSeconds: number | null;
++    bitrateBps: number | null;
++}
++
++export interface FineState {
++    active: 'main' | 'sound' | null;
++    /** Median lateness the corrector sees (positive: sound behind). */
++    lateness: number | null;
++    reason: string;
++    locked: boolean;
++}
++
++export interface SyncRunIO {
++    now(): number;
++    /** D_base + trim. */
++    target(): number;
++    userSpeed(): number;
++    /** Pauses/resumes one session below the user's pause (never touches it). */
++    hold(side: SyncSide, on: boolean): void;
++    probe(side: SyncSide): SideProbe | null;
++    /** Seconds of media the side's cache may hold ahead, bytes alongside. */
++    cacheAhead(
++        side: SyncSide,
++        bitrateBps: number | null
++    ): {
++        seconds: number;
++        bytes: number;
++    };
++    /** Starts the corrector on what it is fed from now on. */
++    beginFine(now: number): void;
++    /** Stops the corrector and gives both sessions the user's speed. */
++    endFine(now: number): void;
++    fine(): FineState;
++    /** The sound did not come back: the owner must end the pair. */
++    giveUp(): void;
++}
++
++export interface SyncRunStatus {
++    phase: SyncPhase;
++    side: SyncSide | null;
++    /** Planned length of the freeze, seconds. */
++    freezeSeconds: number;
++    /** Seconds left of the freeze (counts down once frozen). */
++    remainingSeconds: number;
++    /** Seconds before the announced freeze starts. */
++    announceSeconds: number;
++    /** The gap was larger than the freeze may be. */
++    capped: boolean;
++    freezeCut: FreezeCut | null;
++    failure: SyncFailure | null;
++    /** What is left of the difference, seconds (positive: sound behind). */
++    residualSeconds: number | null;
++    /** Counts every end of a freeze: readers drop what they smoothed. */
++    epoch: number;
 +}
 diff --git a/apps/web/src/index.html b/apps/web/src/index.html
 index 4314d5c..05b7a87 100644
@@ -1422,19 +5005,21 @@ index 4314d5c..05b7a87 100644
              http-equiv="Content-Security-Policy"
              content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src https://www.youtube-nocookie.com; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' http: https: file: data: blob:; font-src 'self' data:; media-src 'self' http: https: file: data: blob:; connect-src 'self' http: https: ws: wss: blob: data:; worker-src 'self' blob:"
 diff --git a/apps/web/src/main.ts b/apps/web/src/main.ts
-index 4802425..c449d99 100644
+index 4802425..e4b2f4f 100644
 --- a/apps/web/src/main.ts
 +++ b/apps/web/src/main.ts
-@@ -5,6 +5,12 @@ import { AppComponent } from './app/app.component';
+@@ -5,6 +5,14 @@ import { AppComponent } from './app/app.component';
  import { appConfig, getInitialLanguage } from './app/app.config';
  import { prepareSourceConnection } from '@iptvnator/services/source-sync/connection';
  import { preparePlayerLoading } from './player-loading-rollback';
 +import { installIosMpvHost } from './app/ios/ios-mpv-host';
 +import { installIosFullscreen } from './app/ios/ios-fullscreen';
++import { installIosLongPress } from './app/ios/ios-touch';
 +
 +// iPhone app only: real mpv players behind the page (no-op everywhere else).
 +installIosMpvHost();
 +installIosFullscreen();
++installIosLongPress();
  
  const restoredHref = resolveRestoredRendererRoute(
      window.location.href,
@@ -1455,6 +5040,406 @@ index bc885dd..8e745ed 100644
      @include focus-ring.focus-ring-declarations($offset: -2px);
  }
 +
+diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.html b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.html
+new file mode 100644
+index 0000000..aaee644
+--- /dev/null
++++ b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.html
+@@ -0,0 +1,63 @@
++<div class="ios-browse">
++    <h1 class="ios-browse__title">{{ title }}</h1>
++
++    @if (isLoading()) {
++        @for (_ of [1, 2, 3]; track $index) {
++            <div class="ios-browse__skeleton" aria-hidden="true"></div>
++        }
++    } @else {
++        @if (recent().length > 0) {
++            <section class="ios-browse__rail">
++                <header class="ios-browse__head">
++                    <h2>Recently Added</h2>
++                    @if (link('recently-added'); as all) {
++                        <a [routerLink]="all">Show All</a>
++                    }
++                </header>
++                <div class="ios-browse__track">
++                    @for (item of recent(); track item.xtream_id ?? $index) {
++                        <button
++                            type="button"
++                            class="ios-browse__card"
++                            (click)="open(item)"
++                        >
++                            <span class="ios-browse__poster">
++                                @if (poster(item); as src) {
++                                    <img [src]="src" alt="" loading="lazy" />
++                                }
++                            </span>
++                            <span class="ios-browse__name">{{ label(item) }}</span>
++                        </button>
++                    }
++                </div>
++            </section>
++        }
++
++        @for (category of categories(); track category.id) {
++            <section class="ios-browse__rail">
++                <header class="ios-browse__head">
++                    <h2>{{ category.name }}</h2>
++                    @if (link(type, category.id); as all) {
++                        <a [routerLink]="all">Show All</a>
++                    }
++                </header>
++                <div class="ios-browse__track">
++                    @for (item of category.items; track item.xtream_id ?? $index) {
++                        <button
++                            type="button"
++                            class="ios-browse__card"
++                            (click)="open(item)"
++                        >
++                            <span class="ios-browse__poster">
++                                @if (poster(item); as src) {
++                                    <img [src]="src" alt="" loading="lazy" />
++                                }
++                            </span>
++                            <span class="ios-browse__name">{{ label(item) }}</span>
++                        </button>
++                    }
++                </div>
++            </section>
++        }
++    }
++</div>
+diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss
+new file mode 100644
+index 0000000..0b966da
+--- /dev/null
++++ b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss
+@@ -0,0 +1,111 @@
++:host {
++    display: block;
++    height: 100%;
++    overflow-y: auto;
++    -webkit-overflow-scrolling: touch;
++}
++
++.ios-browse {
++    padding: 8px 0 120px;
++    display: flex;
++    flex-direction: column;
++    gap: 22px;
++    color: var(--app-on-surface, #fff);
++}
++
++.ios-browse__title {
++    margin: 4px 20px 0;
++    font-size: 34px;
++    font-weight: 700;
++    letter-spacing: -0.02em;
++    line-height: 1.1;
++}
++
++.ios-browse__head {
++    display: flex;
++    align-items: baseline;
++    justify-content: space-between;
++    gap: 12px;
++    padding: 0 20px;
++    margin-bottom: 10px;
++
++    h2 {
++        margin: 0;
++        font-size: 20px;
++        font-weight: 700;
++        letter-spacing: -0.01em;
++        color: var(--app-muted-color, #a3a3a3);
++        min-width: 0;
++        overflow: hidden;
++        text-overflow: ellipsis;
++        white-space: nowrap;
++    }
++
++    a {
++        flex-shrink: 0;
++        font-size: 17px;
++        font-weight: 500;
++        color: #0a84ff;
++        text-decoration: none;
++    }
++}
++
++.ios-browse__track {
++    display: flex;
++    gap: 12px;
++    padding: 0 20px;
++    overflow-x: auto;
++    scroll-snap-type: x proximity;
++    scrollbar-width: none;
++
++    &::-webkit-scrollbar {
++        display: none;
++    }
++}
++
++.ios-browse__card {
++    flex: 0 0 132px;
++    width: 132px;
++    padding: 0;
++    border: 0;
++    background: none;
++    color: inherit;
++    text-align: start;
++    font: inherit;
++    cursor: pointer;
++    scroll-snap-align: start;
++}
++
++.ios-browse__poster {
++    display: block;
++    width: 100%;
++    aspect-ratio: 2 / 3;
++    border-radius: 18px;
++    overflow: hidden;
++    background: rgba(255, 255, 255, 0.08);
++
++    img {
++        width: 100%;
++        height: 100%;
++        object-fit: cover;
++        display: block;
++    }
++}
++
++.ios-browse__name {
++    display: -webkit-box;
++    margin-top: 8px;
++    font-size: 15px;
++    font-weight: 500;
++    line-height: 1.25;
++    -webkit-line-clamp: 2;
++    -webkit-box-orient: vertical;
++    overflow: hidden;
++}
++
++.ios-browse__skeleton {
++    height: 200px;
++    margin: 0 20px;
++    border-radius: 18px;
++    background: rgba(255, 255, 255, 0.06);
++}
+diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts
+new file mode 100644
+index 0000000..cd1036a
+--- /dev/null
++++ b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts
+@@ -0,0 +1,165 @@
++import {
++    ChangeDetectionStrategy,
++    Component,
++    computed,
++    effect,
++    inject,
++} from '@angular/core';
++import { ActivatedRoute, Router, RouterLink } from '@angular/router';
++import {
++    ContentCardComponent,
++    ContentRailShellComponent,
++} from '@iptvnator/portal/shared/ui';
++import {
++    ContentType,
++    XtreamStore,
++} from '@iptvnator/portal/xtream/data-access';
++import { toXtreamRecentlyAddedTimestamp } from '@iptvnator/shared/interfaces';
++
++interface BrowseItem {
++    readonly added?: string;
++    readonly category_id: string | number;
++    readonly cover?: string;
++    readonly id?: number;
++    readonly last_modified?: string;
++    readonly name?: string;
++    readonly poster_url?: string;
++    readonly series_id?: number;
++    readonly stream_id?: number;
++    readonly stream_icon?: string;
++    readonly title?: string;
++    readonly xtream_id?: number;
++}
++
++interface BrowseCategory {
++    readonly id: string;
++    readonly name: string;
++    readonly items: BrowseItem[];
++}
++
++const RAIL_ITEMS = 18;
++const MAX_RAILS = 24;
++const RECENT_ITEMS = 20;
++
++/**
++ * Movies / Series on the phone: a big title, "Recently Added" and one poster rail per category,
++ * each with "Show All" (the category's full grid). It reads the same store as the desktop views.
++ */
++@Component({
++    selector: 'app-ios-browse',
++    templateUrl: './ios-browse.component.html',
++    styleUrl: './ios-browse.component.scss',
++    changeDetection: ChangeDetectionStrategy.OnPush,
++    imports: [ContentCardComponent, ContentRailShellComponent, RouterLink],
++})
++export class IosBrowseComponent {
++    private readonly store = inject(XtreamStore);
++    private readonly router = inject(Router);
++    private readonly route = inject(ActivatedRoute);
++    private readonly getVisible = this.store.getVisibleContentByType();
++
++    readonly type: ContentType =
++        this.route.parent?.snapshot.routeConfig?.path === 'series'
++            ? 'series'
++            : 'vod';
++    readonly title = this.type === 'series' ? 'Series' : 'Movies';
++
++    private readonly playlistId = computed(
++        () => this.store.currentPlaylist()?.id ?? null
++    );
++
++    private readonly all = computed(
++        () => this.getVisible(this.type) as BrowseItem[]
++    );
++
++    readonly recent = computed(() => {
++        const now = Date.now();
++        const series = this.type === 'series';
++        return this.all()
++            .map((item) => ({
++                item,
++                at:
++                    toXtreamRecentlyAddedTimestamp(
++                        series ? item.last_modified : item.added,
++                        now
++                    ) ||
++                    toXtreamRecentlyAddedTimestamp(
++                        series ? item.added : item.last_modified,
++                        now
++                    ),
++            }))
++            .filter((entry) => entry.at > 0)
++            .sort((a, b) => b.at - a.at)
++            .slice(0, RECENT_ITEMS)
++            .map((entry) => entry.item);
++    });
++
++    readonly categories = computed<BrowseCategory[]>(() => {
++        const names = new Map<string, string>();
++        const list =
++            this.type === 'series'
++                ? this.store.serialCategories()
++                : this.store.vodCategories();
++        for (const category of list as unknown as Array<Record<string, unknown>>) {
++            const id = String(category['category_id'] ?? category['id'] ?? '');
++            const name = String(
++                category['category_name'] ?? category['name'] ?? ''
++            );
++            if (id) names.set(id, name);
++        }
++        const groups = new Map<string, BrowseItem[]>();
++        for (const item of this.all()) {
++            const id = String(item.category_id);
++            const group = groups.get(id);
++            if (group) {
++                if (group.length < RAIL_ITEMS) group.push(item);
++            } else {
++                groups.set(id, [item]);
++            }
++        }
++        const result: BrowseCategory[] = [];
++        for (const [id, name] of names) {
++            const items = groups.get(id);
++            if (items?.length) result.push({ id, name, items });
++            if (result.length >= MAX_RAILS) break;
++        }
++        return result;
++    });
++
++    readonly isLoading = computed(
++        () =>
++            this.all().length === 0 &&
++            (this.store.isLoadingContent() ||
++                this.store.isLoadingCategories() ||
++                this.store.isImporting())
++    );
++
++    constructor() {
++        effect(() => this.store.setSelectedContentType(this.type));
++    }
++
++    link(section: string, ...rest: Array<string | number>): string[] | null {
++        const id = this.playlistId();
++        return id
++            ? ['/workspace', 'xtreams', id, section, ...rest.map(String)]
++            : null;
++    }
++
++    poster(item: BrowseItem): string | undefined {
++        return item.poster_url || item.cover || item.stream_icon;
++    }
++
++    label(item: BrowseItem): string {
++        return item.title || item.name || '';
++    }
++
++    open(item: BrowseItem): void {
++        const id =
++            item.xtream_id ||
++            item.id ||
++            (this.type === 'series' ? item.series_id : item.stream_id);
++        void this.router.navigate(['..', this.type, item.category_id, id], {
++            relativeTo: this.route,
++        });
++    }
++}
+diff --git a/libs/portal/xtream/feature/src/lib/xtream-feature.routes.ts b/libs/portal/xtream/feature/src/lib/xtream-feature.routes.ts
+index ec3b761..710b691 100644
+--- a/libs/portal/xtream/feature/src/lib/xtream-feature.routes.ts
++++ b/libs/portal/xtream/feature/src/lib/xtream-feature.routes.ts
+@@ -41,6 +41,20 @@ const loadCategoryContentViewComponent: ComponentLoader = () =>
+         (c) => c.CategoryContentViewComponent
+     );
+ 
++/** The iPhone app (the shell injects `window.d7tNative`) browses Movies/Series as poster rails. */
++const IOS_APP =
++    typeof window !== 'undefined' &&
++    !!(window as unknown as { d7tNative?: unknown }).d7tNative;
++
++const loadIosBrowseComponent: ComponentLoader = () =>
++    import('./ios-browse/ios-browse.component').then(
++        (c) => c.IosBrowseComponent
++    );
++
++const loadBrowseOrCategoryComponent: ComponentLoader = IOS_APP
++    ? loadIosBrowseComponent
++    : loadCategoryContentViewComponent;
++
+ const loadXtreamCollectionRouteComponent: ComponentLoader = () =>
+     import('./xtream-collection-route.component').then(
+         (c) => c.XtreamCollectionRouteComponent
+@@ -105,7 +119,7 @@ export function createXtreamRoutes(): Route[] {
+                                 {
+                                     path: '',
+                                     loadComponent:
+-                                        loadCategoryContentViewComponent,
++                                        loadBrowseOrCategoryComponent,
+                                 },
+                                 {
+                                     path: ':categoryId',
+@@ -131,7 +145,7 @@ export function createXtreamRoutes(): Route[] {
+                                 {
+                                     path: '',
+                                     loadComponent:
+-                                        loadCategoryContentViewComponent,
++                                        loadBrowseOrCategoryComponent,
+                                 },
+                                 {
+                                     path: ':categoryId',
 diff --git a/libs/services/src/lib/runtime-capabilities.service.ts b/libs/services/src/lib/runtime-capabilities.service.ts
 index 577b030..b1f4a18 100644
 --- a/libs/services/src/lib/runtime-capabilities.service.ts
@@ -1480,7 +5465,7 @@ index 577b030..b1f4a18 100644
  
      get supportsDesktopFileSave(): boolean {
 diff --git a/libs/services/src/lib/settings-store.defaults.ts b/libs/services/src/lib/settings-store.defaults.ts
-index 8a79f35..18c17bf 100644
+index 8a79f35..1f538e2 100644
 --- a/libs/services/src/lib/settings-store.defaults.ts
 +++ b/libs/services/src/lib/settings-store.defaults.ts
 @@ -11,9 +11,14 @@ import {
@@ -1504,10 +5489,19 @@ index 8a79f35..18c17bf 100644
      showExternalPlaybackBar: true,
      stripCountryPrefix: false,
 -    theme: Theme.SystemTheme,
-+    theme: IOS_APP ? Theme.DarkTheme : Theme.SystemTheme,
++    theme: IOS_APP ? Theme.BlackOledTheme : Theme.SystemTheme,
      mpvPlayerPath: '',
      mpvPlayerArguments: '',
      mpvReuseInstance: false,
+@@ -48,7 +53,7 @@ export const DEFAULT_SETTINGS: Settings = {
+     embeddedMpvFrameCopy: false,
+     embeddedMpvExtraOptions: '',
+     embeddedMpvAutoReconnect: true,
+-    embeddedMpvSplitAudio: false,
++    embeddedMpvSplitAudio: IOS_APP,
+     portalConnectivityGuard: true,
+     coverSize: 'medium',
+     showCoverTitles: true,
 diff --git a/libs/services/src/lib/settings-store.service.ts b/libs/services/src/lib/settings-store.service.ts
 index 2d547dc..0c16ccb 100644
 --- a/libs/services/src/lib/settings-store.service.ts

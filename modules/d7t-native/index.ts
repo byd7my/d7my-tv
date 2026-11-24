@@ -7,6 +7,7 @@ export type TextResult = { text: string; confidence: number };
 type Native = {
   httpGet(url: string, timeoutSeconds: number): Promise<HttpResult>;
   frameRGBA(path: string, maxWidth: number): Promise<Frame>;
+  frameCrop(path: string, x: number, y: number, w: number, h: number, maxWidth: number): Promise<Frame>;
   readText(path: string, x: number, y: number, w: number, h: number): Promise<TextResult>;
   tempDir(): string;
   getItem(key: string): string | null;

@@ -2,6 +2,8 @@ import { ExpoMpvView, type ExpoMpvViewRef } from 'expo-mpv';
 import React, { forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react';
 import { View } from 'react-native';
 
+import D7TNative from '../modules/d7t-native';
+
 export type Bounds = { x: number; y: number; width: number; height: number };
 
 type Session = {
@@ -31,6 +33,7 @@ type Props = { emit: (event: MpvEvent) => void };
 export const MpvHost = forwardRef<MpvHostHandle, Props>(function MpvHost({ emit }, handle) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const refs = useRef(new Map<string, ExpoMpvViewRef>());
+  const shotReady = useRef(new Set<string>());
   const waiters = useRef(new Map<string, Array<(r: ExpoMpvViewRef) => void>>());
 
   const patch = useCallback((id: string, change: Partial<Session>) => {
@@ -152,6 +155,27 @@ export const MpvHost = forwardRef<MpvHostHandle, Props>(function MpvHost({ emit 
               view.getMediaInfo().catch(() => null),
             ]);
             return { tracks, ids, media };
+          }
+          case 'mpv.frame': {
+            // One picture of the player (mpv screenshot of the decoded video, no subtitles/OSD),
+            // optionally cropped to a region (0..1) and scaled down, as raw RGBA for the page's clock OCR.
+            const view = await withView(a.sid);
+            if (!shotReady.current.has(a.sid)) {
+              shotReady.current.add(a.sid);
+              try {
+                await view.setPropertyString('screenshot-format', 'png');
+                await view.setPropertyString('screenshot-png-compression', '1');
+              } catch {
+                /* the defaults still work */
+              }
+            }
+            const file = `${D7TNative.tempDir()}d7t-frame-${a.sid}.png`;
+            await view.setPropertyString('d7t-command', ['screenshot-to-file', file, 'video'].join('\u0001'));
+            const width = Math.max(64, Math.min(1920, Number(a.maxWidth) || 640));
+            const r = a.region
+              ? await D7TNative.frameCrop(file, a.region.x, a.region.y, a.region.width, a.region.height, width)
+              : await D7TNative.frameRGBA(file, width);
+            return r;
           }
           case 'mpv.info':
             return (await withView(a.sid)).getPlaybackInfo();

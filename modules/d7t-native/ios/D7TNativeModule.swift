@@ -24,6 +24,11 @@ public class D7TNativeModule: Module {
       return try D7TVision.frameRGBA(path: path, maxWidth: maxWidth)
     }.runOnQueue(.global(qos: .userInitiated))
 
+    // Same as frameRGBA, but only the rectangle x, y, w, h (0...1 of the picture) is returned.
+    AsyncFunction("frameCrop") { (path: String, x: Double, y: Double, w: Double, h: Double, maxWidth: Int) -> [String: Any] in
+      return try D7TVision.frameRGBA(path: path, maxWidth: maxWidth, crop: CGRect(x: x, y: y, width: w, height: h))
+    }.runOnQueue(.global(qos: .userInitiated))
+
     AsyncFunction("readText") { (path: String, x: Double, y: Double, w: Double, h: Double) -> [String: Any] in
       return try D7TVision.readText(path: path, x: x, y: y, w: w, h: h)
     }.runOnQueue(.global(qos: .userInitiated))
@@ -233,8 +238,14 @@ enum D7TVision {
     return img
   }
 
-  static func frameRGBA(path: String, maxWidth: Int) throws -> [String: Any] {
-    let img = try loadImage(path)
+  static func frameRGBA(path: String, maxWidth: Int, crop: CGRect? = nil) throws -> [String: Any] {
+    var img = try loadImage(path)
+    if let c = crop {
+      let fw = Double(img.width), fh = Double(img.height)
+      let rect = CGRect(x: max(0, c.origin.x * fw), y: max(0, c.origin.y * fh), width: max(1, c.size.width * fw), height: max(1, c.size.height * fh))
+        .intersection(CGRect(x: 0, y: 0, width: fw, height: fh))
+      if !rect.isNull, let part = img.cropping(to: rect.integral) { img = part }
+    }
     let scale = min(1.0, Double(maxWidth) / Double(img.width))
     let w = max(1, Int(Double(img.width) * scale))
     let h = max(1, Int(Double(img.height) * scale))
