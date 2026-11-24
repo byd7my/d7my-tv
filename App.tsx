@@ -13,21 +13,21 @@ type WebViewRef = {
 const D7TWebView = requireNativeView<any>('D7TNative', 'D7TWebView');
 const D7TTabBar = requireNativeView<any>('D7TNative', 'D7TTabBarView');
 
-// Lume's tab order: Search, Home, Movies, Series, Live TV, then the last place (More). A tab with
-// no icon is text only, as in Lume.
-const TABS = [
-  { id: 'search', title: 'Search', icon: 'magnifyingglass' },
-  { id: 'home', title: 'Home' },
-  { id: 'movies', title: 'Movies' },
-  { id: 'series', title: 'Series' },
-  { id: 'live', title: 'Live TV' },
-  { id: 'more', title: 'More', icon: 'ellipsis' },
-];
+// Five tabs at most: the system turns a sixth into its own "More" tab. Everything else (library,
+// sources, settings, tools) opens from the glass More button.
+const ALL_TABS: Record<string, { id: string; title: string; icon: string }> = {
+  home: { id: 'home', title: 'Home', icon: 'house.fill' },
+  movies: { id: 'movies', title: 'Movies', icon: 'film.fill' },
+  series: { id: 'series', title: 'Series', icon: 'tv.fill' },
+  live: { id: 'live', title: 'Live TV', icon: 'antenna.radiowaves.left.and.right' },
+  search: { id: 'search', title: 'Search', icon: 'magnifyingglass' },
+};
+const TAB_ORDER = ['home', 'movies', 'series', 'live', 'search'];
 
 export default function App() {
   const web = useRef<WebViewRef>(null);
   const mpv = useRef<MpvHostHandle>(null);
-  const [tab, setTab] = useState({ active: 'home', hidden: false, ready: false });
+  const [tab, setTab] = useState<{ active: string; hidden: boolean; ready: boolean; tabs: string[]; more: boolean }>({ active: 'home', hidden: false, ready: false, tabs: TAB_ORDER, more: false });
 
   const emit = useCallback((event: MpvEvent) => {
     web.current?.emit('mpv', JSON.stringify(event)).catch(() => undefined);
@@ -44,8 +44,14 @@ export default function App() {
     try {
       // The page says which tab is showing and whether the bar must be out of the way (fullscreen).
       if (msg.method === 'tabs.state') {
-        const a = msg.args as { active?: string; hidden?: boolean };
-        setTab({ active: a.active ?? 'home', hidden: !!a.hidden, ready: true });
+        const a = msg.args as { active?: string; hidden?: boolean; tabs?: string[]; more?: boolean };
+        setTab({
+          active: a.active ?? 'home',
+          hidden: !!a.hidden,
+          ready: true,
+          tabs: (a.tabs ?? TAB_ORDER).filter((id) => ALL_TABS[id]),
+          more: !!a.more,
+        });
         await web.current?.resolve(msg.id, true, 'null');
         return;
       }
@@ -66,9 +72,10 @@ export default function App() {
         <D7TTabBar
           style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
           pointerEvents="box-none"
-          tabs={TABS}
+          tabs={tab.tabs.map((id) => ALL_TABS[id])}
           selected={tab.active}
           barHidden={tab.hidden}
+          moreVisible={tab.more}
           onSelectTab={(e: { nativeEvent: { id: string } }) => {
             web.current?.emit('tab', JSON.stringify(e.nativeEvent.id)).catch(() => undefined);
           }}

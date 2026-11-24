@@ -22,8 +22,20 @@ final class D7TTabBarView: ExpoView, UITabBarControllerDelegate {
     didSet { select(selected) }
   }
 
+  /// The glass "More" button (top trailing): everything that does not fit in five tabs.
+  var moreVisible: Bool = false {
+    didSet { UIView.animate(withDuration: 0.2) { self.moreButton.alpha = self.moreVisible && !self.barHidden ? 1 : 0 } }
+  }
+  private let moreButton = UIButton(type: .system)
+
   var barHidden: Bool = false {
-    didSet { UIView.animate(withDuration: 0.25) { self.controller.view.alpha = self.barHidden ? 0 : 1 } ; controller.tabBar.isUserInteractionEnabled = !barHidden }
+    didSet {
+      UIView.animate(withDuration: 0.25) {
+        self.controller.view.alpha = self.barHidden ? 0 : 1
+        self.moreButton.alpha = self.moreVisible && !self.barHidden ? 1 : 0
+      }
+      controller.tabBar.isUserInteractionEnabled = !barHidden
+    }
   }
 
   required init(appContext: AppContext? = nil) {
@@ -36,6 +48,22 @@ final class D7TTabBarView: ExpoView, UITabBarControllerDelegate {
     controller.view.frame = bounds
     controller.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
     addSubview(controller.view)
+
+    // Real glass button on iOS 26; a plain tinted one before.
+    if #available(iOS 26.0, *) {
+      var config = UIButton.Configuration.glass()
+      config.image = UIImage(systemName: "ellipsis")
+      moreButton.configuration = config
+    } else {
+      var config = UIButton.Configuration.tinted()
+      config.image = UIImage(systemName: "ellipsis")
+      config.cornerStyle = .capsule
+      moreButton.configuration = config
+    }
+    moreButton.accessibilityLabel = "More"
+    moreButton.alpha = 0
+    moreButton.addAction(UIAction { [weak self] _ in self?.onSelectTab(["id": "more"]) }, for: .touchUpInside)
+    addSubview(moreButton)
   }
 
   override func didMoveToWindow() {
@@ -98,11 +126,14 @@ final class D7TTabBarView: ExpoView, UITabBarControllerDelegate {
     super.layoutSubviews()
     controller.view.frame = bounds
     clearBackgrounds(controller.view)
+    let side: CGFloat = 44
+    moreButton.frame = CGRect(x: bounds.width - 16 - side, y: safeAreaInsets.top + 8, width: side, height: side)
   }
 
   /// Only the bar itself takes touches; everything else belongs to the web page below.
   override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
     if barHidden { return nil }
+    if moreButton.alpha > 0.5, moreButton.frame.contains(point) { return moreButton }
     let bar = controller.tabBar
     let local = convert(point, to: bar)
     guard bar.bounds.contains(local), let hit = bar.hitTest(local, with: event) else { return nil }

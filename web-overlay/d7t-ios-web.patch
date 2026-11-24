@@ -1,9 +1,9 @@
 diff --git a/apps/web/src/_ios-lume.scss b/apps/web/src/_ios-lume.scss
 new file mode 100644
-index 0000000..a598e9b
+index 0000000..aaf7348
 --- /dev/null
 +++ b/apps/web/src/_ios-lume.scss
-@@ -0,0 +1,1187 @@
+@@ -0,0 +1,1256 @@
 +// ─────────────────────────────────────────────────────────────────────────────
 +// One design language for the whole iPhone app, taken from Lume's SwiftUI source
 +// (sizes read from Lume/Views: PosterCardMetrics, CategoryTileMetrics,
@@ -1191,12 +1191,81 @@ index 0000000..a598e9b
 +        }
 +    }
 +}
++
++// ═════════ Pages that hold a player (Recently viewed, Favorites): picture first ═════════
++// Same order as Live TV and Lume's player screen: the picture on top at 16:9, then what is
++// playing, then the list. The title row and the desktop sidebar toggle are not needed while a
++// picture is on screen, and the sidebar toggle never makes sense on a phone.
++@media (max-width: 640px) {
++    html.d7t-ios {
++        app-unified-collection-page:has(app-unified-live-tab .video-player) .collection-header {
++            display: none;
++        }
++
++        app-unified-collection-page .collection-sidebar-toggle {
++            display: none !important;
++        }
++
++        app-unified-live-tab .sidebar {
++            width: 100% !important;
++            max-width: none !important;
++            min-width: 0 !important;
++            border-right: 0;
++        }
++    }
++}
++
++// ═════════ Home: add another source ═════════
++@media (max-width: 640px) {
++    html.d7t-ios {
++        .dashboard-add-source {
++            display: flex;
++            align-items: center;
++            gap: 12px;
++            width: calc(100% - 2 * var(--l-inset));
++            min-height: var(--l-row);
++            margin: 8px var(--l-inset) 0;
++            padding: 0 16px;
++            border: 0;
++            border-radius: var(--l-r-card);
++            background: var(--l-fill);
++            color: var(--l-tint);
++            font: 600 17px/1 var(--l-font);
++            cursor: pointer;
++            -webkit-tap-highlight-color: transparent;
++            transition: opacity 0.12s ease-out;
++
++            &:active {
++                opacity: 0.6;
++            }
++        }
++
++        .dashboard-add-source__plus {
++            width: 28px;
++            font-size: 26px;
++            font-weight: 400;
++            text-align: center;
++        }
++
++        // The playlist-only toolbar chip wraps under the channel instead of being clipped.
++        app-unified-collection-page app-unified-live-tab .epg.epg--inline,
++        app-unified-collection-page app-unified-live-tab .epg.epg--list,
++        app-unified-collection-page
++            app-unified-live-tab
++            .epg.epg--inline:has(app-epg-timeline-empty-state) {
++            --epg-inline-height: auto;
++            flex: 0 0 auto !important;
++            height: auto !important;
++            max-height: none !important;
++        }
++    }
++}
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..ca35f09
+index 0000000..bc7753c
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,736 @@
+@@ -0,0 +1,738 @@
 +@mixin phone-controls {
 +            grid-template-columns: auto minmax(0, 1fr) !important;
 +            grid-template-areas:
@@ -1568,7 +1637,8 @@ index 0000000..ca35f09
 +        }
 +
 +        // Live TV: picture first, list underneath.
-+        app-live-stream-layout {
++        app-live-stream-layout,
++        app-unified-live-tab {
 +            flex-direction: column;
 +
 +            .content-container {
@@ -1915,7 +1985,8 @@ index 0000000..ca35f09
 +    }
 +
 +    // Nothing is playing yet: the list is the page, no "select a channel" placeholder.
-+    html.d7t-ios app-live-stream-layout .content-container:not(:has(.video-player)) {
++    html.d7t-ios app-live-stream-layout .content-container:not(:has(.video-player)),
++    html.d7t-ios app-unified-live-tab .content-container:not(:has(.video-player)) {
 +        display: none !important;
 +    }
 +
@@ -3265,10 +3336,10 @@ index 0000000..7880bdf
 +}
 diff --git a/apps/web/src/app/ios/ios-native-tabs.ts b/apps/web/src/app/ios/ios-native-tabs.ts
 new file mode 100644
-index 0000000..8522ed8
+index 0000000..2ffb65a
 --- /dev/null
 +++ b/apps/web/src/app/ios/ios-native-tabs.ts
-@@ -0,0 +1,95 @@
+@@ -0,0 +1,116 @@
 +import { getD7tNative } from './ios-bridge';
 +
 +/**
@@ -3292,11 +3363,16 @@ index 0000000..8522ed8
 +    document.documentElement.classList.add('d7t-native-tabs');
 +
 +    let last = '';
-+    const send = (active: string, hidden: boolean) => {
-+        const key = `${active}|${hidden}`;
++    const send = (state: {
++        active: string;
++        hidden: boolean;
++        tabs: string[];
++        more: boolean;
++    }) => {
++        const key = JSON.stringify(state);
 +        if (key === last) return;
 +        last = key;
-+        void native.call('tabs.state', { active, hidden }).catch(() => undefined);
++        void native.call('tabs.state', state).catch(() => undefined);
 +    };
 +
 +    const compute = () => {
@@ -3304,11 +3380,15 @@ index 0000000..8522ed8
 +        const hidden =
 +            html.classList.contains('d7t-has-fullscreen') ||
 +            !!document.querySelector('.d7t-fullscreen');
-+        const moreOpen = document.querySelector(
-+            '.rail-more-sheet:not(.is-closing), .app-rail.native-more-open'
-+        );
-+        let active = 'more';
-+        if (!moreOpen) {
++        // Only the tabs this source has (an M3U playlist has no Movies/Series).
++        const tabs = Object.entries(TAB_LINKS)
++            .filter(([, suffix]) =>
++                document.querySelector(`.app-rail a.nav-item[href$="${suffix}"]`)
++            )
++            .map(([id]) => id);
++        const sheetOpen = document.querySelector('.app-rail.native-more-open');
++        let active = 'none';
++        if (!sheetOpen) {
 +            for (const [id, suffix] of Object.entries(TAB_LINKS)) {
 +                const link = document.querySelector(
 +                    `.app-rail a.nav-item[href$="${suffix}"]`
@@ -3319,7 +3399,19 @@ index 0000000..8522ed8
 +                }
 +            }
 +        }
-+        send(active, hidden);
++        // The glass More button sits top-trailing: it stays off the player (whose own controls are
++        // there) and off pages whose header holds the search field.
++        const path = location.pathname;
++        const hasPlayer = !!document.querySelector(
++            '.video-player, app-web-player-view, .embedded-mpv-player__viewport'
++        );
++        const searchHeader = /\/(search|settings)(\/|$)/.test(path);
++        send({
++            active,
++            hidden,
++            tabs,
++            more: !hasPlayer && !searchHeader && !sheetOpen,
++        });
 +    };
 +
 +    let frame = 0;
@@ -9926,6 +10018,48 @@ index 1ab7542..d1bd3a9 100644
      protected toggleSearch(): void {
          const next = !this.searching();
          this.searching.set(next);
+diff --git a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html
+index 0d6bdad..2c20efe 100644
+--- a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html
++++ b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html
+@@ -128,6 +128,19 @@
+             />
+         }
+ 
++        <!-- iPhone app: add another source from Home, next to the ones already here -->
++        @if (isIosApp) {
++            <button
++                type="button"
++                class="dashboard-add-source"
++                data-test-id="dashboard-add-source"
++                (click)="addSource()"
++            >
++                <span class="dashboard-add-source__plus" aria-hidden="true">+</span>
++                <span>Add source</span>
++            </button>
++        }
++
+         <!-- Xtream recently-added rail (only relevant if there are Xtream playlists) -->
+         @if (
+             dashboardRails().xtreamRecentlyAdded &&
+diff --git a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts
+index 9eca42f..23d7ff6 100644
+--- a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts
++++ b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts
+@@ -126,6 +126,13 @@ export class WorkspaceDashboardRailsComponent {
+     private readonly translate = inject(TranslateService);
+     private readonly languageTick = injectTranslationTick();
+     private readonly shellActions = inject(WORKSPACE_SHELL_ACTIONS);
++    /** iPhone app only: Home offers "Add source" beside the existing sources. */
++    protected readonly isIosApp = !!(window as unknown as { d7tNative?: unknown })
++        .d7tNative;
++
++    protected addSource(): void {
++        this.shellActions.openAddPlaylistDialog();
++    }
+     private readonly runtime = inject(RuntimeCapabilitiesService);
+     private readonly settingsStore = inject(SettingsStore);
+     private readonly sourceExpiry = inject(DashboardSourceExpiryService);
 diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-header/workspace-shell-header.component.html b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-header/workspace-shell-header.component.html
 index 7ac2c4a..47a768e 100644
 --- a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-header/workspace-shell-header.component.html
