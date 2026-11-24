@@ -2683,10 +2683,10 @@ index 0000000..2dd8486
 +}
 diff --git a/apps/web/src/app/ios/ios-mpv-host.ts b/apps/web/src/app/ios/ios-mpv-host.ts
 new file mode 100644
-index 0000000..7880bdf
+index 0000000..21a2f56
 --- /dev/null
 +++ b/apps/web/src/app/ios/ios-mpv-host.ts
-@@ -0,0 +1,741 @@
+@@ -0,0 +1,746 @@
 +import type {
 +    ElectronBridgeApi,
 +    EmbeddedMpvBounds,
@@ -2824,7 +2824,9 @@ index 0000000..7880bdf
 +        now: () => Date.now(),
 +        createSession: (bounds, title, volume) =>
 +            this.createHiddenSession(bounds, title, volume),
-+        loadPlayback: (id, playback) => void this.loadEmbeddedMpvPlayback(id, playback),
++        // The sound's own session is not a new picture: it must not announce itself as the primary
++        // playback (that would reset the chosen audio and hide the sync controls).
++        loadPlayback: (id, playback) => void this.loadEmbeddedMpvPlayback(id, playback, false),
 +        setPaused: (id, paused) => void this.setEmbeddedMpvPaused(id, paused),
 +        seekBy: (id, delta) => void this.seekEmbeddedMpvBy(id, delta),
 +        disposeSession: (id) => void this.disposeEmbeddedMpvSession(id),
@@ -3087,17 +3089,20 @@ index 0000000..7880bdf
 +
 +    loadEmbeddedMpvPlayback = async (
 +        sessionId: string,
-+        playback: ResolvedPortalPlayback
++        playback: ResolvedPortalPlayback,
++        isPicture = true
 +    ): Promise<void> => {
-+        // A new picture ends the audio channel that belonged to the old one.
-+        this.split.onUserLoad(sessionId);
-+        // Whatever page started it (Live, Recently viewed, Favorites, Search), the sound picker
-+        // must know which channel is the picture; see SplitAudioCatalogService.
-+        window.dispatchEvent(
-+            new CustomEvent('d7t-primary-playback', {
-+                detail: { url: playback.streamUrl, title: playback.title },
-+            })
-+        );
++        if (isPicture) {
++            // A new picture ends the audio channel that belonged to the old one.
++            this.split.onUserLoad(sessionId);
++            // Whatever page started it (Live, Recently viewed, Favorites, Search), the sound picker
++            // must know which channel is the picture; see SplitAudioCatalogService.
++            window.dispatchEvent(
++                new CustomEvent('d7t-primary-playback', {
++                    detail: { url: playback.streamUrl, title: playback.title },
++                })
++            );
++        }
 +        this.update(sessionId, {
 +            streamUrl: playback.streamUrl,
 +            title: playback.title,
