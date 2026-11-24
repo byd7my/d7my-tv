@@ -1,9 +1,1050 @@
+diff --git a/apps/web/src/_ios-lume.scss b/apps/web/src/_ios-lume.scss
+new file mode 100644
+index 0000000..8199759
+--- /dev/null
++++ b/apps/web/src/_ios-lume.scss
+@@ -0,0 +1,1035 @@
++// ─────────────────────────────────────────────────────────────────────────────
++// One design language for the whole iPhone app, taken from Lume's SwiftUI source
++// (sizes read from Lume/Views: PosterCardMetrics, CategoryTileMetrics,
++// DetailMetrics, PrimaryPlayButton, LiveStreamCardView, EngineControlsOverlay,
++// sheets with .medium/.large detents).  Lume is the reference for proportions,
++// spacing, type scale, radii and hierarchy; D7my-TV supplies the features.
++//
++//   touch target   44        content inset   20       section gap   28
++//   row (list)     52        rail gap        16       tile radius   10
++//   card radius    12        poster radius   10       sheet radius  36
++//   primary button 50 tall   control button  44       toolbar icon  20–24
++//   type           large title 34/700 · title3 20/700 · headline 17/600
++//                  body 17 · subheadline 15 · footnote 13 · caption 12
++// ─────────────────────────────────────────────────────────────────────────────
++html.d7t-ios {
++    --l-inset: 20px;
++    --l-section: 28px;
++    --l-touch: 44px;
++    --l-row: 52px;
++    --l-r-card: 12px;
++    --l-r-tile: 10px;
++    --l-r-sheet: 36px;
++    --l-bg: #000;
++    --l-surface: #1c1c1e;
++    --l-surface-2: #2c2c2e;
++    --l-fill: rgba(118, 118, 128, 0.24);
++    --l-fill-strong: rgba(118, 118, 128, 0.4);
++    --l-sep: rgba(84, 84, 88, 0.65);
++    --l-label: #fff;
++    --l-label-2: rgba(235, 235, 245, 0.6);
++    --l-label-3: rgba(235, 235, 245, 0.3);
++    --l-tint: #0a84ff;
++    --l-danger: #ff453a;
++    --l-font: -apple-system, 'SF Pro Text', system-ui, sans-serif;
++}
++
++@media (max-width: 640px) {
++    html.d7t-ios {
++        // ── Page titles: Lume's large navigation title ───────────────────────
++        .recently-added-page__title,
++        .sources-title,
++        app-workspace-settings-context-panel + * h2:first-child {
++            font-size: 34px !important;
++            font-weight: 700 !important;
++            letter-spacing: -0.02em;
++            line-height: 1.1;
++        }
++
++        // ── Rails (Home, Recently added): title3 header, 16 gap, 10-radius posters ─
++        .rail__title {
++            font-size: 20px !important;
++            font-weight: 700 !important;
++            letter-spacing: -0.01em;
++        }
++
++        .rail__chev {
++            display: none !important;
++        }
++
++        .rail__card,
++        .content-card,
++        .content-card__activation {
++            border-radius: var(--l-r-tile) !important;
++        }
++
++        // ── Buttons ──────────────────────────────────────────────────────────
++        // Control buttons: 44 tall capsules on a quiet fill (Lume's bordered style).
++        .mdc-button,
++        .mat-mdc-button,
++        .mat-mdc-outlined-button,
++        .mat-mdc-unelevated-button,
++        .mat-mdc-raised-button {
++            min-height: var(--l-touch);
++            border-radius: 999px !important;
++            font-family: var(--l-font);
++            font-size: 15px;
++            font-weight: 600;
++            letter-spacing: 0;
++        }
++
++        .mat-mdc-outlined-button {
++            border: 0 !important;
++            background: var(--l-fill);
++            color: var(--l-label);
++        }
++
++        .mat-mdc-button:not(.mat-mdc-icon-button) {
++            color: var(--l-tint);
++        }
++
++        // Primary action: 50 tall, white fill with dark label (Lume's PrimaryPlayButton).
++        .mat-mdc-unelevated-button.mat-primary,
++        .mat-mdc-raised-button.mat-primary,
++        .mat-mdc-unelevated-button:not([disabled]):not(.mat-warn),
++        .mat-mdc-raised-button:not([disabled]):not(.mat-warn) {
++            min-height: 50px;
++            padding-inline: 24px;
++            background: #fff !important;
++            color: #000 !important;
++            font-size: 17px;
++            box-shadow: none !important;
++        }
++
++        .mat-mdc-icon-button {
++            width: var(--l-touch) !important;
++            height: var(--l-touch) !important;
++            padding: 10px !important;
++        }
++
++        // ── Fields: filled 12-radius controls, no outlines ───────────────────
++        .mat-mdc-form-field {
++            .mdc-notched-outline__leading,
++            .mdc-notched-outline__notch,
++            .mdc-notched-outline__trailing {
++                border-color: transparent !important;
++            }
++
++            .mdc-text-field--outlined {
++                background: var(--l-fill);
++                border-radius: 12px;
++                min-height: var(--l-touch);
++            }
++
++            .mat-mdc-select-value,
++            input {
++                font-size: 17px;
++            }
++        }
++
++        .settings-select {
++            width: 100%;
++        }
++
++        // ── Grouped cards (Settings and friends): inset-grouped list look ─────
++        .settings-card {
++            background: var(--l-surface) !important;
++            border: 0 !important;
++            border-radius: var(--l-r-card) !important;
++            box-shadow: none !important;
++            padding: 16px !important;
++        }
++
++        .settings-card h3,
++        .settings-card .settings-card__title {
++            font-size: 17px;
++            font-weight: 600;
++        }
++
++        // ── Dialogs: a bottom sheet with a 36 radius (medium/large detent) ─────
++        .cdk-global-overlay-wrapper:has(.mat-mdc-dialog-panel) {
++            align-items: flex-end !important;
++            justify-content: stretch !important;
++        }
++
++        .mat-mdc-dialog-panel {
++            width: 100% !important;
++            max-width: 100% !important;
++            max-height: calc(100dvh - env(safe-area-inset-top) - 12px) !important;
++            margin: 0 !important;
++        }
++
++        .mat-mdc-dialog-container .mdc-dialog__surface {
++            border-radius: var(--l-r-sheet) var(--l-r-sheet) 0 0 !important;
++            background: var(--l-surface) !important;
++            box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.45) !important;
++            padding-bottom: env(safe-area-inset-bottom);
++        }
++
++        .mat-mdc-dialog-title {
++            font-size: 17px !important;
++            font-weight: 700 !important;
++            text-align: center;
++        }
++
++        .mat-mdc-dialog-actions {
++            gap: 10px;
++            padding: 12px 20px 16px !important;
++            justify-content: flex-end;
++        }
++
++        // ── Menus: 14 radius glass, 44 rows, 17pt ────────────────────────────
++        .mat-mdc-menu-panel {
++            border-radius: 14px !important;
++            background: rgba(44, 44, 46, 0.92) !important;
++            -webkit-backdrop-filter: blur(30px) saturate(1.8);
++            backdrop-filter: blur(30px) saturate(1.8);
++            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
++            min-width: 220px;
++        }
++
++        .mat-mdc-menu-item {
++            min-height: var(--l-touch) !important;
++            font-size: 17px;
++        }
++
++        // ── Snackbar, tooltips ───────────────────────────────────────────────
++        .mat-mdc-snack-bar-container .mdc-snackbar__surface {
++            border-radius: 14px !important;
++        }
++
++        // ── Switch: 51 × 31 with a 27 thumb, like UISwitch ───────────────────
++        .mdc-switch {
++            --mat-switch-track-width: 51px;
++            --mat-switch-track-height: 31px;
++            --mat-switch-track-shape: 16px;
++            --mat-switch-selected-handle-width: 27px;
++            --mat-switch-selected-handle-height: 27px;
++            --mat-switch-unselected-handle-width: 27px;
++            --mat-switch-unselected-handle-height: 27px;
++            --mat-switch-selected-track-color: #30d158;
++            --mat-switch-selected-hover-track-color: #30d158;
++            --mat-switch-selected-focus-track-color: #30d158;
++            --mat-switch-selected-pressed-track-color: #30d158;
++            --mat-switch-unselected-track-color: rgba(120, 120, 128, 0.32);
++            --mat-switch-selected-handle-color: #fff;
++            --mat-switch-unselected-handle-color: #fff;
++        }
++    }
++}
++
++// ═════════════ Audio panel, Auto Sync window, sync bar: compact grouped rows ═════════════
++// Source of truth: audio-sync-window.component.{html,scss} and split-audio-panel.component.*
++// (shared with desktop and untouched there).  On the phone the window was a stack of cards: two
++// 220 px pictures, three result rows, a verdict, a stepper, a chip row and two buttons — about
++// 740 px tall.  Here it is Lume's settings pattern: an inset-grouped list of 44–52 px rows, the
++// clock crops shrunk to thumbnails beside their readouts, one 44 px primary action.
++@media (max-width: 640px) {
++    html.d7t-ios {
++        // One frame for both panels.
++        .player-controls__split-audio-panel .split-audio,
++        app-audio-sync-window > .sync {
++            gap: 0 !important;
++            padding: 0 !important;
++            background: rgba(28, 28, 30, 0.96) !important;
++            -webkit-backdrop-filter: blur(30px) saturate(1.8);
++            backdrop-filter: blur(30px) saturate(1.8);
++            border: 0 !important;
++            border-radius: 24px !important;
++            box-shadow:
++                inset 0 0 0 0.5px rgba(255, 255, 255, 0.14),
++                0 18px 60px rgba(0, 0, 0, 0.55) !important;
++            color: var(--l-label);
++            font-family: var(--l-font);
++            font-size: 15px;
++            overflow-x: hidden;
++            overflow-y: auto !important;
++            overscroll-behavior: contain;
++        }
++
++        // Header: 48 tall, 17/600 title, 36 round buttons.
++        .split-audio__header,
++        .sync__header {
++            min-height: 48px;
++            padding: 0 8px 0 16px !important;
++            gap: 8px;
++            border-bottom: 0.5px solid var(--l-sep) !important;
++            background: transparent !important;
++        }
++
++        .split-audio__title,
++        .sync__title {
++            font-size: 17px !important;
++            font-weight: 600 !important;
++            letter-spacing: -0.01em;
++        }
++
++        .split-audio__header-icon,
++        .sync__header-icon {
++            width: 20px;
++            height: 20px;
++            font-size: 20px;
++            color: var(--l-tint) !important;
++        }
++
++        .split-audio__icon-button,
++        .sync__icon-button,
++        .sync-bar__close {
++            width: 36px !important;
++            height: 36px !important;
++            border: 0 !important;
++            border-radius: 50% !important;
++            background: var(--l-fill) !important;
++            color: var(--l-label) !important;
++        }
++
++        .sync__icon-button--small {
++            width: 32px !important;
++            height: 32px !important;
++        }
++
++        // ── Audio channel list: 52 rows with inset hairlines ───────────────────
++        .split-audio__source {
++            display: flex;
++            align-items: center;
++            gap: 12px;
++            min-height: var(--l-touch);
++            margin: 10px 12px 0;
++            padding: 0 12px !important;
++            border-radius: var(--l-r-card);
++            background: var(--l-surface-2);
++            font-size: 17px;
++            color: var(--l-label);
++
++            select {
++                flex: 1;
++                min-height: var(--l-touch);
++                border: 0 !important;
++                background: transparent !important;
++                color: var(--l-tint) !important;
++                font-size: 17px;
++                text-align: right;
++            }
++        }
++
++        .split-audio__list {
++            margin: 10px 12px 12px;
++            padding: 0 !important;
++            border-radius: var(--l-r-card);
++            background: var(--l-surface-2);
++            overflow: hidden;
++        }
++
++        .split-audio__row {
++            min-height: var(--l-row);
++            padding: 0 4px 0 16px !important;
++            border: 0 !important;
++            border-radius: 0 !important;
++            background: transparent !important;
++            font-size: 17px;
++
++            & + .split-audio__row {
++                border-top: 0.5px solid var(--l-sep) !important;
++            }
++        }
++
++        .split-audio__name {
++            font-size: 17px !important;
++            font-weight: 400;
++        }
++
++        .split-audio__search input {
++            min-height: 40px;
++            margin: 10px 12px 0;
++            padding: 0 14px;
++            border: 0 !important;
++            border-radius: 999px !important;
++            background: var(--l-fill) !important;
++            color: var(--l-label) !important;
++            font-size: 17px;
++        }
++
++        .split-audio__empty,
++        .split-audio__hints {
++            padding: 12px 20px;
++            font-size: 13px;
++            line-height: 1.35;
++            color: var(--l-label-2);
++            text-align: center;
++        }
++
++        .split-audio__footer {
++            gap: 8px;
++            padding: 8px 12px 12px;
++        }
++
++        // ── Auto / Manual section of the audio panel (app-split-sync-section) ──────
++        .sync-section {
++            display: flex;
++            flex-direction: column;
++            gap: 0 !important;
++            padding: 10px 12px 0 !important;
++        }
++
++        .sync-section__modes {
++            display: flex;
++            gap: 2px;
++            padding: 2px;
++            border-radius: 10px;
++            background: var(--l-fill);
++        }
++
++        .sync-section__mode {
++            flex: 1;
++            min-height: 32px;
++            padding: 0 10px !important;
++            border: 0 !important;
++            border-radius: 8px !important;
++            background: transparent !important;
++            color: var(--l-label) !important;
++            font-size: 15px;
++            font-weight: 600;
++        }
++
++        .sync-section__mode[aria-pressed='true'],
++        .sync-section__mode--on,
++        .sync-section__mode[aria-checked='true'] {
++            background: #636366 !important;
++        }
++
++        .sync-section__hint,
++        .sync-section__summary {
++            margin: 0;
++            padding: 8px 4px 0;
++            font-size: 13px;
++            line-height: 1.35;
++            color: var(--l-label-2);
++        }
++
++        .sync-section__start {
++            display: flex;
++            align-items: center;
++            justify-content: center;
++            gap: 8px;
++            width: 100%;
++            min-height: var(--l-touch) !important;
++            margin: 10px 0 0 !important;
++            padding: 0 20px !important;
++            border: 0 !important;
++            border-radius: 999px !important;
++            background: #fff !important;
++            color: #000 !important;
++            font-size: 17px !important;
++            font-weight: 600 !important;
++            box-shadow: none !important;
++        }
++
++        // The two secondary tools (choose clock regions / quick sync): rows, not tiles.
++        .sync-section__tools {
++            display: flex !important;
++            flex-direction: column;
++            gap: 0 !important;
++            margin-top: 10px;
++            border-radius: var(--l-r-card);
++            background: var(--l-surface-2);
++            overflow: hidden;
++        }
++
++        .sync-section__tool {
++            display: flex !important;
++            flex-direction: row !important;
++            align-items: center;
++            justify-content: flex-start;
++            gap: 12px;
++            min-height: var(--l-touch);
++            padding: 0 16px !important;
++            border: 0 !important;
++            border-radius: 0 !important;
++            background: transparent !important;
++            color: var(--l-label) !important;
++            font-size: 17px;
++            text-align: left;
++
++            mat-icon {
++                width: 22px;
++                height: 22px;
++                font-size: 22px;
++                color: var(--l-tint);
++            }
++
++            & + .sync-section__tool {
++                border-top: 0.5px solid var(--l-sep) !important;
++            }
++
++            &[disabled] {
++                opacity: 0.4;
++            }
++        }
++
++        .sync-section__nudges {
++            display: flex;
++            gap: 6px;
++            margin-top: 8px;
++        }
++
++        .sync-section__nudge {
++            flex: 1;
++            min-height: 36px;
++            border: 0 !important;
++            border-radius: 999px !important;
++            background: var(--l-fill) !important;
++            color: var(--l-label) !important;
++            font-size: 15px;
++            font-weight: 600;
++        }
++
++        .sync-section__link {
++            min-height: var(--l-touch);
++            color: var(--l-tint) !important;
++            font-size: 15px;
++        }
++
++        // "Sync audio by clock" opener when no split is running.
++        .split-audio__sync {
++            display: flex;
++            align-items: center;
++            gap: 12px;
++            width: calc(100% - 24px);
++            min-height: var(--l-touch);
++            margin: 10px 12px 0;
++            padding: 0 16px !important;
++            border: 0 !important;
++            border-radius: var(--l-r-card) !important;
++            background: var(--l-surface-2) !important;
++            color: var(--l-label) !important;
++            font-size: 17px;
++            text-align: left;
++
++            mat-icon {
++                color: var(--l-tint);
++            }
++        }
++
++        .split-audio__divider {
++            display: none;
++        }
++
++        .split-audio__save,
++        .split-audio__original {
++            min-height: var(--l-touch);
++            border: 0 !important;
++            border-radius: 999px !important;
++            background: var(--l-fill) !important;
++            color: var(--l-label) !important;
++            font-size: 15px;
++            font-weight: 600;
++        }
++
++        // ── Auto Sync window ────────────────────────────────────────────────────
++        // Notice / hint lines: footnote, secondary.
++        .sync__notice,
++        .sync__hint,
++        .sync__error {
++            margin: 0;
++            padding: 8px 16px 0;
++            background: transparent !important;
++            border: 0 !important;
++            font-size: 13px;
++            line-height: 1.35;
++            color: var(--l-label-2);
++        }
++
++        .sync__error {
++            color: var(--l-danger);
++        }
++
++        // Each source (main video / audio channel) is one grouped row: caption on top, the clock
++        // crop as a 52 px strip on the left, its readout on the right.
++        .sync__source {
++            display: grid !important;
++            grid-template-columns: minmax(0, 1fr) auto;
++            grid-template-areas: 'label label' 'shot readout';
++            align-items: center;
++            gap: 4px 12px;
++            margin: 10px 12px 0;
++            padding: 10px 12px;
++            border-radius: var(--l-r-card);
++            background: var(--l-surface-2);
++
++            &[hidden] {
++                display: none !important;
++            }
++        }
++
++        .sync__label {
++            grid-area: label;
++            font-size: 13px;
++            font-weight: 600;
++            color: var(--l-label-2);
++        }
++
++        .sync__shot:not(.sync__shot--picking) {
++            grid-area: shot;
++            min-height: 0 !important;
++            height: 52px;
++            border-radius: 8px;
++
++            .sync__canvas {
++                height: 52px !important;
++                max-height: 52px !important;
++                width: 100% !important;
++                object-fit: contain;
++            }
++        }
++
++        .sync__readout {
++            grid-area: readout;
++            display: flex;
++            align-items: center;
++            gap: 8px;
++        }
++
++        .sync__clock {
++            font-size: 22px;
++            font-weight: 600;
++            font-variant-numeric: tabular-nums;
++        }
++
++        .sync__badge {
++            padding: 2px 8px;
++            border-radius: 999px;
++            font-size: 12px;
++            font-weight: 600;
++        }
++
++        // Result: an inset-grouped list, rows 40 tall, the difference in headline weight.
++        .sync__result {
++            margin: 10px 12px 0;
++            border-radius: var(--l-r-card);
++            background: var(--l-surface-2);
++            overflow: hidden;
++            gap: 0 !important;
++            padding: 0 !important;
++
++            &:empty {
++                display: none;
++            }
++        }
++
++        .sync__row {
++            display: flex;
++            align-items: center;
++            justify-content: space-between;
++            min-height: 40px;
++            padding: 0 16px;
++            font-size: 15px;
++
++            & + .sync__row,
++            & + .sync__verdict {
++                border-top: 0.5px solid var(--l-sep);
++            }
++
++            strong {
++                font-size: 17px;
++                font-weight: 600;
++                font-variant-numeric: tabular-nums;
++            }
++        }
++
++        .sync__row--dim {
++            color: var(--l-label-2);
++            font-size: 13px;
++            min-height: 32px;
++        }
++
++        .sync__verdict {
++            display: flex;
++            align-items: center;
++            gap: 8px;
++            min-height: 40px;
++            padding: 0 16px;
++            font-size: 15px;
++            font-weight: 600;
++            background: transparent !important;
++            border-radius: 0 !important;
++        }
++
++        // Primary actions: 44 tall capsules (white, dark label) — Lume's PrimaryPlayButton at the
++        // control size; inside the result group it sits flush as a full-width row button.
++        .sync__primary,
++        .sync__actions .sync__primary {
++            min-height: var(--l-touch) !important;
++            margin: 10px 12px 0;
++            padding: 0 20px !important;
++            border: 0 !important;
++            border-radius: 999px !important;
++            background: #fff !important;
++            color: #000 !important;
++            font-size: 17px !important;
++            font-weight: 600 !important;
++            box-shadow: none !important;
++
++            &[disabled] {
++                opacity: 0.4;
++            }
++        }
++
++        .sync__result .sync__primary {
++            width: calc(100% - 24px);
++            margin: 8px 12px 12px;
++        }
++
++        .sync__link {
++            min-height: var(--l-touch);
++            padding: 0 16px;
++            border: 0;
++            background: transparent;
++            color: var(--l-tint) !important;
++            font-size: 15px;
++            font-weight: 600;
++            text-decoration: none !important;
++        }
++
++        .sync__actions {
++            display: flex;
++            flex-direction: column;
++            align-items: stretch;
++            gap: 0 !important;
++            padding-bottom: 8px;
++        }
++
++        // Picking (the clock reader): a segmented control, a frame capped at 180, then actions.
++        .sync__tabs {
++            display: flex;
++            gap: 2px;
++            margin: 10px 12px 0;
++            padding: 2px;
++            border-radius: 10px;
++            background: var(--l-fill);
++        }
++
++        .sync__tab {
++            flex: 1;
++            min-height: 32px;
++            padding: 0 10px !important;
++            border: 0 !important;
++            border-radius: 8px !important;
++            background: transparent !important;
++            color: var(--l-label) !important;
++            font-size: 15px;
++            font-weight: 600;
++        }
++
++        .sync__tab--on {
++            background: #636366 !important;
++        }
++
++        .sync__shot--picking {
++            margin: 10px 12px 0;
++
++            .sync__canvas {
++                max-height: 180px !important;
++                border-radius: 8px;
++            }
++        }
++
++        // Stepper + step chips + save: one grouped block of three compact rows.
++        .sync__stepper {
++            display: flex;
++            align-items: center;
++            justify-content: space-between;
++            margin: 10px 12px 0;
++            padding: 4px 8px;
++            border-radius: var(--l-r-card) var(--l-r-card) 0 0;
++            background: var(--l-surface-2);
++        }
++
++        .sync__step-button {
++            width: var(--l-touch) !important;
++            height: 36px !important;
++            border: 0 !important;
++            border-radius: 999px !important;
++            background: var(--l-fill) !important;
++            color: var(--l-label) !important;
++        }
++
++        .sync__delay {
++            font-size: 22px;
++            font-weight: 600;
++            font-variant-numeric: tabular-nums;
++        }
++
++        .sync__chips {
++            display: flex;
++            gap: 6px;
++            margin: 0 12px;
++            padding: 4px 12px 10px;
++            background: var(--l-surface-2);
++        }
++
++        .sync__chip {
++            flex: 1;
++            min-height: 32px;
++            padding: 0 8px !important;
++            border: 0 !important;
++            border-radius: 999px !important;
++            background: var(--l-fill) !important;
++            color: var(--l-label) !important;
++            font-size: 15px;
++            font-weight: 600;
++        }
++
++        .sync__chip--on {
++            background: var(--l-tint) !important;
++            color: #fff !important;
++        }
++
++        .sync__save {
++            min-height: var(--l-touch);
++            margin: 0 12px 12px;
++            padding: 0 16px !important;
++            border: 0 !important;
++            border-top: 0.5px solid var(--l-sep) !important;
++            border-radius: 0 0 var(--l-r-card) var(--l-r-card) !important;
++            background: var(--l-surface-2) !important;
++            color: var(--l-tint) !important;
++            font-size: 17px !important;
++            font-weight: 400 !important;
++
++            &[disabled] {
++                color: var(--l-label-3) !important;
++            }
++        }
++
++        .sync__compare {
++            display: flex;
++            flex-direction: column;
++            gap: 0;
++            margin: 10px 12px 0;
++            border-radius: var(--l-r-card);
++            background: var(--l-surface-2);
++            overflow: hidden;
++        }
++
++        .sync__compare-field {
++            display: flex;
++            align-items: center;
++            justify-content: space-between;
++            min-height: var(--l-touch);
++            padding: 0 16px;
++            font-size: 15px;
++        }
++
++        .sync__manual-input {
++            min-height: 36px;
++            max-width: 140px;
++            padding: 0 12px;
++            border: 0 !important;
++            border-radius: 10px !important;
++            background: var(--l-fill) !important;
++            color: var(--l-label) !important;
++            font-size: 17px;
++            text-align: right;
++        }
++
++        // ── Inline sync bar (under the picture while Auto Sync runs) ──────────
++        .sync-bar {
++            border: 0 !important;
++            border-radius: var(--l-r-card) !important;
++            background: rgba(44, 44, 46, 0.92) !important;
++            font-family: var(--l-font);
++        }
++
++        .sync-bar__action,
++        .sync-bar__action--stop {
++            min-height: var(--l-touch) !important;
++            border: 0 !important;
++            border-radius: 999px !important;
++            font-size: 15px !important;
++            font-weight: 600 !important;
++            box-shadow: none !important;
++        }
++
++        .sync-bar__action:not(.sync-bar__action--stop) {
++            background: #fff !important;
++            color: #000 !important;
++        }
++
++        .sync-bar__action--stop {
++            background: rgba(255, 69, 58, 0.2) !important;
++            color: var(--l-danger) !important;
++        }
++
++        .sync-bar__note,
++        .sync-bar__notice {
++            font-size: 13px;
++            color: var(--l-label-2);
++        }
++
++        .sync-bar__time,
++        .sync-bar__diff,
++        .sync-bar__clock {
++            font-variant-numeric: tabular-nums;
++        }
++    }
++}
++
++// ── Search filters: checkboxes become capsule toggles (Lume's filter chips) ───
++@media (max-width: 640px) {
++    html.d7t-ios app-search-results .mat-mdc-checkbox {
++        .mdc-checkbox {
++            display: none !important;
++        }
++
++        .mdc-form-field {
++            min-height: 36px;
++            padding: 0 16px;
++            border-radius: 999px;
++            background: var(--l-fill);
++            color: var(--l-label);
++            font-size: 15px;
++            font-weight: 600;
++        }
++
++        label {
++            padding: 0 !important;
++            cursor: pointer;
++        }
++
++        &.mat-mdc-checkbox-checked .mdc-form-field {
++            background: var(--l-tint);
++            color: #fff;
++        }
++    }
++}
++
++// ═════════ "More": the one place for everything the top bar used to hold ═════════
++// A bottom sheet in Lume's sheet frame (36 radius glass, grabber, 17/700 title), grouped like
++// its settings lists: 52-tall rows, 24 icons, 20 inset, hairlines inset past the icon.
++@media (max-width: 640px) {
++    html.d7t-ios {
++        .rail-more-sheet {
++            left: 8px !important;
++            right: 8px !important;
++            bottom: calc(env(safe-area-inset-bottom, 0px) + 78px) !important;
++            max-height: calc(100dvh - 150px - env(safe-area-inset-top, 0px));
++            overflow-y: auto;
++            overscroll-behavior: contain;
++            padding: 8px 0 12px !important;
++            border: 0 !important;
++            border-radius: var(--l-r-sheet) !important;
++            background: rgba(28, 28, 30, 0.94) !important;
++            font-family: var(--l-font);
++
++            .rail-more-grabber {
++                width: 36px;
++                height: 5px;
++                margin: 0 auto 4px;
++                border-radius: 3px;
++                background: rgba(235, 235, 245, 0.3);
++            }
++
++            .rail-more-title {
++                padding: 6px var(--l-inset) 10px;
++                text-align: center;
++                font-size: 17px;
++                font-weight: 700;
++            }
++
++            .rail-more-group {
++                margin: 0 12px 16px;
++                border-radius: var(--l-r-card);
++                background: var(--l-surface-2);
++                overflow: hidden;
++            }
++
++            .rail-more-heading {
++                padding: 10px 16px 4px;
++                font-size: 13px;
++                font-weight: 600;
++                color: var(--l-label-2);
++            }
++
++            .rail-more-item {
++                position: relative;
++                display: flex !important;
++                align-items: center;
++                gap: 14px;
++                width: 100% !important;
++                min-height: var(--l-row) !important;
++                height: var(--l-row) !important;
++                padding: 0 16px !important;
++                border: 0;
++                border-radius: 0 !important;
++                background: transparent;
++                color: var(--l-label) !important;
++                font: 400 17px/1.2 var(--l-font);
++                text-align: left;
++                text-decoration: none;
++
++                mat-icon {
++                    flex: none;
++                    width: 24px;
++                    height: 24px;
++                    font-size: 24px;
++                    color: var(--l-tint);
++                }
++
++                span {
++                    flex: 1;
++                }
++
++                .rail-more-chevron {
++                    flex: none;
++                    width: 20px;
++                    height: 20px;
++                    font-size: 20px;
++                    color: var(--l-label-3);
++                }
++
++                & + .rail-more-item::before {
++                    content: '';
++                    position: absolute;
++                    top: 0;
++                    left: 54px;
++                    right: 0;
++                    height: 0.5px;
++                    background: var(--l-sep);
++                }
++            }
++
++            // The source switcher is the existing component, framed as a row.
++            .rail-more-switcher {
++                display: block;
++                padding: 6px 12px 10px;
++            }
++        }
++
++        // The contextual top bar and the page search field: Lume's capsule, 44 tall.
++        .workspace-header {
++            min-height: 52px;
++
++            .search-field {
++                flex: 1 1 auto;
++                height: var(--l-touch) !important;
++                border-radius: 999px !important;
++                background: var(--l-fill) !important;
++                border: 0 !important;
++                font-size: 17px;
++            }
++
++            .header-back,
++            .context-drawer-toggle {
++                width: var(--l-touch) !important;
++                height: var(--l-touch) !important;
++                border-radius: 50% !important;
++                background: var(--l-fill) !important;
++            }
++
++            .header-actions {
++                border: 0 !important;
++                background: transparent !important;
++            }
++        }
++    }
++}
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..e67e164
+index 0000000..0d8e561
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,513 @@
+@@ -0,0 +1,696 @@
 +@mixin phone-controls {
 +            grid-template-columns: auto minmax(0, 1fr) !important;
 +            grid-template-areas:
@@ -105,8 +1146,18 @@ index 0000000..e67e164
 +//  - the player's controls float over the picture instead of taking a strip below it.
 +@media (max-width: 640px) {
 +    html.d7t-ios {
++        // The top bar is contextual now (see WorkspaceShellHeaderComponent.phoneApp): 52 px when
++        // it holds Back / a page action / a search field, and gone — no blank strip — otherwise.
 +        .workspace-shell {
-+            grid-template-rows: 56px minmax(0, 1fr) auto !important;
++            grid-template-rows: auto minmax(0, 1fr) auto !important;
++        }
++
++        app-workspace-shell-header.is-phone-empty {
++            display: none !important;
++        }
++
++        app-workspace-shell-header:not(.is-phone-empty) .workspace-header {
++            min-height: 52px;
 +        }
 +
 +        app-workspace-shell-header {
@@ -499,22 +1550,195 @@ index 0000000..e67e164
 +@media (max-width: 640px) {
 +    html.d7t-ios app-audio-sync-window {
 +        position: fixed !important;
-+        left: 10px !important;
-+        right: 10px !important;
-+        top: calc(env(safe-area-inset-top) + 52px) !important;
++        left: 8px !important;
++        right: 8px !important;
++        top: calc(env(safe-area-inset-top) + 8px) !important;
 +        width: auto !important;
 +        z-index: 2147483001 !important;
 +
 +        > * {
 +            width: 100% !important;
 +            max-width: none !important;
-+            max-height: calc(100vh - 190px - env(safe-area-inset-top)) !important;
++            max-height: calc(100dvh - 120px - env(safe-area-inset-top)) !important;
 +            box-sizing: border-box;
 +        }
 +    }
 +
 +    html.d7t-ios:has(app-audio-sync-window) .player-controls__split-audio-panel {
 +        display: none !important;
++    }
++}
++
++// ── Live TV channel list (iPhone): plain rows after the Live TV reference ─────
++// Large rounded logo on the left, name over the EPG line, chevron at the end and
++// hairline separators inset from the logo. Only the iPhone shell is affected.
++@media (max-width: 640px) {
++    html.d7t-ios app-ios-live-panel app-portal-channels-list {
++        .scroll-viewport-portals {
++            padding: 0 !important;
++        }
++
++        app-channel-list-item {
++            .channel-list-item,
++            .channel-list-item:not(.compact) {
++                height: 68px;
++                min-height: 68px;
++                padding: 0 8px 0 16px;
++                border: 0 !important;
++                border-radius: 0 !important;
++                background: transparent !important;
++                box-shadow: none !important;
++                transform: none !important;
++                position: relative;
++                gap: 8px;
++
++                &::after {
++                    content: '';
++                    position: absolute;
++                    left: 88px;
++                    right: 0;
++                    bottom: 0;
++                    height: 1px;
++                    background: rgba(84, 84, 88, 0.65);
++                }
++
++                &.active {
++                    background: rgba(255, 255, 255, 0.08) !important;
++                }
++            }
++
++            .channel-logo-shell {
++                width: 60px;
++                height: 60px;
++                border-radius: 8px;
++                background: rgba(255, 255, 255, 0.06);
++                box-shadow: none;
++            }
++
++            .channel-logo {
++                padding: 3px;
++            }
++
++            .channel-content {
++                gap: 12px;
++            }
++
++            .channel-details {
++                gap: 1px;
++            }
++
++            .channel-name {
++                font-size: 17px;
++                font-weight: 600;
++                letter-spacing: -0.01em;
++            }
++
++            // Current programme, then its time range on one line (no progress bar).
++            .epg-title {
++                font-size: 15px;
++                color: #fff;
++                opacity: 1;
++            }
++
++            .epg-timeline {
++                display: flex;
++                gap: 4px;
++            }
++
++            .epg-progress-track {
++                display: none;
++            }
++
++            .epg-time {
++                font-size: 12px;
++                color: rgba(235, 235, 245, 0.6);
++                opacity: 1;
++            }
++
++            .epg-time:first-child::after {
++                content: ' –';
++            }
++
++            // Row without a programme: the short "No EPG data" of the reference.
++            .epg-placeholder {
++                font-size: 0;
++                opacity: 1;
++            }
++
++            .epg-placeholder::before {
++                content: 'No EPG data';
++                font-size: 14px;
++                color: rgba(235, 235, 245, 0.35);
++            }
++
++            .action-buttons {
++                gap: 0;
++                flex-direction: row !important;
++                align-items: center;
++            }
++
++            // The details chevron comes from the row itself; the heart stays a tap target.
++            .program-info-button {
++                display: none;
++            }
++
++            // Heart marker (filled when favourite) then a disclosure chevron, as in the reference.
++            .favorite-button {
++                width: 36px;
++                height: 36px;
++                padding: 0;
++                color: rgba(235, 235, 245, 0.32);
++
++                mat-icon {
++                    font-size: 0 !important;
++                    width: 22px;
++                    height: 22px;
++                    background: currentColor;
++                    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 20.5s-8-4.9-8-11A4.6 4.6 0 0 1 12 6.8 4.6 4.6 0 0 1 20 9.5c0 6.1-8 11-8 11Z' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E") center / contain no-repeat;
++                    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 20.5s-8-4.9-8-11A4.6 4.6 0 0 1 12 6.8 4.6 4.6 0 0 1 20 9.5c0 6.1-8 11-8 11Z' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E") center / contain no-repeat;
++                }
++
++                &[aria-pressed='true'] {
++                    color: #ff375f;
++
++                    mat-icon {
++                        -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 20.5s-8-4.9-8-11A4.6 4.6 0 0 1 12 6.8 4.6 4.6 0 0 1 20 9.5c0 6.1-8 11-8 11Z' fill='black'/%3E%3C/svg%3E");
++                        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 20.5s-8-4.9-8-11A4.6 4.6 0 0 1 12 6.8 4.6 4.6 0 0 1 20 9.5c0 6.1-8 11-8 11Z' fill='black'/%3E%3C/svg%3E");
++                    }
++                }
++            }
++
++            .action-buttons::after {
++                content: '';
++                flex: 0 0 auto;
++                width: 9px;
++                height: 9px;
++                margin: 0 12px 0 4px;
++                border-top: 2.5px solid rgba(235, 235, 245, 0.3);
++                border-right: 2.5px solid rgba(235, 235, 245, 0.3);
++                transform: rotate(45deg);
++                border-radius: 1px;
++            }
++        }
++    }
++
++    // Nothing is playing yet: the list is the page, no "select a channel" placeholder.
++    html.d7t-ios app-live-stream-layout .content-container:not(:has(.video-player)) {
++        display: none !important;
++    }
++
++    html.d7t-ios app-live-stream-layout .sidebar:has(app-ios-live-panel) {
++        width: 100% !important;
++        max-width: none !important;
++        min-width: 0 !important;
++        padding-inline-end: 0;
++        border-right: 0;
++    }
++
++    html.d7t-ios .d7t-ios-sheet-pane {
++        position: fixed !important;
++        inset: 0 !important;
++        pointer-events: none;
 +    }
 +}
 diff --git a/apps/web/src/app/app.component.ts b/apps/web/src/app/app.component.ts
@@ -5024,30 +6248,45 @@ index 4802425..e4b2f4f 100644
  const restoredHref = resolveRestoredRendererRoute(
      window.location.href,
 diff --git a/apps/web/src/styles.scss b/apps/web/src/styles.scss
-index bc885dd..8e745ed 100644
+index bc885dd..e1b57a3 100644
 --- a/apps/web/src/styles.scss
 +++ b/apps/web/src/styles.scss
-@@ -5,6 +5,7 @@
+@@ -5,6 +5,8 @@
  @use './settings-theme';
  @use './glass-theme';
  @use './cover-size';
 +@use './ios-shell';
++@use './ios-lume';
  
  // ─── Tailwind CSS ─────────────────────────────────────────────────────────────
  // Preflight is disabled in tailwind.config.js to avoid conflicts with
-@@ -342,3 +343,4 @@ body.dark-theme {
+@@ -342,3 +344,4 @@ body.dark-theme {
  .channel-scroll-focus:focus-visible {
      @include focus-ring.focus-ring-declarations($offset: -2px);
  }
 +
 diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.html b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.html
 new file mode 100644
-index 0000000..aaee644
+index 0000000..a0952a9
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.html
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,90 @@
 +<div class="ios-browse">
-+    <h1 class="ios-browse__title">{{ title }}</h1>
++    <div class="ios-browse__top">
++        <h1 class="ios-browse__title">{{ title }}</h1>
++        <button
++            type="button"
++            class="ios-browse__glass"
++            data-test-id="ios-browse-categories"
++            aria-label="Categories"
++            (click)="openCategories()"
++        >
++            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
++                <path d="M5 7h14M5 12h14M5 17h9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
++            </svg>
++            Categories
++        </button>
++    </div>
 +
 +    @if (isLoading()) {
 +        @for (_ of [1, 2, 3]; track $index) {
@@ -5107,14 +6346,27 @@ index 0000000..aaee644
 +                </div>
 +            </section>
 +        }
++
++        @if (tiles().length > 0) {
++            <section class="ios-browse__tiles">
++                <h2>All Categories</h2>
++                <div class="ios-browse__grid">
++                    @for (tile of tiles(); track tile.id) {
++                        @if (link(type, tile.id); as to) {
++                            <a class="ios-browse__tile" [routerLink]="to">{{ tile.name }}</a>
++                        }
++                    }
++                </div>
++            </section>
++        }
 +    }
 +</div>
 diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss
 new file mode 100644
-index 0000000..0b966da
+index 0000000..0fffe4e
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,194 @@
 +:host {
 +    display: block;
 +    height: 100%;
@@ -5169,7 +6421,7 @@ index 0000000..0b966da
 +
 +.ios-browse__track {
 +    display: flex;
-+    gap: 12px;
++    gap: 16px;
 +    padding: 0 20px;
 +    overflow-x: auto;
 +    scroll-snap-type: x proximity;
@@ -5197,7 +6449,7 @@ index 0000000..0b966da
 +    display: block;
 +    width: 100%;
 +    aspect-ratio: 2 / 3;
-+    border-radius: 18px;
++    border-radius: 10px;
 +    overflow: hidden;
 +    background: rgba(255, 255, 255, 0.08);
 +
@@ -5212,7 +6464,7 @@ index 0000000..0b966da
 +.ios-browse__name {
 +    display: -webkit-box;
 +    margin-top: 8px;
-+    font-size: 15px;
++    font-size: 13px;
 +    font-weight: 500;
 +    line-height: 1.25;
 +    -webkit-line-clamp: 2;
@@ -5226,18 +6478,102 @@ index 0000000..0b966da
 +    border-radius: 18px;
 +    background: rgba(255, 255, 255, 0.06);
 +}
++
++.ios-browse__top {
++    display: flex;
++    align-items: center;
++    justify-content: space-between;
++    gap: 12px;
++    padding-right: 16px;
++
++    .ios-browse__title {
++        margin-top: 0;
++    }
++}
++
++// Glass capsule (Categories): same treatment as the header controls.
++.ios-browse__glass {
++    appearance: none;
++    border: 0;
++    flex: 0 0 auto;
++    min-height: 40px;
++    padding: 0 14px;
++    border-radius: 999px;
++    display: inline-flex;
++    align-items: center;
++    gap: 8px;
++    color: #fff;
++    font: inherit;
++    font-size: 15px;
++    font-weight: 600;
++    background: rgba(118, 118, 128, 0.3);
++    -webkit-backdrop-filter: blur(24px) saturate(1.6);
++    backdrop-filter: blur(24px) saturate(1.6);
++    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
++    cursor: pointer;
++    -webkit-tap-highlight-color: transparent;
++
++    &:active {
++        background: rgba(118, 118, 128, 0.5);
++    }
++}
++
++// "All Categories": light name tiles instead of one poster rail per category.
++.ios-browse__tiles {
++    padding: 0 16px;
++
++    h2 {
++        margin: 0 4px 12px;
++        font-size: 17px;
++        font-weight: 700;
++        color: var(--app-muted-color, #a3a3a3);
++    }
++}
++
++.ios-browse__grid {
++    display: grid;
++    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
++    gap: 12px;
++}
++
++.ios-browse__tile {
++    display: flex;
++    align-items: center;
++    justify-content: center;
++    min-height: 56px;
++    padding: 8px 12px;
++    border-radius: 12px;
++    background: rgba(118, 118, 128, 0.22);
++    color: #fff;
++    font-size: 15px;
++    font-weight: 600;
++    line-height: 1.2;
++    text-align: center;
++    text-decoration: none;
++    overflow: hidden;
++    display: -webkit-box;
++    -webkit-line-clamp: 2;
++    -webkit-box-orient: vertical;
++    line-clamp: 2;
++    -webkit-tap-highlight-color: transparent;
++
++    &:active {
++        background: rgba(118, 118, 128, 0.4);
++    }
++}
 diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts
 new file mode 100644
-index 0000000..cd1036a
+index 0000000..71e02f2
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts
-@@ -0,0 +1,165 @@
+@@ -0,0 +1,236 @@
 +import {
 +    ChangeDetectionStrategy,
 +    Component,
 +    computed,
 +    effect,
 +    inject,
++    signal,
 +} from '@angular/core';
 +import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 +import {
@@ -5249,6 +6585,9 @@ index 0000000..cd1036a
 +    XtreamStore,
 +} from '@iptvnator/portal/xtream/data-access';
 +import { toXtreamRecentlyAddedTimestamp } from '@iptvnator/shared/interfaces';
++import { IosCategoryRow } from '../ios-live/ios-category-sheet.component';
++import { IosCategorySheetService } from '../ios-live/ios-category-sheet.service';
++import { IosHiddenCategoriesService } from '../ios-live/ios-hidden-categories.service';
 +
 +interface BrowseItem {
 +    readonly added?: string;
@@ -5271,8 +6610,14 @@ index 0000000..cd1036a
 +    readonly items: BrowseItem[];
 +}
 +
-+const RAIL_ITEMS = 18;
-+const MAX_RAILS = 24;
++interface CategoryTile {
++    readonly id: string;
++    readonly name: string;
++}
++
++/** Same split as Lume: a few real poster rails, every other category a light tile. */
++const RAIL_ITEMS = 20;
++const MAX_RAILS = 4;
 +const RECENT_ITEMS = 20;
 +
 +/**
@@ -5291,6 +6636,8 @@ index 0000000..cd1036a
 +    private readonly router = inject(Router);
 +    private readonly route = inject(ActivatedRoute);
 +    private readonly getVisible = this.store.getVisibleContentByType();
++    private readonly hiddenService = inject(IosHiddenCategoriesService);
++    private readonly sheets = inject(IosCategorySheetService);
 +
 +    readonly type: ContentType =
 +        this.route.parent?.snapshot.routeConfig?.path === 'series'
@@ -5302,9 +6649,30 @@ index 0000000..cd1036a
 +        () => this.store.currentPlaylist()?.id ?? null
 +    );
 +
-+    private readonly all = computed(
-+        () => this.getVisible(this.type) as BrowseItem[]
++    private readonly hiddenType = this.type === 'series' ? 'series' : 'vod';
++    private readonly hiddenIds = computed(() =>
++        this.hiddenService.hiddenIds(this.playlistId() ?? '', this.hiddenType)
 +    );
++
++    /** Every item outside the categories the user hid (a local preference only). */
++    private readonly all = computed(() => {
++        const hidden = this.hiddenIds();
++        const items = this.getVisible(this.type) as BrowseItem[];
++        return hidden.size
++            ? items.filter((i) => !hidden.has(String(i.category_id)))
++            : items;
++    });
++
++    private readonly categoryList = computed(() => {
++        const list =
++            this.type === 'series'
++                ? this.store.serialCategories()
++                : this.store.vodCategories();
++        return (list as unknown as Array<Record<string, unknown>>).map((c) => ({
++            id: String(c['category_id'] ?? c['id'] ?? ''),
++            name: String(c['category_name'] ?? c['name'] ?? ''),
++        }));
++    });
 +
 +    readonly recent = computed(() => {
 +        const now = Date.now();
@@ -5329,18 +6697,7 @@ index 0000000..cd1036a
 +    });
 +
 +    readonly categories = computed<BrowseCategory[]>(() => {
-+        const names = new Map<string, string>();
-+        const list =
-+            this.type === 'series'
-+                ? this.store.serialCategories()
-+                : this.store.vodCategories();
-+        for (const category of list as unknown as Array<Record<string, unknown>>) {
-+            const id = String(category['category_id'] ?? category['id'] ?? '');
-+            const name = String(
-+                category['category_name'] ?? category['name'] ?? ''
-+            );
-+            if (id) names.set(id, name);
-+        }
++        const hidden = this.hiddenIds();
 +        const groups = new Map<string, BrowseItem[]>();
 +        for (const item of this.all()) {
 +            const id = String(item.category_id);
@@ -5352,12 +6709,42 @@ index 0000000..cd1036a
 +            }
 +        }
 +        const result: BrowseCategory[] = [];
-+        for (const [id, name] of names) {
++        for (const { id, name } of this.categoryList()) {
++            if (!id || hidden.has(id)) continue;
 +            const items = groups.get(id);
 +            if (items?.length) result.push({ id, name, items });
 +            if (result.length >= MAX_RAILS) break;
 +        }
 +        return result;
++    });
++
++    /** Every visible category that is not already a rail. */
++    readonly tiles = computed<CategoryTile[]>(() => {
++        const hidden = this.hiddenIds();
++        const railIds = new Set(this.categories().map((c) => c.id));
++        return this.categoryList().filter(
++            (c) => c.id && !hidden.has(c.id) && !railIds.has(c.id)
++        );
++    });
++
++    private readonly sheetRows = computed<IosCategoryRow[]>(() => {
++        const counts = this.store.getCategoryItemCounts();
++        const hidden = this.hiddenIds();
++        return this.categoryList()
++            .filter((c) => c.id && !hidden.has(c.id))
++            .map((c) => ({
++                key: `c:${c.id}`,
++                name: c.name,
++                count: counts?.get(Number(c.id)) ?? null,
++                hideable: true,
++            }));
++    });
++
++    private readonly hiddenRows = computed<IosCategoryRow[]>(() => {
++        const hidden = this.hiddenIds();
++        return this.categoryList()
++            .filter((c) => hidden.has(c.id))
++            .map((c) => ({ key: `c:${c.id}`, name: c.name, hideable: false }));
 +    });
 +
 +    readonly isLoading = computed(
@@ -5370,6 +6757,25 @@ index 0000000..cd1036a
 +
 +    constructor() {
 +        effect(() => this.store.setSelectedContentType(this.type));
++    }
++
++    openCategories(): void {
++        const playlist = this.playlistId() ?? '';
++        this.sheets.open({
++            rows: this.sheetRows,
++            hiddenRows: this.hiddenRows,
++            selectedKey: signal<string | null>(null),
++            onPick: (key) => {
++                const link = this.link(this.type, key.slice(2));
++                if (link) void this.router.navigate(link);
++            },
++            onHide: (key) =>
++                this.hiddenService.hide(playlist, this.hiddenType, key.slice(2)),
++            onRestore: (key) =>
++                this.hiddenService.restore(playlist, this.hiddenType, key.slice(2)),
++            onRestoreAll: () =>
++                this.hiddenService.restoreAll(playlist, this.hiddenType),
++        });
 +    }
 +
 +    link(section: string, ...rest: Array<string | number>): string[] | null {
@@ -5397,6 +6803,1617 @@ index 0000000..cd1036a
 +        });
 +    }
 +}
+diff --git a/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.component.scss b/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.component.scss
+new file mode 100644
+index 0000000..945a97e
+--- /dev/null
++++ b/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.component.scss
+@@ -0,0 +1,334 @@
++// iOS "page sheet" for choosing categories. Values follow the supplied
++// Categories reference: 17pt semibold title, capsule Done, inset hairline
++// separators, 19pt rows, floating search capsule.
++:host {
++    position: fixed;
++    inset: 0;
++    z-index: 2147483200;
++    display: block;
++    color: #fff;
++    font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif;
++    -webkit-font-smoothing: antialiased;
++    pointer-events: none;
++}
++
++.ios-sheet__scrim {
++    position: absolute;
++    inset: 0;
++    background: rgba(0, 0, 0, 0);
++    transition: background 0.26s ease;
++    pointer-events: auto;
++
++    &.is-open {
++        background: rgba(0, 0, 0, 0.42);
++    }
++}
++
++.ios-sheet {
++    position: absolute;
++    left: 0;
++    right: 0;
++    bottom: 0;
++    top: calc(env(safe-area-inset-top, 0px) + 12px);
++    display: flex;
++    flex-direction: column;
++    background: #1c1c1e;
++    border-radius: 36px 36px 0 0;
++    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.45);
++    overflow: hidden;
++    transform: translateY(100%);
++    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
++    pointer-events: auto;
++    max-width: 720px;
++    margin-inline: auto;
++
++    &.is-open {
++        transform: translateY(0);
++    }
++
++    &.is-open.is-dragging {
++        transition: none;
++    }
++}
++
++.ios-sheet__header {
++    position: relative;
++    flex: 0 0 auto;
++    display: grid;
++    grid-template-columns: 1fr auto 1fr;
++    align-items: center;
++    padding: 18px 16px 12px;
++    background: rgba(44, 44, 46, 0.72);
++    -webkit-backdrop-filter: blur(24px) saturate(1.6);
++    backdrop-filter: blur(24px) saturate(1.6);
++    border-bottom: 0.5px solid rgba(255, 255, 255, 0.14);
++    touch-action: none;
++
++    button:first-of-type {
++        justify-self: start;
++    }
++
++    button:last-of-type {
++        justify-self: end;
++    }
++}
++
++.ios-sheet__grabber {
++    position: absolute;
++    top: 6px;
++    left: 50%;
++    width: 36px;
++    height: 5px;
++    margin-left: -18px;
++    border-radius: 3px;
++    background: rgba(255, 255, 255, 0.3);
++}
++
++.ios-sheet__title {
++    margin: 0;
++    font-size: 17px;
++    font-weight: 700;
++    letter-spacing: -0.01em;
++    text-align: center;
++    white-space: nowrap;
++}
++
++.ios-pill {
++    appearance: none;
++    border: 0;
++    min-height: 36px;
++    min-width: 44px;
++    padding: 0 16px;
++    border-radius: 999px;
++    background: rgba(118, 118, 128, 0.34);
++    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.18);
++    color: #fff;
++    font: inherit;
++    font-size: 17px;
++    font-weight: 600;
++    display: inline-flex;
++    align-items: center;
++    gap: 6px;
++    cursor: pointer;
++    -webkit-tap-highlight-color: transparent;
++
++    &:active {
++        background: rgba(118, 118, 128, 0.55);
++    }
++
++    &--text {
++        background: transparent;
++        box-shadow: none;
++        color: #0a84ff;
++        padding-inline: 4px;
++        font-weight: 500;
++
++        &.is-active {
++            font-weight: 700;
++        }
++    }
++
++    &--small {
++        min-height: 30px;
++        padding: 0 14px;
++        font-size: 15px;
++        color: #0a84ff;
++    }
++}
++
++.ios-sheet__scroll {
++    flex: 1 1 auto;
++    min-height: 0;
++    overflow-y: auto;
++    overscroll-behavior: contain;
++    -webkit-overflow-scrolling: touch;
++    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 84px);
++}
++
++.ios-list {
++    list-style: none;
++    margin: 0;
++    padding: 0;
++}
++
++.ios-row {
++    display: flex;
++    align-items: center;
++    min-height: 52px;
++    padding-inline-start: 20px;
++    position: relative;
++
++    &::after {
++        content: '';
++        position: absolute;
++        left: 20px;
++        right: 0;
++        bottom: 0;
++        height: 0.5px;
++        background: rgba(84, 84, 88, 0.65);
++    }
++
++    &.is-selected .ios-row__name {
++        font-weight: 600;
++    }
++
++    &--manage {
++        margin-top: 14px;
++
++        .ios-row__name {
++            color: rgba(255, 255, 255, 0.72);
++        }
++    }
++}
++
++.ios-row__hide {
++    appearance: none;
++    border: 0;
++    flex: 0 0 auto;
++    width: 30px;
++    height: 30px;
++    margin-inline-end: 12px;
++    border-radius: 50%;
++    background: #ff453a;
++    color: #fff;
++    display: grid;
++    place-items: center;
++    cursor: pointer;
++    -webkit-tap-highlight-color: transparent;
++}
++
++.ios-row__main {
++    appearance: none;
++    border: 0;
++    background: transparent;
++    color: inherit;
++    font: inherit;
++    text-align: start;
++    flex: 1 1 auto;
++    min-width: 0;
++    min-height: 52px;
++    padding: 8px 20px 8px 0;
++    display: flex;
++    align-items: center;
++    gap: 12px;
++    cursor: pointer;
++    -webkit-tap-highlight-color: transparent;
++
++    &:active:not(.ios-row__main--static) {
++        background: rgba(255, 255, 255, 0.06);
++    }
++}
++
++.ios-row__icon {
++    flex: 0 0 auto;
++    color: #0a84ff;
++    display: inline-grid;
++    place-items: center;
++    width: 24px;
++}
++
++.ios-row__name {
++    flex: 1 1 auto;
++    min-width: 0;
++    font-size: 19px;
++    line-height: 1.25;
++    letter-spacing: -0.01em;
++    overflow: hidden;
++    text-overflow: ellipsis;
++    white-space: nowrap;
++}
++
++.ios-row__count {
++    flex: 0 0 auto;
++    color: rgba(235, 235, 245, 0.5);
++    font-size: 16px;
++    font-variant-numeric: tabular-nums;
++}
++
++.ios-row__check {
++    flex: 0 0 auto;
++    color: #0a84ff;
++}
++
++.ios-row__chev {
++    flex: 0 0 auto;
++    color: rgba(235, 235, 245, 0.35);
++}
++
++.ios-note {
++    margin: 14px 20px 10px;
++    color: rgba(235, 235, 245, 0.55);
++    font-size: 14px;
++    line-height: 1.4;
++}
++
++.ios-empty {
++    padding: 28px 20px;
++    color: rgba(235, 235, 245, 0.55);
++    font-size: 16px;
++}
++
++.ios-restore-all {
++    display: flex;
++    justify-content: center;
++    padding: 22px 0 6px;
++}
++
++.ios-search {
++    position: absolute;
++    left: 16px;
++    right: 16px;
++    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
++    height: 48px;
++    display: flex;
++    align-items: center;
++    gap: 10px;
++    padding: 0 16px;
++    border-radius: 999px;
++    background: rgba(72, 72, 74, 0.78);
++    -webkit-backdrop-filter: blur(28px) saturate(1.8);
++    backdrop-filter: blur(28px) saturate(1.8);
++    box-shadow:
++        inset 0 0 0 0.5px rgba(255, 255, 255, 0.22),
++        0 6px 24px rgba(0, 0, 0, 0.35);
++    color: rgba(235, 235, 245, 0.62);
++
++    input {
++        flex: 1;
++        min-width: 0;
++        border: 0;
++        outline: 0;
++        background: transparent;
++        color: #fff;
++        font: inherit;
++        font-size: 19px;
++        // 16px+ keeps iOS from zooming the page when the field is focused.
++
++        &::placeholder {
++            color: rgba(235, 235, 245, 0.55);
++        }
++
++        &::-webkit-search-cancel-button {
++            display: none;
++        }
++    }
++}
++
++.ios-search__clear {
++    appearance: none;
++    border: 0;
++    width: 28px;
++    height: 28px;
++    border-radius: 50%;
++    background: rgba(255, 255, 255, 0.16);
++    color: #fff;
++    display: grid;
++    place-items: center;
++}
++
++@media (prefers-reduced-motion: reduce) {
++    .ios-sheet,
++    .ios-sheet__scrim {
++        transition: none;
++    }
++}
+diff --git a/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.component.ts b/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.component.ts
+new file mode 100644
+index 0000000..7bbbb19
+--- /dev/null
++++ b/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.component.ts
+@@ -0,0 +1,333 @@
++import {
++    ChangeDetectionStrategy,
++    Component,
++    computed,
++    ElementRef,
++    HostListener,
++    input,
++    OnInit,
++    output,
++    signal,
++    viewChild,
++} from '@angular/core';
++import { foldSearchText } from '@iptvnator/shared/interfaces';
++
++export type IosCategoryIcon = 'all' | 'favorites' | 'recent' | null;
++
++export interface IosCategoryRow {
++    /** `all`, `favorites`, `recent` or `c:<category id>`. */
++    readonly key: string;
++    readonly name: string;
++    readonly count?: number | null;
++    readonly icon?: IosCategoryIcon;
++    /** Only real provider categories can be hidden. */
++    readonly hideable: boolean;
++}
++
++/**
++ * Bottom sheet for choosing (and hiding / restoring) categories, laid out after
++ * the iOS "page sheet": title, Done, an inset-separator list and a floating
++ * search capsule. It is rendered through the CDK overlay so no ancestor with
++ * containment can clip or re-anchor it.
++ */
++@Component({
++    selector: 'app-ios-category-sheet',
++    changeDetection: ChangeDetectionStrategy.OnPush,
++    template: `
++        <div
++            class="ios-sheet__scrim"
++            [class.is-open]="open()"
++            (click)="dismiss()"
++        ></div>
++        <section
++            class="ios-sheet"
++            role="dialog"
++            aria-modal="true"
++            [attr.aria-label]="heading()"
++            [class.is-open]="open()"
++            [class.is-dragging]="dragging()"
++            [style.transform]="sheetTransform()"
++        >
++            <header
++                class="ios-sheet__header"
++                (pointerdown)="dragStart($event)"
++                (pointermove)="dragMove($event)"
++                (pointerup)="dragEnd($event)"
++                (pointercancel)="dragEnd($event)"
++            >
++                <span class="ios-sheet__grabber" aria-hidden="true"></span>
++                @if (page() === 'hidden') {
++                    <button
++                        type="button"
++                        class="ios-pill ios-pill--text"
++                        (click)="page.set('list')"
++                    >
++                        <svg viewBox="0 0 12 20" width="9" height="15" aria-hidden="true">
++                            <path d="M10 2 2 10l8 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
++                        </svg>
++                        Back
++                    </button>
++                } @else {
++                    <button
++                        type="button"
++                        class="ios-pill ios-pill--text"
++                        data-test-id="ios-cat-edit"
++                        [class.is-active]="editing()"
++                        (click)="toggleEdit()"
++                    >
++                        {{ editing() ? 'Finish' : 'Edit' }}
++                    </button>
++                }
++                <h2 class="ios-sheet__title">{{ heading() }}</h2>
++                <button
++                    type="button"
++                    class="ios-pill"
++                    data-test-id="ios-cat-done"
++                    (click)="dismiss()"
++                >
++                    Done
++                </button>
++            </header>
++
++            <div class="ios-sheet__scroll" #scroller>
++                @if (page() === 'list') {
++                    <ul class="ios-list" role="list">
++                        @for (row of filteredRows(); track row.key) {
++                            <li class="ios-row" [class.is-selected]="row.key === selectedKey()">
++                                @if (editing() && row.hideable) {
++                                    <button
++                                        type="button"
++                                        class="ios-row__hide"
++                                        data-test-id="ios-cat-hide"
++                                        [attr.aria-label]="'Hide ' + row.name"
++                                        (click)="hide.emit(row.key)"
++                                    >
++                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
++                                            <path d="M3 12s3.6-6.5 9-6.5c1.7 0 3.2.6 4.5 1.4M21 12s-3.6 6.5-9 6.5c-1.7 0-3.2-.6-4.5-1.4M4 4l16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
++                                        </svg>
++                                    </button>
++                                }
++                                <button
++                                    type="button"
++                                    class="ios-row__main"
++                                    data-test-id="ios-cat-row"
++                                    [attr.aria-current]="row.key === selectedKey() ? 'true' : null"
++                                    (click)="pick(row)"
++                                >
++                                    @if (row.icon) {
++                                        <span class="ios-row__icon" aria-hidden="true">
++                                            @switch (row.icon) {
++                                                @case ('favorites') {
++                                                    <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 20.5s-8-4.9-8-11A4.6 4.6 0 0 1 12 6.8 4.6 4.6 0 0 1 20 9.5c0 6.1-8 11-8 11Z" fill="currentColor" /></svg>
++                                                }
++                                                @case ('recent') {
++                                                    <svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2" /><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
++                                                }
++                                                @default {
++                                                    <svg viewBox="0 0 24 24" width="20" height="20"><path d="M5 7h14M5 12h14M5 17h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /></svg>
++                                                }
++                                            }
++                                        </span>
++                                    }
++                                    <span class="ios-row__name">{{ row.name }}</span>
++                                    @if (row.count != null) {
++                                        <span class="ios-row__count">{{ row.count }}</span>
++                                    }
++                                    @if (row.key === selectedKey()) {
++                                        <svg class="ios-row__check" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
++                                            <path d="m5 12.5 4.6 4.6L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
++                                        </svg>
++                                    }
++                                </button>
++                            </li>
++                        } @empty {
++                            <li class="ios-empty">No categories match “{{ term() }}”.</li>
++                        }
++                        @if (hiddenRows().length > 0 || editing()) {
++                            <li class="ios-row ios-row--manage">
++                                <button
++                                    type="button"
++                                    class="ios-row__main"
++                                    data-test-id="ios-cat-hidden-open"
++                                    (click)="page.set('hidden')"
++                                >
++                                    <span class="ios-row__name">Hidden Categories</span>
++                                    <span class="ios-row__count">{{ hiddenRows().length }}</span>
++                                    <svg class="ios-row__chev" viewBox="0 0 12 20" width="8" height="14" aria-hidden="true">
++                                        <path d="m2 2 8 8-8 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
++                                    </svg>
++                                </button>
++                            </li>
++                        }
++                    </ul>
++                } @else {
++                    <p class="ios-note">
++                        Hidden categories stay on your provider and in your playlist.
++                        They are only left out of this app.
++                    </p>
++                    <ul class="ios-list" role="list">
++                        @for (row of hiddenRows(); track row.key) {
++                            <li class="ios-row">
++                                <div class="ios-row__main ios-row__main--static">
++                                    <span class="ios-row__name">{{ row.name }}</span>
++                                    <button
++                                        type="button"
++                                        class="ios-pill ios-pill--small"
++                                        data-test-id="ios-cat-restore"
++                                        [attr.aria-label]="'Restore ' + row.name"
++                                        (click)="restore.emit(row.key)"
++                                    >
++                                        Restore
++                                    </button>
++                                </div>
++                            </li>
++                        } @empty {
++                            <li class="ios-empty">No hidden categories.</li>
++                        }
++                    </ul>
++                    @if (hiddenRows().length > 1) {
++                        <div class="ios-restore-all">
++                            <button
++                                type="button"
++                                class="ios-pill"
++                                data-test-id="ios-cat-restore-all"
++                                (click)="restoreAll.emit()"
++                            >
++                                Restore All
++                            </button>
++                        </div>
++                    }
++                }
++            </div>
++
++            @if (page() === 'list') {
++                <label class="ios-search">
++                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
++                        <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.4" />
++                        <path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
++                    </svg>
++                    <input
++                        #search
++                        type="search"
++                        enterkeyhint="search"
++                        autocomplete="off"
++                        autocapitalize="off"
++                        spellcheck="false"
++                        placeholder="Search categories"
++                        aria-label="Search categories"
++                        [value]="term()"
++                        (input)="term.set(search.value)"
++                    />
++                    @if (term()) {
++                        <button type="button" class="ios-search__clear" aria-label="Clear search" (click)="term.set(''); search.focus()">
++                            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" /></svg>
++                        </button>
++                    }
++                </label>
++            }
++        </section>
++    `,
++    styleUrl: './ios-category-sheet.component.scss',
++})
++export class IosCategorySheetComponent implements OnInit {
++    readonly rows = input.required<IosCategoryRow[]>();
++    readonly hiddenRows = input<IosCategoryRow[]>([]);
++    readonly selectedKey = input<string | null>(null);
++    readonly title = input('Categories');
++
++    readonly picked = output<string>();
++    readonly hide = output<string>();
++    readonly restore = output<string>();
++    readonly restoreAll = output<void>();
++    readonly closed = output<void>();
++
++    readonly open = signal(false);
++    readonly editing = signal(false);
++    readonly page = signal<'list' | 'hidden'>('list');
++    readonly term = signal('');
++    readonly dragY = signal(0);
++    readonly dragging = signal(false);
++
++    private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
++    private dragOrigin: number | null = null;
++    private closing = false;
++
++    readonly heading = computed(() =>
++        this.page() === 'hidden' ? 'Hidden Categories' : this.title()
++    );
++
++    readonly filteredRows = computed(() => {
++        const q = foldSearchText(this.term().trim());
++        const all = this.rows();
++        return q ? all.filter((r) => foldSearchText(r.name).includes(q)) : all;
++    });
++
++    readonly sheetTransform = computed(() =>
++        this.dragY() > 0 ? `translateY(${this.dragY()}px)` : null
++    );
++
++    ngOnInit(): void {
++        // Next frame, so the slide-up transition has a starting state to run from.
++        requestAnimationFrame(() => this.open.set(true));
++    }
++
++    @HostListener('document:keydown.escape')
++    onEscape(): void {
++        this.dismiss();
++    }
++
++    toggleEdit(): void {
++        this.editing.update((v) => !v);
++    }
++
++    pick(row: IosCategoryRow): void {
++        if (this.editing()) {
++            return;
++        }
++        this.picked.emit(row.key);
++        this.dismiss();
++    }
++
++    dismiss(): void {
++        if (this.closing) {
++            return;
++        }
++        this.closing = true;
++        this.dragY.set(0);
++        this.open.set(false);
++        setTimeout(() => this.closed.emit(), 260);
++    }
++
++    dragStart(event: PointerEvent): void {
++        if ((event.target as HTMLElement).closest('button')) {
++            return;
++        }
++        this.dragOrigin = event.clientY;
++        this.dragging.set(true);
++        (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
++    }
++
++    dragMove(event: PointerEvent): void {
++        if (this.dragOrigin === null) {
++            return;
++        }
++        this.dragY.set(Math.max(0, event.clientY - this.dragOrigin));
++    }
++
++    dragEnd(event: PointerEvent): void {
++        if (this.dragOrigin === null) {
++            return;
++        }
++        const travelled = this.dragY();
++        this.dragOrigin = null;
++        this.dragging.set(false);
++        (event.currentTarget as HTMLElement).releasePointerCapture?.(
++            event.pointerId
++        );
++        if (travelled > 110) {
++            this.dismiss();
++        } else {
++            this.dragY.set(0);
++        }
++    }
++}
+diff --git a/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.service.ts b/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.service.ts
+new file mode 100644
+index 0000000..0484c6e
+--- /dev/null
++++ b/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.service.ts
+@@ -0,0 +1,69 @@
++import { Overlay, OverlayRef } from '@angular/cdk/overlay';
++import { ComponentPortal } from '@angular/cdk/portal';
++import {
++    effect,
++    EffectRef,
++    inject,
++    Injectable,
++    Injector,
++    Signal,
++} from '@angular/core';
++import {
++    IosCategoryRow,
++    IosCategorySheetComponent,
++} from './ios-category-sheet.component';
++
++export interface IosCategorySheetConfig {
++    readonly title?: string;
++    readonly rows: Signal<IosCategoryRow[]>;
++    readonly hiddenRows: Signal<IosCategoryRow[]>;
++    readonly selectedKey: Signal<string | null>;
++    readonly onPick: (key: string) => void;
++    readonly onHide: (key: string) => void;
++    readonly onRestore: (key: string) => void;
++    readonly onRestoreAll: () => void;
++}
++
++/** Presents the Categories sheet above everything (CDK overlay, body level). */
++@Injectable({ providedIn: 'root' })
++export class IosCategorySheetService {
++    private readonly overlay = inject(Overlay);
++    private readonly injector = inject(Injector);
++    private current: OverlayRef | null = null;
++
++    open(config: IosCategorySheetConfig): void {
++        if (this.current) {
++            return;
++        }
++        const ref = this.overlay.create({
++            positionStrategy: this.overlay.position().global(),
++            scrollStrategy: this.overlay.scrollStrategies.block(),
++            panelClass: 'd7t-ios-sheet-pane',
++        });
++        this.current = ref;
++        const sheet = ref.attach(
++            new ComponentPortal(IosCategorySheetComponent)
++        );
++        if (config.title) {
++            sheet.setInput('title', config.title);
++        }
++        const sync: EffectRef = effect(
++            () => {
++                sheet.setInput('rows', config.rows());
++                sheet.setInput('hiddenRows', config.hiddenRows());
++                sheet.setInput('selectedKey', config.selectedKey());
++            },
++            { injector: this.injector }
++        );
++        const instance = sheet.instance;
++        instance.picked.subscribe((key) => config.onPick(key));
++        instance.hide.subscribe((key) => config.onHide(key));
++        instance.restore.subscribe((key) => config.onRestore(key));
++        instance.restoreAll.subscribe(() => config.onRestoreAll());
++        instance.closed.subscribe(() => {
++            sync.destroy();
++            ref.dispose();
++            this.current = null;
++        });
++    }
++}
+diff --git a/libs/portal/xtream/feature/src/lib/ios-live/ios-hidden-categories.service.ts b/libs/portal/xtream/feature/src/lib/ios-live/ios-hidden-categories.service.ts
+new file mode 100644
+index 0000000..73fb7af
+--- /dev/null
++++ b/libs/portal/xtream/feature/src/lib/ios-live/ios-hidden-categories.service.ts
+@@ -0,0 +1,87 @@
++import { Injectable, signal } from '@angular/core';
++
++export type IosCategoryType = 'live' | 'vod' | 'series';
++
++type HiddenMap = Record<string, Partial<Record<IosCategoryType, string[]>>>;
++
++const STORAGE_KEY = 'd7t.hiddenCategories.v1';
++
++/**
++ * Categories the user chose not to see in the iPhone app.
++ *
++ * Hiding is a local preference only: nothing is deleted from the provider, the
++ * playlist or the catalog database. It is stored per playlist and content type
++ * in localStorage, so it survives restarts and never leaks between sources.
++ */
++@Injectable({ providedIn: 'root' })
++export class IosHiddenCategoriesService {
++    private readonly state = signal<HiddenMap>(this.read());
++
++    /** Reactive set of hidden category ids for one playlist and section. */
++    hiddenIds(playlistId: string, type: IosCategoryType): ReadonlySet<string> {
++        return new Set(this.state()[playlistId]?.[type] ?? []);
++    }
++
++    isHidden(
++        playlistId: string,
++        type: IosCategoryType,
++        categoryId: string | number
++    ): boolean {
++        return (this.state()[playlistId]?.[type] ?? []).includes(
++            String(categoryId)
++        );
++    }
++
++    hide(
++        playlistId: string,
++        type: IosCategoryType,
++        categoryId: string | number
++    ): void {
++        const id = String(categoryId);
++        this.update(playlistId, type, (ids) =>
++            ids.includes(id) ? ids : [...ids, id]
++        );
++    }
++
++    restore(
++        playlistId: string,
++        type: IosCategoryType,
++        categoryId: string | number
++    ): void {
++        const id = String(categoryId);
++        this.update(playlistId, type, (ids) => ids.filter((x) => x !== id));
++    }
++
++    restoreAll(playlistId: string, type: IosCategoryType): void {
++        this.update(playlistId, type, () => []);
++    }
++
++    private update(
++        playlistId: string,
++        type: IosCategoryType,
++        change: (ids: string[]) => string[]
++    ): void {
++        const next: HiddenMap = { ...this.state() };
++        const entry = { ...(next[playlistId] ?? {}) };
++        entry[type] = change(entry[type] ?? []);
++        next[playlistId] = entry;
++        this.state.set(next);
++        try {
++            localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
++        } catch {
++            // storage unavailable: the choice still holds for this session
++        }
++    }
++
++    private read(): HiddenMap {
++        try {
++            const raw = localStorage.getItem(STORAGE_KEY);
++            const parsed = raw ? (JSON.parse(raw) as unknown) : null;
++            return parsed && typeof parsed === 'object'
++                ? (parsed as HiddenMap)
++                : {};
++        } catch {
++            return {};
++        }
++    }
++}
+diff --git a/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.scss b/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.scss
+new file mode 100644
+index 0000000..5c87312
+--- /dev/null
++++ b/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.scss
+@@ -0,0 +1,88 @@
++// Live TV list, after the supplied reference: a tappable category title above
++// a plain vertical list with large rounded logos, name over EPG line, chevron
++// at the end and inset hairline separators.
++:host {
++    display: flex;
++    flex-direction: column;
++    flex: 1 1 auto;
++    min-height: 0;
++    width: 100%;
++    overflow: hidden;
++    font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif;
++}
++
++.ios-live-head {
++    flex: 0 0 auto;
++    display: flex;
++    align-items: center;
++    gap: 4px;
++    padding: 6px 8px 6px 16px;
++    border-bottom: 0.5px solid rgba(255, 255, 255, 0.16);
++}
++
++.ios-live-title {
++    appearance: none;
++    border: 0;
++    background: transparent;
++    color: #fff;
++    font: inherit;
++    flex: 1 1 auto;
++    min-width: 0;
++    min-height: 44px;
++    display: flex;
++    align-items: center;
++    gap: 10px;
++    padding: 0;
++    text-align: start;
++    cursor: pointer;
++    -webkit-tap-highlight-color: transparent;
++
++    &:active {
++        opacity: 0.6;
++    }
++}
++
++.ios-live-title__icon {
++    flex: 0 0 auto;
++    color: rgba(235, 235, 245, 0.6);
++}
++
++.ios-live-title__name {
++    flex: 0 1 auto;
++    min-width: 0;
++    overflow: hidden;
++    text-overflow: ellipsis;
++    white-space: nowrap;
++    font-size: 22px;
++    font-weight: 700;
++    letter-spacing: -0.02em;
++}
++
++.ios-live-title__chev {
++    flex: 0 0 auto;
++    margin-inline-start: auto;
++    color: rgba(235, 235, 245, 0.55);
++}
++
++.ios-live-sort {
++    appearance: none;
++    border: 0;
++    background: transparent;
++    color: rgba(235, 235, 245, 0.7);
++    width: 44px;
++    height: 44px;
++    display: grid;
++    place-items: center;
++    border-radius: 50%;
++    cursor: pointer;
++    -webkit-tap-highlight-color: transparent;
++
++    &:active {
++        background: rgba(255, 255, 255, 0.1);
++    }
++}
++
++.ios-live-list {
++    flex: 1 1 auto;
++    min-height: 0;
++}
+diff --git a/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.ts b/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.ts
+new file mode 100644
+index 0000000..136c92f
+--- /dev/null
++++ b/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.ts
+@@ -0,0 +1,360 @@
++import {
++    ChangeDetectionStrategy,
++    Component,
++    computed,
++    DestroyRef,
++    effect,
++    inject,
++    input,
++    OnInit,
++    output,
++    signal,
++    untracked,
++} from '@angular/core';
++import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
++import { MatMenuModule } from '@angular/material/menu';
++import { ActivatedRoute, Router } from '@angular/router';
++import {
++    FavoritesService,
++    XtreamStore,
++} from '@iptvnator/portal/xtream/data-access';
++import { PortalChannelSortMode } from '@iptvnator/portal/shared/util';
++import { EMPTY, fromEvent, merge, of, switchMap } from 'rxjs';
++import { catchError, filter } from 'rxjs/operators';
++import {
++    PortalChannelsListComponent,
++    XtreamChannelListItem,
++} from '../portal-channels-list/portal-channels-list.component';
++import { IosCategoryRow } from './ios-category-sheet.component';
++import { IosCategorySheetService } from './ios-category-sheet.service';
++import { XtreamFavoriteMarksService } from '../portal-channels-list/xtream-favorite-marks.service';
++import { IosHiddenCategoriesService } from './ios-hidden-categories.service';
++
++type Scope =
++    | { kind: 'all' }
++    | { kind: 'favorites' }
++    | { kind: 'recent' }
++    | { kind: 'category'; id: number };
++
++interface CategoryLike {
++    readonly category_id?: string | number;
++    readonly id?: string | number;
++    readonly category_name?: string;
++    readonly name?: string;
++}
++
++const SORT_OPTIONS: ReadonlyArray<{
++    mode: PortalChannelSortMode;
++    label: string;
++}> = [
++    { mode: 'server', label: 'Provider order' },
++    { mode: 'name-asc', label: 'Name A–Z' },
++    { mode: 'name-desc', label: 'Name Z–A' },
++];
++
++/**
++ * The Live TV list as the iPhone app shows it: one tappable category title
++ * (opens the Categories sheet), a plain vertical channel list underneath.
++ * It reuses the real channel list, EPG queue, favorites and playback of the
++ * PC app; only the arrangement and the category chooser are new.
++ */
++@Component({
++    selector: 'app-ios-live-panel',
++    changeDetection: ChangeDetectionStrategy.OnPush,
++    imports: [MatMenuModule, PortalChannelsListComponent],
++    template: `
++        <div class="ios-live-head">
++            <button
++                type="button"
++                class="ios-live-title"
++                data-test-id="ios-live-category"
++                aria-haspopup="dialog"
++                [attr.aria-label]="'Category: ' + title() + '. Choose category'"
++                (click)="openSheet()"
++            >
++                @switch (scope().kind) {
++                    @case ('favorites') {
++                        <svg class="ios-live-title__icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 20.5s-8-4.9-8-11A4.6 4.6 0 0 1 12 6.8 4.6 4.6 0 0 1 20 9.5c0 6.1-8 11-8 11Z" fill="currentColor" /></svg>
++                    }
++                    @case ('recent') {
++                        <svg class="ios-live-title__icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2" /><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
++                    }
++                }
++                <span class="ios-live-title__name">{{ title() }}</span>
++                <svg class="ios-live-title__chev" viewBox="0 0 14 22" width="12" height="19" aria-hidden="true">
++                    <path d="m2.5 8.5 4.5-5 4.5 5M2.5 13.5l4.5 5 4.5-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
++                </svg>
++            </button>
++            <button
++                type="button"
++                class="ios-live-sort"
++                aria-label="Sort channels"
++                [matMenuTriggerFor]="sortMenu"
++            >
++                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
++                    <path d="M4 7h10M4 12h7M4 17h4M18 5v14m0 0-3-3m3 3 3-3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
++                </svg>
++            </button>
++            <mat-menu #sortMenu="matMenu">
++                @for (option of sortOptions; track option.mode) {
++                    <button mat-menu-item (click)="sortModeChange.emit(option.mode)">
++                        {{ sortMode() === option.mode ? '✓ ' : '' }}{{ option.label }}
++                    </button>
++                }
++            </mat-menu>
++        </div>
++        <app-portal-channels-list
++            class="ios-live-list"
++            [revealRequest]="revealRequest()"
++            [sortMode]="sortMode()"
++            [searchTermInput]="searchTermInput()"
++            [channelsOverride]="channelsOverride()"
++            (playClicked)="playClicked.emit($event)"
++            (playbackRequested)="playbackRequested.emit($event)"
++        />
++    `,
++    styleUrl: './ios-live-panel.component.scss',
++})
++export class IosLiveCategoryPanelComponent implements OnInit {
++    readonly sortMode = input<PortalChannelSortMode>('server');
++    readonly searchTermInput = input('');
++    readonly revealRequest = input<{
++        channelId: number;
++        sequence: number;
++    } | null>(null);
++
++    readonly sortModeChange = output<PortalChannelSortMode>();
++    readonly playClicked = output<XtreamChannelListItem>();
++    readonly playbackRequested = output<XtreamChannelListItem>();
++
++    readonly sortOptions = SORT_OPTIONS;
++
++    private readonly store = inject(XtreamStore);
++    private readonly favoritesService = inject(FavoritesService);
++    private readonly hiddenService = inject(IosHiddenCategoriesService);
++    private readonly favoriteMarks = inject(XtreamFavoriteMarksService);
++    private readonly sheets = inject(IosCategorySheetService);
++    private readonly router = inject(Router);
++    private readonly route = inject(ActivatedRoute);
++    private readonly destroyRef = inject(DestroyRef);
++
++    private readonly playlistId = computed(
++        () => this.store.currentPlaylist()?.id ?? ''
++    );
++
++    readonly scope = signal<Scope>({ kind: 'all' });
++    private readonly favoriteIds = signal<ReadonlySet<number>>(new Set());
++
++    private readonly categories = computed(
++        () => this.store.getCategoriesBySelectedType() as CategoryLike[]
++    );
++    private readonly counts = this.store.getCategoryItemCounts;
++    private readonly hiddenIds = computed(() =>
++        this.hiddenService.hiddenIds(this.playlistId(), 'live')
++    );
++
++    private static idOf(category: CategoryLike): string {
++        return String(category.category_id ?? category.id ?? '');
++    }
++
++    private static nameOf(category: CategoryLike): string {
++        return String(category.category_name ?? category.name ?? '');
++    }
++
++    private readonly visibleCategories = computed(() => {
++        const hidden = this.hiddenIds();
++        return this.categories().filter(
++            (c) => !hidden.has(IosLiveCategoryPanelComponent.idOf(c))
++        );
++    });
++
++    private readonly recentLiveIds = computed(() => {
++        const out: number[] = [];
++        for (const item of this.store.recentItems() as unknown as Array<{
++            type?: string;
++            xtream_id?: number;
++        }>) {
++            if (item.type === 'live' && typeof item.xtream_id === 'number') {
++                out.push(item.xtream_id);
++            }
++        }
++        return out;
++    });
++
++    /** Every live channel outside hidden categories (store selection must be null). */
++    private readonly allVisibleChannels = computed(() => {
++        const hidden = this.hiddenIds();
++        const all = this.store.selectItemsFromSelectedCategory() as XtreamChannelListItem[];
++        return hidden.size
++            ? all.filter((i) => !hidden.has(String(i.category_id ?? '')))
++            : all;
++    });
++
++    readonly channelsOverride = computed<XtreamChannelListItem[] | null>(() => {
++        const s = this.scope();
++        if (s.kind === 'category') {
++            return null;
++        }
++        const all = this.allVisibleChannels();
++        if (s.kind === 'favorites') {
++            const fav = this.favoriteIds();
++            return all.filter((i) => fav.has(i.xtream_id));
++        }
++        if (s.kind === 'recent') {
++            const byId = new Map(all.map((i) => [i.xtream_id, i] as const));
++            return this.recentLiveIds()
++                .map((id) => byId.get(id))
++                .filter((i): i is XtreamChannelListItem => !!i);
++        }
++        return all;
++    });
++
++    readonly title = computed(() => {
++        const s = this.scope();
++        if (s.kind === 'favorites') return 'Favorites';
++        if (s.kind === 'recent') return 'Recently Watched';
++        if (s.kind === 'all') return 'All Channels';
++        const found = this.categories().find(
++            (c) => IosLiveCategoryPanelComponent.idOf(c) === String(s.id)
++        );
++        return found
++            ? IosLiveCategoryPanelComponent.nameOf(found)
++            : 'Channels';
++    });
++
++    private readonly selectedKey = computed(() => {
++        const s = this.scope();
++        return s.kind === 'category' ? `c:${s.id}` : s.kind;
++    });
++
++    constructor() {
++        // Keep the store's category in step with the scope: "all", favorites and
++        // recents read the whole live catalog, so no category may be selected.
++        effect(() => {
++            const s = this.scope();
++            untracked(() =>
++                this.store.setSelectedCategory(
++                    s.kind === 'category' ? s.id : null
++                )
++            );
++        });
++    }
++
++    ngOnInit(): void {
++        const selected = this.store.selectedCategoryId();
++        const fromRoute = Number(this.route.snapshot.params['categoryId']);
++        const initial = Number.isFinite(fromRoute) ? fromRoute : selected;
++        if (initial !== null && initial !== undefined && Number.isFinite(Number(initial))) {
++            this.scope.set({ kind: 'category', id: Number(initial) });
++        }
++
++        const playlist = this.store.currentPlaylist();
++        if (playlist) {
++            this.store.loadRecentItems({ id: playlist.id });
++            merge(
++                of(null),
++                fromEvent(window, 'iptvnator-favorites-changed'),
++                this.favoriteMarks.changes$.pipe(
++                    filter((change) => change.playlistId === playlist.id)
++                )
++            )
++                .pipe(
++                    switchMap(() =>
++                        this.favoritesService
++                            .getFavorites(playlist.id)
++                            .pipe(catchError(() => EMPTY))
++                    ),
++                    takeUntilDestroyed(this.destroyRef)
++                )
++                .subscribe((items) => {
++                    this.favoriteIds.set(
++                        new Set(
++                            items
++                                .filter((i) => i.type === 'live')
++                                .map((i) => i.xtream_id)
++                        )
++                    );
++                });
++        }
++    }
++
++    openSheet(): void {
++        this.sheets.open({
++            rows: this.sheetRows,
++            hiddenRows: this.hiddenRows,
++            selectedKey: this.selectedKey,
++            onPick: (key) => this.select(key),
++            onHide: (key) => this.hide(key),
++            onRestore: (key) => this.restore(key),
++            onRestoreAll: () =>
++                this.hiddenService.restoreAll(this.playlistId(), 'live'),
++        });
++    }
++
++    private readonly sheetRows = computed<IosCategoryRow[]>(() => {
++        const counts = this.counts();
++        const total = this.visibleCategories().reduce(
++            (sum, c) =>
++                sum + (counts?.get(Number(IosLiveCategoryPanelComponent.idOf(c))) ?? 0),
++            0
++        );
++        const rows: IosCategoryRow[] = [
++            { key: 'all', name: 'All Channels', icon: 'all', count: total, hideable: false },
++            { key: 'favorites', name: 'Favorites', icon: 'favorites', count: this.favoriteIds().size, hideable: false },
++            { key: 'recent', name: 'Recently Watched', icon: 'recent', count: this.recentLiveIds().length, hideable: false },
++        ];
++        for (const c of this.visibleCategories()) {
++            const id = IosLiveCategoryPanelComponent.idOf(c);
++            rows.push({
++                key: `c:${id}`,
++                name: IosLiveCategoryPanelComponent.nameOf(c),
++                count: counts?.get(Number(id)) ?? null,
++                hideable: true,
++            });
++        }
++        return rows;
++    });
++
++    private readonly hiddenRows = computed<IosCategoryRow[]>(() => {
++        const hidden = this.hiddenIds();
++        return this.categories()
++            .filter((c) => hidden.has(IosLiveCategoryPanelComponent.idOf(c)))
++            .map((c) => ({
++                key: `c:${IosLiveCategoryPanelComponent.idOf(c)}`,
++                name: IosLiveCategoryPanelComponent.nameOf(c),
++                hideable: false,
++            }));
++    });
++
++    private select(key: string): void {
++        if (key === 'all' || key === 'favorites' || key === 'recent') {
++            this.scope.set({ kind: key });
++            return;
++        }
++        const id = Number(key.slice(2));
++        if (!Number.isFinite(id)) {
++            return;
++        }
++        this.scope.set({ kind: 'category', id });
++        // Same as the PC rail: keep a category route in step with the selection.
++        if (this.route.snapshot.params['categoryId'] !== undefined) {
++            void this.router.navigate(
++                ['/workspace', 'xtreams', this.playlistId(), 'live', id],
++                { queryParamsHandling: 'preserve', replaceUrl: true }
++            );
++        }
++    }
++
++    private hide(key: string): void {
++        const id = key.slice(2);
++        this.hiddenService.hide(this.playlistId(), 'live', id);
++        const s = this.scope();
++        if (s.kind === 'category' && String(s.id) === id) {
++            this.scope.set({ kind: 'all' });
++        }
++    }
++
++    private restore(key: string): void {
++        this.hiddenService.restore(this.playlistId(), 'live', key.slice(2));
++    }
++}
+diff --git a/libs/portal/xtream/feature/src/lib/live-stream-layout/live-stream-layout.component.html b/libs/portal/xtream/feature/src/lib/live-stream-layout/live-stream-layout.component.html
+index 2ed0283..05d848a 100644
+--- a/libs/portal/xtream/feature/src/lib/live-stream-layout/live-stream-layout.component.html
++++ b/libs/portal/xtream/feature/src/lib/live-stream-layout/live-stream-layout.component.html
+@@ -12,136 +12,147 @@
+         [defaultWidth]="400"
+         storageKey="live-channels-sidebar-width"
+     >
+-        <div class="sidebar-header">
+-            @if (livePanels.canOpenCategoriesPopover()) {
+-                <!-- The categories rail is folded: the title becomes the way
+-                     back to it (a dropdown of the same list) so switching
+-                     categories stays one click away. -->
+-                <button
+-                    #showCategoriesButton
+-                    mat-icon-button
+-                    type="button"
+-                    class="sidebar-show-categories"
+-                    data-test-id="live-show-categories"
+-                    [attr.aria-label]="'LAYOUT.SHOW_CATEGORIES' | translate"
+-                    [matTooltip]="'LAYOUT.SHOW_CATEGORIES' | translate"
+-                    (click)="livePanels.showCategories()"
+-                >
+-                    <mat-icon>chevron_right</mat-icon>
+-                </button>
+-                <button
+-                    #categoryDropdown
+-                    type="button"
+-                    class="category-dropdown"
+-                    data-test-id="live-category-dropdown"
+-                    aria-haspopup="dialog"
+-                    aria-expanded="false"
+-                    [attr.aria-label]="'LAYOUT.CHOOSE_CATEGORY' | translate"
+-                    (click)="livePanels.openCategoriesPopover(categoryDropdown)"
+-                >
+-                    <span class="category-title">
+-                        {{
+-                            selectedCategoryInfo()?.name ??
+-                                ((selectedCategoryInfo()
+-                                    ? 'HOME.PLAYLISTS.CHANNELS'
+-                                    : 'PORTALS.ALL_ITEMS'
+-                                ) | translate)
+-                        }}
+-                    </span>
+-                    @if (selectedCategoryInfo()?.count) {
+-                        <span class="category-count">{{
+-                            selectedCategoryInfo()?.count
+-                        }}</span>
+-                    }
+-                    <mat-icon class="category-dropdown__caret"
+-                        >expand_more</mat-icon
++        @if (isIosApp) {
++            <app-ios-live-panel
++                [revealRequest]="channelNavigation.revealRequest()"
++                [sortMode]="liveChannelSortMode()"
++                (sortModeChange)="setLiveChannelSortMode($event)"
++                [searchTermInput]="workspaceSearchTerm()"
++                (playClicked)="playLive($event)"
++                (playbackRequested)="playLive($event, true)"
++            />
++        } @else {
++            <div class="sidebar-header">
++                @if (livePanels.canOpenCategoriesPopover()) {
++                    <!-- The categories rail is folded: the title becomes the way
++                         back to it (a dropdown of the same list) so switching
++                         categories stays one click away. -->
++                    <button
++                        #showCategoriesButton
++                        mat-icon-button
++                        type="button"
++                        class="sidebar-show-categories"
++                        data-test-id="live-show-categories"
++                        [attr.aria-label]="'LAYOUT.SHOW_CATEGORIES' | translate"
++                        [matTooltip]="'LAYOUT.SHOW_CATEGORIES' | translate"
++                        (click)="livePanels.showCategories()"
+                     >
+-                </button>
+-            } @else {
+-                <div class="category-heading">
+-                    <h2 class="category-title">
+-                        {{
+-                            selectedCategoryInfo()?.name ??
+-                                ((selectedCategoryInfo()
+-                                    ? 'HOME.PLAYLISTS.CHANNELS'
+-                                    : 'PORTALS.ALL_ITEMS'
+-                                ) | translate)
+-                        }}
+-                    </h2>
+-                    @if (selectedCategoryInfo()?.count) {
+-                        <span class="category-count">{{
+-                            selectedCategoryInfo()?.count
+-                        }}</span>
+-                    }
+-                </div>
+-            }
+-            @if (channelNavigation.canReveal()) {
++                        <mat-icon>chevron_right</mat-icon>
++                    </button>
++                    <button
++                        #categoryDropdown
++                        type="button"
++                        class="category-dropdown"
++                        data-test-id="live-category-dropdown"
++                        aria-haspopup="dialog"
++                        aria-expanded="false"
++                        [attr.aria-label]="'LAYOUT.CHOOSE_CATEGORY' | translate"
++                        (click)="livePanels.openCategoriesPopover(categoryDropdown)"
++                    >
++                        <span class="category-title">
++                            {{
++                                selectedCategoryInfo()?.name ??
++                                    ((selectedCategoryInfo()
++                                        ? 'HOME.PLAYLISTS.CHANNELS'
++                                        : 'PORTALS.ALL_ITEMS'
++                                    ) | translate)
++                            }}
++                        </span>
++                        @if (selectedCategoryInfo()?.count) {
++                            <span class="category-count">{{
++                                selectedCategoryInfo()?.count
++                            }}</span>
++                        }
++                        <mat-icon class="category-dropdown__caret"
++                            >expand_more</mat-icon
++                        >
++                    </button>
++                } @else {
++                    <div class="category-heading">
++                        <h2 class="category-title">
++                            {{
++                                selectedCategoryInfo()?.name ??
++                                    ((selectedCategoryInfo()
++                                        ? 'HOME.PLAYLISTS.CHANNELS'
++                                        : 'PORTALS.ALL_ITEMS'
++                                    ) | translate)
++                            }}
++                        </h2>
++                        @if (selectedCategoryInfo()?.count) {
++                            <span class="category-count">{{
++                                selectedCategoryInfo()?.count
++                            }}</span>
++                        }
++                    </div>
++                }
++                @if (channelNavigation.canReveal()) {
++                    <button
++                        mat-icon-button
++                        type="button"
++                        [attr.aria-label]="
++                            'CHANNELS.SHOW_PLAYING_CHANNEL' | translate
++                        "
++                        [matTooltip]="'CHANNELS.SHOW_PLAYING_CHANNEL' | translate"
++                        (click)="channelNavigation.reveal()"
++                    >
++                        <mat-icon>list_alt</mat-icon>
++                    </button>
++                }
+                 <button
+                     mat-icon-button
+-                    type="button"
+-                    [attr.aria-label]="
+-                        'CHANNELS.SHOW_PLAYING_CHANNEL' | translate
++                    [matMenuTriggerFor]="channelSortMenu"
++                    [matTooltip]="
++                        ('WORKSPACE.SORT_LABEL' | translate) +
++                        (liveChannelSortLabelKey() | translate)
+                     "
+-                    [matTooltip]="'CHANNELS.SHOW_PLAYING_CHANNEL' | translate"
+-                    (click)="channelNavigation.reveal()"
+-                >
+-                    <mat-icon>list_alt</mat-icon>
+-                </button>
+-            }
+-            <button
+-                mat-icon-button
+-                [matMenuTriggerFor]="channelSortMenu"
+-                [matTooltip]="
+-                    ('WORKSPACE.SORT_LABEL' | translate) +
+-                    (liveChannelSortLabelKey() | translate)
+-                "
+-                [attr.aria-label]="'CHANNELS.SORT_CHANNELS' | translate"
+-            >
+-                <mat-icon>sort_by_alpha</mat-icon>
+-            </button>
+-            <button
+-                mat-icon-button
+-                type="button"
+-                [attr.aria-label]="'LAYOUT.HIDE_PANELS' | translate"
+-                [matTooltip]="'LAYOUT.HIDE_PANELS_TOOLTIP' | translate"
+-                (click)="livePanels.collapsePanels()"
+-            >
+-                <mat-icon>chevron_left</mat-icon>
+-            </button>
+-            <mat-menu #channelSortMenu="matMenu">
+-                <button
+-                    mat-menu-item
+-                    [appMenuItemRadio]="liveChannelSortMode() === 'server'"
+-                    (click)="setLiveChannelSortMode('server')"
+-                >
+-                    <mat-icon appMenuItemRadioCheck>check</mat-icon>
+-                    <span>{{ 'CHANNELS.SORT_SERVER_ORDER' | translate }}</span>
+-                </button>
+-                <button
+-                    mat-menu-item
+-                    [appMenuItemRadio]="liveChannelSortMode() === 'name-asc'"
+-                    (click)="setLiveChannelSortMode('name-asc')"
++                    [attr.aria-label]="'CHANNELS.SORT_CHANNELS' | translate"
+                 >
+-                    <mat-icon appMenuItemRadioCheck>check</mat-icon>
+-                    <span>{{ 'WORKSPACE.SORT_NAME_ASC' | translate }}</span>
++                    <mat-icon>sort_by_alpha</mat-icon>
+                 </button>
+                 <button
+-                    mat-menu-item
+-                    [appMenuItemRadio]="liveChannelSortMode() === 'name-desc'"
+-                    (click)="setLiveChannelSortMode('name-desc')"
++                    mat-icon-button
++                    type="button"
++                    [attr.aria-label]="'LAYOUT.HIDE_PANELS' | translate"
++                    [matTooltip]="'LAYOUT.HIDE_PANELS_TOOLTIP' | translate"
++                    (click)="livePanels.collapsePanels()"
+                 >
+-                    <mat-icon appMenuItemRadioCheck>check</mat-icon>
+-                    <span>{{ 'WORKSPACE.SORT_NAME_DESC' | translate }}</span>
++                    <mat-icon>chevron_left</mat-icon>
+                 </button>
+-            </mat-menu>
+-        </div>
+-        <app-portal-channels-list
+-            [revealRequest]="channelNavigation.revealRequest()"
+-            [sortMode]="liveChannelSortMode()"
+-            [searchTermInput]="workspaceSearchTerm()"
+-            (playClicked)="playLive($event)"
+-            (playbackRequested)="playLive($event, true)"
+-        />
++                <mat-menu #channelSortMenu="matMenu">
++                    <button
++                        mat-menu-item
++                        [appMenuItemRadio]="liveChannelSortMode() === 'server'"
++                        (click)="setLiveChannelSortMode('server')"
++                    >
++                        <mat-icon appMenuItemRadioCheck>check</mat-icon>
++                        <span>{{ 'CHANNELS.SORT_SERVER_ORDER' | translate }}</span>
++                    </button>
++                    <button
++                        mat-menu-item
++                        [appMenuItemRadio]="liveChannelSortMode() === 'name-asc'"
++                        (click)="setLiveChannelSortMode('name-asc')"
++                    >
++                        <mat-icon appMenuItemRadioCheck>check</mat-icon>
++                        <span>{{ 'WORKSPACE.SORT_NAME_ASC' | translate }}</span>
++                    </button>
++                    <button
++                        mat-menu-item
++                        [appMenuItemRadio]="liveChannelSortMode() === 'name-desc'"
++                        (click)="setLiveChannelSortMode('name-desc')"
++                    >
++                        <mat-icon appMenuItemRadioCheck>check</mat-icon>
++                        <span>{{ 'WORKSPACE.SORT_NAME_DESC' | translate }}</span>
++                    </button>
++                </mat-menu>
++            </div>
++            <app-portal-channels-list
++                [revealRequest]="channelNavigation.revealRequest()"
++                [sortMode]="liveChannelSortMode()"
++                [searchTermInput]="workspaceSearchTerm()"
++                (playClicked)="playLive($event)"
++                (playbackRequested)="playLive($event, true)"
++            />
++        }
+     </div>
+ }
+ <div class="content-container">
+diff --git a/libs/portal/xtream/feature/src/lib/live-stream-layout/live-stream-layout.component.ts b/libs/portal/xtream/feature/src/lib/live-stream-layout/live-stream-layout.component.ts
+index 7947435..e3f1f5a 100644
+--- a/libs/portal/xtream/feature/src/lib/live-stream-layout/live-stream-layout.component.ts
++++ b/libs/portal/xtream/feature/src/lib/live-stream-layout/live-stream-layout.component.ts
+@@ -1,3 +1,4 @@
++import { IosLiveCategoryPanelComponent } from '../ios-live/ios-live-panel.component';
+ import {
+     activateXtreamArchiveAction,
+     getProgramTimestampSeconds,
+@@ -135,6 +136,7 @@ const LIVE_CHANNEL_SORT_STORAGE_KEY = 'xtream-live-channel-sort-mode';
+         },
+     ],
+     imports: [
++        IosLiveCategoryPanelComponent,
+         EpgListViewComponent,
+         EpgTimelineComponent,
+         MatButtonModule,
+@@ -229,8 +231,13 @@ export class LiveStreamLayoutComponent
+     readonly workspaceSearchTerm = queryParamSignal(this.route, 'q', (value) =>
+         (value ?? '').trim()
+     );
++    /** The iPhone app (the shell injects `window.d7tNative`) always lists channels. */
++    readonly isIosApp =
++        typeof window !== 'undefined' &&
++        !!(window as unknown as { d7tNative?: unknown }).d7tNative;
+     readonly showLiveChannelSidebar = computed(
+         () =>
++            this.isIosApp ||
+             !!this.selectedCategoryId() ||
+             !!this.workspaceSearchTerm() ||
+             !!this.activeStreamUrl()
 diff --git a/libs/portal/xtream/feature/src/lib/xtream-feature.routes.ts b/libs/portal/xtream/feature/src/lib/xtream-feature.routes.ts
 index ec3b761..710b691 100644
 --- a/libs/portal/xtream/feature/src/lib/xtream-feature.routes.ts
@@ -5738,11 +8755,207 @@ index de5a577..9335fbc 100644
          audio: this.activeAudio,
          videoUrl: this.videoUrl,
          setDelay: (seconds) => this.setDelay(seconds),
+diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-header/workspace-shell-header.component.html b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-header/workspace-shell-header.component.html
+index 7ac2c4a..47a768e 100644
+--- a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-header/workspace-shell-header.component.html
++++ b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-header/workspace-shell-header.component.html
+@@ -54,7 +54,7 @@
+          playlist-scoped, but Settings is a global page. Per the UX
+          audit, leaving them visible implied switching playlists changes
+          which settings you're editing. -->
+-    @if (!isSettingsRoute()) {
++    @if (!isSettingsRoute() && !phoneApp()) {
+         <app-playlist-switcher
+             class="playlist-switcher"
+             [currentTitle]="playlistTitle()"
+@@ -68,7 +68,7 @@
+ 
+     <!-- Settings search works without any playlist, so a fresh user can
+          find settings before importing a first source. -->
+-    @if (!hasNoPlaylists() || isSettingsRoute()) {
++    @if (showSearchField()) {
+         <label class="search-field" for="workspace-shell-search-input">
+             <mat-icon>search</mat-icon>
+             @if (searchScopeLabel()) {
+@@ -118,6 +118,7 @@
+                     {{ searchStatusLabel() }}
+                 </span>
+             }
++            @if (!phoneApp()) {
+             <button
+                 type="button"
+                 class="command-trigger"
+@@ -138,6 +139,7 @@
+                 }}</span>
+                 <mat-icon class="command-trigger__icon">bolt</mat-icon>
+             </button>
++            }
+         </label>
+     }
+ 
+@@ -147,6 +149,7 @@
+          importing their first source). Only the per-playlist shortcut
+          is hidden on Settings. -->
+     <div class="header-actions header-actions--leading">
++        @if (!phoneApp()) {
+         <button
+             type="button"
+             class="shortcuts-trigger"
+@@ -193,8 +196,10 @@
+                 }}</mat-icon>
+             </button>
+         }
++        }
+         @if (!isSettingsRoute()) {
+             @if (headerSidebarToggle(); as sidebarToggle) {
++                @if (!phoneApp()) {
+                 <button
+                     type="button"
+                     class="header-shortcut header-sidebar-toggle"
+@@ -209,6 +214,7 @@
+                 >
+                     <mat-icon>view_sidebar</mat-icon>
+                 </button>
++                }
+             }
+             @if (headerShortcut(); as action) {
+                 <button
+diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-header/workspace-shell-header.component.ts b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-header/workspace-shell-header.component.ts
+index d2d082f..7db9df5 100644
+--- a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-header/workspace-shell-header.component.ts
++++ b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-header/workspace-shell-header.component.ts
+@@ -1,9 +1,14 @@
++import { NavigationEnd, Router } from '@angular/router';
++import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
++import { filter } from 'rxjs';
+ import {
+     ChangeDetectionStrategy,
+     Component,
+     computed,
+     ElementRef,
++    inject,
+     input,
++    signal,
+     output,
+     viewChild,
+ } from '@angular/core';
+@@ -33,8 +38,28 @@ import { LayoutSlideDirective } from '../../layout-slide.directive';
+     templateUrl: './workspace-shell-header.component.html',
+     styleUrl: './workspace-shell-header.component.scss',
+     changeDetection: ChangeDetectionStrategy.OnPush,
++    host: { '[class.is-phone-empty]': 'phoneBarEmpty()' },
+ })
+ export class WorkspaceShellHeaderComponent {
++    private readonly router = inject(Router);
++    /** The page's own last URL segment, to tell a tab's root page from a page pushed above it. */
++    private readonly lastSegment = signal(this.segmentOf(this.router.url));
++
++    constructor() {
++        this.router.events
++            .pipe(
++                filter((event) => event instanceof NavigationEnd),
++                takeUntilDestroyed()
++            )
++            .subscribe(() =>
++                this.lastSegment.set(this.segmentOf(this.router.url))
++            );
++    }
++
++    private segmentOf(url: string): string {
++        return url.split(/[?#]/)[0].split('/').filter(Boolean).pop() ?? '';
++    }
++
+     private readonly searchInput =
+         viewChild<ElementRef<HTMLInputElement>>('searchInput');
+     // read: ElementRef because mat-icon-button is a component, so a bare
+@@ -49,7 +74,21 @@ export class WorkspaceShellHeaderComponent {
+     readonly commandShortcutLabel = this.isMac ? '⌘K' : 'Ctrl+K';
+ 
+     /** The page's Back or the history fallback; null when there is neither. */
+-    readonly backTarget = input<WorkspaceBackTarget | null>(null);
++    readonly rawBackTarget = input<WorkspaceBackTarget | null>(null, {
++        alias: 'backTarget',
++    });
++    /**
++     * In the iPhone app a tab's root page has no Back: the bottom bar is the navigation. Any
++     * other page (a detail, a category list, Settings, a page opened from "More") keeps its arrow.
++     * Without this the history fallback would put an arrow on every tab after the first switch.
++     */
++    readonly backTarget = computed(() => {
++        const back = this.rawBackTarget();
++        if (!back || !this.phoneApp()) {
++            return back;
++        }
++        return TAB_ROOTS.has(this.lastSegment()) ? null : back;
++    });
+     readonly playlistTitle = input('');
+     readonly playlistSubtitle = input('');
+     readonly searchQuery = input('');
+@@ -91,6 +130,16 @@ export class WorkspaceShellHeaderComponent {
+      * `isContextDrawerOpen` feeds aria-expanded.
+      */
+     readonly showContextDrawerToggle = input(false);
++    /**
++     * The iPhone app. There the bottom bar is the only navigation, so this header shrinks to a
++     * contextual bar: Back, the section drawer where the page has no sheet of its own, the page's
++     * own action, and a search field on the two pages that are about searching (Search, Settings).
++     * Source switching, adding a source, quick actions and the parental lock live under "More".
++     */
++    readonly phoneApp = input(false);
++    /** 'category' | 'sources' | 'settings' | 'collection' | 'none' */
++    readonly contextPanelKind = input('none');
++    readonly isSearchSection = input(false);
+     readonly isContextDrawerOpen = input(false);
+     /**
+      * Variant-aware labels: the drawer holds categories on portal routes,
+@@ -109,10 +158,33 @@ export class WorkspaceShellHeaderComponent {
+         const back = this.backTarget();
+         return back ? (back.phoneDrawerToggle ?? 'replace') : null;
+     });
+-    /** The drawer toggle renders unless Back takes its phone slot. */
++    /**
++     * The drawer toggle renders unless Back takes its phone slot. In the iPhone app the category
++     * drawer is replaced by the page's own Categories sheet, so only the other panels keep it.
++     */
+     readonly showDrawerToggle = computed(
+         () =>
+-            this.showContextDrawerToggle() && this.backPhoneSlot() !== 'replace'
++            this.showContextDrawerToggle() &&
++            this.backPhoneSlot() !== 'replace' &&
++            !(this.phoneApp() && this.contextPanelKind() === 'category')
++    );
++    readonly showSearchField = computed(() => {
++        if (this.phoneApp()) {
++            return (
++                (this.isSettingsRoute() || this.isSearchSection()) &&
++                (!this.hasNoPlaylists() || this.isSettingsRoute())
++            );
++        }
++        return !this.hasNoPlaylists() || this.isSettingsRoute();
++    });
++    /** iPhone app with nothing to show: the bar is removed instead of leaving a blank strip. */
++    readonly phoneBarEmpty = computed(
++        () =>
++            this.phoneApp() &&
++            !this.backTarget() &&
++            !this.showDrawerToggle() &&
++            !this.showSearchField() &&
++            !(this.headerShortcut() && !this.isSettingsRoute())
+     );
+     /** At phone width, Back hides behind a shown drawer toggle. */
+     readonly backYieldsToDrawerToggle = computed(
+@@ -250,3 +322,6 @@ export class WorkspaceShellHeaderComponent {
+         return document.activeElement === toggle;
+     }
+ }
++
++/** Last URL segments of the pages the bottom bar opens directly. */
++const TAB_ROOTS = new Set(['dashboard', 'vod', 'series', 'live', 'search']);
 diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html
-index 4e89c2e..bb604db 100644
+index 4e89c2e..1085595 100644
 --- a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html
 +++ b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html
-@@ -22,6 +22,41 @@
+@@ -22,6 +22,139 @@
          </div>
      }
  
@@ -5759,25 +8972,123 @@ index 4e89c2e..bb604db 100644
 +
 +    @if (moreOpen()) {
 +        <div class="rail-more-scrim" (click)="moreOpen.set(false)"></div>
-+        <div class="rail-more-sheet" role="menu" (click)="moreOpen.set(false)">
-+            @for (link of moreLinks(); track link.path.join('/')) {
++        <div class="rail-more-sheet" role="menu" data-test-id="more-sheet">
++            <div class="rail-more-grabber" aria-hidden="true"></div>
++            <div class="rail-more-title">More</div>
++
++            @if (!hasNoPlaylists()) {
++                <div class="rail-more-group" data-test-id="more-group-source">
++                    <div class="rail-more-heading">Source</div>
++                    <app-playlist-switcher
++                        class="rail-more-switcher"
++                        [currentTitle]="playlistTitle()"
++                        [subtitle]="playlistSubtitle()"
++                        (accountInfoForPlaylistRequested)="
++                            accountInfoForPlaylistRequested.emit($event)
++                        "
++                        (addPlaylistRequested)="
++                            moreOpen.set(false);
++                            addPlaylistRequested.emit()
++                        "
++                    />
++                @for (link of otherLinks(); track link.path.join('/')) {
++                    <a
++                        class="rail-more-item"
++                        role="menuitem"
++                        [routerLink]="link.path"
++                    >
++                        <mat-icon aria-hidden="true">{{ link.icon }}</mat-icon>
++                        <span>{{ link.tooltip }}</span>
++                        <mat-icon class="rail-more-chevron" aria-hidden="true"
++                            >chevron_right</mat-icon
++                        >
++                    </a>
++                }
++                </div>
++            }
++
++            <div class="rail-more-group" data-test-id="more-group-library">
++                <div class="rail-more-heading">Library</div>
++                @for (link of libraryLinks(); track link.path.join('/')) {
++                    <a
++                        class="rail-more-item"
++                        role="menuitem"
++                        [routerLink]="link.path"
++                    >
++                        <mat-icon aria-hidden="true">{{ link.icon }}</mat-icon>
++                        <span>{{ link.tooltip }}</span>
++                        <mat-icon class="rail-more-chevron" aria-hidden="true"
++                            >chevron_right</mat-icon
++                        >
++                    </a>
++                }
++            </div>
++
++            <div class="rail-more-group" data-test-id="more-group-tools">
++                <div class="rail-more-heading">Tools</div>
++                <button
++                    type="button"
++                    class="rail-more-item"
++                    role="menuitem"
++                    data-test-id="more-add-playlist"
++                    (click)="moreOpen.set(false); addPlaylistRequested.emit()"
++                >
++                    <mat-icon aria-hidden="true">add</mat-icon>
++                    <span>{{ 'WORKSPACE.SHELL.ADD_PLAYLIST' | translate }}</span>
++                </button>
++                <button
++                    type="button"
++                    class="rail-more-item"
++                    role="menuitem"
++                    data-test-id="more-command-palette"
++                    (click)="
++                        moreOpen.set(false); commandPaletteRequested.emit()
++                    "
++                >
++                    <mat-icon aria-hidden="true">bolt</mat-icon>
++                    <span>{{
++                        'WORKSPACE.SHELL.OPEN_COMMAND_PALETTE' | translate
++                    }}</span>
++                </button>
++                @if (parentalLockState() !== 'off') {
++                    <button
++                        type="button"
++                        class="rail-more-item"
++                        role="menuitem"
++                        data-test-id="more-parental-lock"
++                        (click)="
++                            moreOpen.set(false);
++                            parentalLockToggleRequested.emit()
++                        "
++                    >
++                        <mat-icon aria-hidden="true">{{
++                            parentalLockState() === 'locked'
++                                ? 'lock'
++                                : 'lock_open'
++                        }}</mat-icon>
++                        <span>{{
++                            (parentalLockState() === 'locked'
++                                ? 'PARENTAL_LOCK.HEADER_UNLOCK'
++                                : 'PARENTAL_LOCK.HEADER_LOCK'
++                            ) | translate
++                        }}</span>
++                    </button>
++                }
++            </div>
++
++            <div class="rail-more-group" data-test-id="more-group-app">
 +                <a
 +                    class="rail-more-item"
 +                    role="menuitem"
-+                    [routerLink]="link.path"
++                    routerLink="/workspace/settings"
 +                >
-+                    <mat-icon aria-hidden="true">{{ link.icon }}</mat-icon>
-+                    <span>{{ link.tooltip }}</span>
++                    <mat-icon aria-hidden="true">settings</mat-icon>
++                    <span>{{ 'WORKSPACE.SHELL.RAIL_SETTINGS' | translate }}</span>
++                    <mat-icon class="rail-more-chevron" aria-hidden="true"
++                        >chevron_right</mat-icon
++                    >
 +                </a>
-+            }
-+            <a
-+                class="rail-more-item"
-+                role="menuitem"
-+                routerLink="/workspace/settings"
-+            >
-+                <mat-icon aria-hidden="true">settings</mat-icon>
-+                <span>{{ 'WORKSPACE.SHELL.RAIL_SETTINGS' | translate }}</span>
-+            </a>
++            </div>
 +        </div>
 +    }
 +
@@ -5801,26 +9112,79 @@ index 839d26b..76abf2f 100644
 +    display: none;
 +}
 diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts
-index 92fce1a..e5abaf4 100644
+index 92fce1a..50d019b 100644
 --- a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts
 +++ b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts
-@@ -4,6 +4,7 @@ import {
+@@ -4,10 +4,16 @@ import {
      computed,
      inject,
      input,
++    output,
 +    signal,
  } from '@angular/core';
  import { MatIcon } from '@angular/material/icon';
  import { MatTooltip } from '@angular/material/tooltip';
-@@ -43,6 +44,20 @@ export class WorkspaceShellRailComponent {
+-import { RouterLink } from '@angular/router';
++import { NavigationEnd, Router, RouterLink } from '@angular/router';
++import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
++import { filter } from 'rxjs';
++import { PlaylistSwitcherComponent } from '@iptvnator/playlist/shared/ui';
++import { PlaylistMeta } from '@iptvnator/shared/interfaces';
+ import { TranslatePipe } from '@ngx-translate/core';
+ import {
+     PortalRailLink,
+@@ -24,6 +30,7 @@ import { WorkspaceShellRailLinksComponent } from '../workspace-shell-rail-links/
+     imports: [
+         MatIcon,
+         MatTooltip,
++        PlaylistSwitcherComponent,
+         RouterLink,
+         TranslatePipe,
+         WorkspaceShellRailLinksComponent,
+@@ -42,6 +49,54 @@ export class WorkspaceShellRailComponent {
+     >(null);
      readonly railProviderClass = input('rail-context-region');
      readonly isSettingsRoute = input(false);
- 
++    /** "More" (iPhone app) is the home of everything the removed top bar used to hold. */
++    readonly playlistTitle = input('');
++    readonly playlistSubtitle = input('');
++    readonly parentalLockState = input<'off' | 'locked' | 'unlocked'>('off');
++    readonly hasNoPlaylists = input(false);
++    readonly addPlaylistRequested = output<void>();
++    readonly commandPaletteRequested = output<void>();
++    readonly parentalLockToggleRequested = output<void>();
++    readonly accountInfoForPlaylistRequested = output<PlaylistMeta>();
++
++    constructor() {
++        // A navigation from inside the sheet (a link, or a different source) closes it.
++        inject(Router)
++            .events.pipe(
++                filter((event) => event instanceof NavigationEnd),
++                takeUntilDestroyed()
++            )
++            .subscribe(() => this.moreOpen.set(false));
++    }
++
 +    /**
 +     * iPhone app only (the button and the sheet are hidden by CSS everywhere else): the tab bar
 +     * keeps five places and everything else opens from "More".
 +     */
 +    readonly moreOpen = signal(false);
++    /** Favorites, recently watched and recently added belong together. */
++    private static readonly LIBRARY_PATH = /(favorites|recent|recently-added)/;
++    readonly libraryLinks = computed(() =>
++        this.moreLinks().filter((link) =>
++            WorkspaceShellRailComponent.LIBRARY_PATH.test(link.path.join('/'))
++        )
++    );
++    readonly otherLinks = computed(() =>
++        this.moreLinks().filter(
++            (link) =>
++                !WorkspaceShellRailComponent.LIBRARY_PATH.test(
++                    link.path.join('/')
++                )
++        )
++    );
 +    readonly moreLinks = computed<PortalRailLink[]>(() => [
 +        ...this.workspaceLinks().filter(
 +            (link) => !link.path.join('/').endsWith('/dashboard')
@@ -5829,7 +9193,50 @@ index 92fce1a..e5abaf4 100644
 +            (link) => !link.path.join('/').endsWith('/search')
 +        ),
 +    ]);
-+
+ 
      /** Self-hosted server storage: hidden while `inactive`. */
      readonly serverState = inject(ServerStorageStatusService).state;
-     readonly serverIcon = computed(() => SERVER_ICONS[this.serverState()]);
+diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/workspace-shell.component.html b/libs/workspace/shell/feature/src/lib/workspace-shell/workspace-shell.component.html
+index 9c51ff8..e51115b 100644
+--- a/libs/workspace/shell/feature/src/lib/workspace-shell/workspace-shell.component.html
++++ b/libs/workspace/shell/feature/src/lib/workspace-shell/workspace-shell.component.html
+@@ -25,6 +25,14 @@
+         [selectedSection]="facade.currentSection()"
+         [railProviderClass]="facade.railProviderClass()"
+         [isSettingsRoute]="facade.isSettingsRoute()"
++        [playlistTitle]="facade.playlistTitle()"
++        [playlistSubtitle]="facade.playlistSubtitle()"
++        [parentalLockState]="facade.parentalLockState()"
++        [hasNoPlaylists]="facade.hasNoPlaylists()"
++        (addPlaylistRequested)="facade.openAddPlaylistDialog()"
++        (commandPaletteRequested)="facade.openCommandPalette()"
++        (parentalLockToggleRequested)="facade.toggleParentalLock()"
++        (accountInfoForPlaylistRequested)="facade.openAccountInfoFor($event)"
+     />
+ 
+     <app-workspace-shell-header
+@@ -48,6 +56,9 @@
+         [isSettingsRoute]="facade.isSettingsRoute()"
+         [parentalLockState]="facade.parentalLockState()"
+         [showContextDrawerToggle]="facade.hasContextPanelContent()"
++        [phoneApp]="isPhoneApp"
++        [contextPanelKind]="facade.contextPanel()"
++        [isSearchSection]="facade.currentSection() === 'search'"
+         [isContextDrawerOpen]="contextDrawer.isOpen()"
+         [contextDrawerToggleAriaKey]="facade.contextDrawerLabelKeys().aria"
+         [contextDrawerTooltipKey]="facade.contextDrawerLabelKeys().tooltip"
+diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/workspace-shell.component.ts b/libs/workspace/shell/feature/src/lib/workspace-shell/workspace-shell.component.ts
+index c0e6839..70c0380 100644
+--- a/libs/workspace/shell/feature/src/lib/workspace-shell/workspace-shell.component.ts
++++ b/libs/workspace/shell/feature/src/lib/workspace-shell/workspace-shell.component.ts
+@@ -81,6 +81,10 @@ import { LIVE_CATEGORIES_POPOVER } from '@iptvnator/portal/shared/util';
+ })
+ export class WorkspaceShellComponent {
+     readonly facade = inject(WorkspaceShellFacade);
++    /** The iPhone app injects `window.d7tNative`; the header becomes a contextual bar there. */
++    readonly isPhoneApp =
++        typeof window !== 'undefined' &&
++        !!(window as unknown as { d7tNative?: unknown }).d7tNative;
+     readonly keyboardShortcuts = inject(WorkspaceKeyboardShortcutsService);
+     readonly contextDrawer = inject(WorkspaceShellContextDrawerService);
+     private readonly mpvOverlayVisibility = inject(
