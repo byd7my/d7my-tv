@@ -1263,10 +1263,10 @@ index 0000000..ac56c32
 +}
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..93a8c03
+index 0000000..9c797fc
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,764 @@
+@@ -0,0 +1,770 @@
 +@mixin phone-controls {
 +            grid-template-columns: auto minmax(0, 1fr) !important;
 +            grid-template-areas:
@@ -2030,6 +2030,12 @@ index 0000000..93a8c03
 +        top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
 +        right: max(20px, calc(env(safe-area-inset-right, 0px) + 12px)) !important;
 +    }
++}
++
++// The system tab bar replaces the HTML rail: the (invisible) rail must not swallow touches meant
++// for the page underneath it. Its links are still clickable from code (tab switching).
++html.d7t-ios.d7t-native-tabs .app-rail {
++    pointer-events: none !important;
 +}
 diff --git a/apps/web/src/app/app.component.ts b/apps/web/src/app/app.component.ts
 index 3f52add..ff1d90f 100644
@@ -7466,10 +7472,10 @@ index 0000000..a0952a9
 +</div>
 diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss
 new file mode 100644
-index 0000000..0fffe4e
+index 0000000..05a7aa0
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss
-@@ -0,0 +1,194 @@
+@@ -0,0 +1,201 @@
 +:host {
 +    display: block;
 +    height: 100%;
@@ -7526,6 +7532,8 @@ index 0000000..0fffe4e
 +    display: flex;
 +    gap: 16px;
 +    padding: 0 20px;
++    // Without this the snap point pulls the first poster to the screen edge, past the page inset.
++    scroll-padding-inline: 20px;
 +    overflow-x: auto;
 +    scroll-snap-type: x proximity;
 +    scrollbar-width: none;
@@ -7536,6 +7544,11 @@ index 0000000..0fffe4e
 +}
 +
 +.ios-browse__card {
++    // A <button> centres its content vertically: a one-line name pushed the poster down.
++    display: flex;
++    flex-direction: column;
++    justify-content: flex-start;
++    align-self: flex-start;
 +    flex: 0 0 132px;
 +    width: 132px;
 +    padding: 0;
@@ -7666,10 +7679,10 @@ index 0000000..0fffe4e
 +}
 diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts
 new file mode 100644
-index 0000000..71e02f2
+index 0000000..f536427
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts
-@@ -0,0 +1,236 @@
+@@ -0,0 +1,239 @@
 +import {
 +    ChangeDetectionStrategy,
 +    Component,
@@ -7687,7 +7700,10 @@ index 0000000..71e02f2
 +    ContentType,
 +    XtreamStore,
 +} from '@iptvnator/portal/xtream/data-access';
-+import { toXtreamRecentlyAddedTimestamp } from '@iptvnator/shared/interfaces';
++import {
++    plainDisplayText,
++    toXtreamRecentlyAddedTimestamp,
++} from '@iptvnator/shared/interfaces';
 +import { IosCategoryRow } from '../ios-live/ios-category-sheet.component';
 +import { IosCategorySheetService } from '../ios-live/ios-category-sheet.service';
 +import { IosHiddenCategoriesService } from '../ios-live/ios-hidden-categories.service';
@@ -7773,7 +7789,7 @@ index 0000000..71e02f2
 +                : this.store.vodCategories();
 +        return (list as unknown as Array<Record<string, unknown>>).map((c) => ({
 +            id: String(c['category_id'] ?? c['id'] ?? ''),
-+            name: String(c['category_name'] ?? c['name'] ?? ''),
++            name: plainDisplayText(String(c['category_name'] ?? c['name'] ?? '')),
 +        }));
 +    });
 +
@@ -7893,7 +7909,7 @@ index 0000000..71e02f2
 +    }
 +
 +    label(item: BrowseItem): string {
-+        return item.title || item.name || '';
++        return plainDisplayText(item.title || item.name || '');
 +    }
 +
 +    open(item: BrowseItem): void {
@@ -8756,10 +8772,10 @@ index 0000000..73fb7af
 +}
 diff --git a/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.scss b/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.scss
 new file mode 100644
-index 0000000..5c87312
+index 0000000..d238385
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.scss
-@@ -0,0 +1,88 @@
+@@ -0,0 +1,91 @@
 +// Live TV list, after the supplied reference: a tappable category title above
 +// a plain vertical list with large rounded logos, name over EPG line, chevron
 +// at the end and inset hairline separators.
@@ -8778,23 +8794,25 @@ index 0000000..5c87312
 +    display: flex;
 +    align-items: center;
 +    gap: 4px;
-+    padding: 6px 8px 6px 16px;
-+    border-bottom: 0.5px solid rgba(255, 255, 255, 0.16);
++    padding: 8px 12px 6px 16px;
 +}
 +
 +.ios-live-title {
++    // A glass-style pill (the category chooser), not a page heading: the list keeps the room.
 +    appearance: none;
 +    border: 0;
-+    background: transparent;
++    background: rgba(118, 118, 128, 0.24);
 +    color: #fff;
 +    font: inherit;
-+    flex: 1 1 auto;
++    flex: 0 1 auto;
 +    min-width: 0;
-+    min-height: 44px;
++    max-width: calc(100% - 56px);
++    min-height: 40px;
 +    display: flex;
 +    align-items: center;
-+    gap: 10px;
-+    padding: 0;
++    gap: 8px;
++    padding: 0 14px;
++    border-radius: 999px;
 +    text-align: start;
 +    cursor: pointer;
 +    -webkit-tap-highlight-color: transparent;
@@ -8815,18 +8833,19 @@ index 0000000..5c87312
 +    overflow: hidden;
 +    text-overflow: ellipsis;
 +    white-space: nowrap;
-+    font-size: 22px;
-+    font-weight: 700;
-+    letter-spacing: -0.02em;
++    font-size: 17px;
++    font-weight: 600;
++    letter-spacing: -0.01em;
 +}
 +
 +.ios-live-title__chev {
 +    flex: 0 0 auto;
-+    margin-inline-start: auto;
++    margin-inline-start: 2px;
 +    color: rgba(235, 235, 245, 0.55);
 +}
 +
 +.ios-live-sort {
++    margin-inline-start: auto;
 +    appearance: none;
 +    border: 0;
 +    background: transparent;
@@ -8850,10 +8869,10 @@ index 0000000..5c87312
 +}
 diff --git a/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.ts b/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.ts
 new file mode 100644
-index 0000000..2499732
+index 0000000..60e0ba2
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.ts
-@@ -0,0 +1,364 @@
+@@ -0,0 +1,427 @@
 +import {
 +    ChangeDetectionStrategy,
 +    Component,
@@ -9139,6 +9158,69 @@ index 0000000..2499732
 +    }
 +
 +    openSheet(): void {
++        const native = (
++            window as unknown as {
++                d7tNative?: {
++                    call: <T>(method: string, args?: unknown) => Promise<T>;
++                };
++            }
++        ).d7tNative;
++        if (native) {
++            void this.openNativeSheet(native);
++            return;
++        }
++        this.openHtmlSheet();
++    }
++
++    /** iPhone: the system's own sheet (Liquid Glass) with search; hiding stays in the HTML editor. */
++    private async openNativeSheet(native: {
++        call: <T>(method: string, args?: unknown) => Promise<T>;
++    }): Promise<void> {
++        const rows = this.sheetRows();
++        const selected = this.selectedKey();
++        const icons: Record<string, string> = {
++            all: 'list.bullet',
++            favorites: 'heart.fill',
++            recent: 'clock',
++        };
++        const toItem = (row: IosCategoryRow) => ({
++            id: row.key,
++            title: plainDisplayText(row.name),
++            icon: icons[row.key],
++            checked: row.key === selected,
++            trailing: row.count != null ? String(row.count) : undefined,
++        });
++        const special = rows.filter((r) => icons[r.key]).map(toItem);
++        const categories = rows.filter((r) => !icons[r.key]).map(toItem);
++        try {
++            const picked = await native.call<string | null>('ui.sheet', {
++                title: 'Categories',
++                searchable: true,
++                groups: [
++                    { items: special },
++                    { heading: 'Categories', items: categories },
++                    {
++                        items: [
++                            {
++                                id: '__edit',
++                                title: 'Hide or restore categories',
++                                icon: 'eye.slash',
++                            },
++                        ],
++                    },
++                ],
++            });
++            if (picked === '__edit') {
++                this.openHtmlSheet();
++            } else if (picked) {
++                this.select(picked);
++            }
++        } catch {
++            this.openHtmlSheet();
++        }
++    }
++
++    private openHtmlSheet(): void {
 +        this.sheets.open({
 +            rows: this.sheetRows,
 +            hiddenRows: this.hiddenRows,
@@ -9774,6 +9856,74 @@ index 16c0d1e..fa760e1 100644
          )
      );
      readonly showFavoriteButton = input(false);
+diff --git a/libs/ui/epg/src/lib/epg-list-view/epg-list-view.component.html b/libs/ui/epg/src/lib/epg-list-view/epg-list-view.component.html
+index 6b13737..8614c2e 100644
+--- a/libs/ui/epg/src/lib/epg-list-view/epg-list-view.component.html
++++ b/libs/ui/epg/src/lib/epg-list-view/epg-list-view.component.html
+@@ -19,7 +19,7 @@
+         >
+             <span class="cc"><mat-icon>keyboard_arrow_down</mat-icon></span>
+             <span class="gt">
+-                <b>{{ channelName() }}</b>
++                <b>{{ plain(channelName()) }}</b>
+                 <span class="src">{{ sourceLabel() }}</span>
+             </span>
+         </button>
+diff --git a/libs/ui/epg/src/lib/epg-list-view/epg-list-view.component.ts b/libs/ui/epg/src/lib/epg-list-view/epg-list-view.component.ts
+index fd5b0e4..3d01e19 100644
+--- a/libs/ui/epg/src/lib/epg-list-view/epg-list-view.component.ts
++++ b/libs/ui/epg/src/lib/epg-list-view/epg-list-view.component.ts
+@@ -18,7 +18,7 @@ import { MatIcon } from '@angular/material/icon';
+ import { MatTooltip } from '@angular/material/tooltip';
+ import { normalizeDateLocale } from '@iptvnator/pipes';
+ import { injectTranslationTick } from '@iptvnator/services';
+-import { EpgProgram } from '@iptvnator/shared/interfaces';
++import { EpgProgram, plainDisplayText } from '@iptvnator/shared/interfaces';
+ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+ import {
+     EpgDateNavigationDirection,
+@@ -75,6 +75,7 @@ type RenderState = 'loading' | 'list' | EpgTimelineEmptyReason;
+     ],
+ })
+ export class EpgListViewComponent {
++    protected readonly plain = plainDisplayText;
+     readonly programs = input<EpgProgram[]>([]);
+     readonly channelName = input('');
+     readonly channelLogo = input('');
+diff --git a/libs/ui/epg/src/lib/epg-timeline/epg-timeline.component.html b/libs/ui/epg/src/lib/epg-timeline/epg-timeline.component.html
+index 13381f9..12742a2 100644
+--- a/libs/ui/epg/src/lib/epg-timeline/epg-timeline.component.html
++++ b/libs/ui/epg/src/lib/epg-timeline/epg-timeline.component.html
+@@ -21,7 +21,7 @@
+                 <mat-icon>keyboard_arrow_down</mat-icon>
+             </span>
+             <span class="epg-timeline__heading">
+-                <b>{{ channelName() }}</b>
++                <b>{{ plain(channelName()) }}</b>
+                 @if (!collapsed() && hasSummary()) {
+                     <span
+                         class="epg-timeline__subtitle"
+diff --git a/libs/ui/epg/src/lib/epg-timeline/epg-timeline.component.ts b/libs/ui/epg/src/lib/epg-timeline/epg-timeline.component.ts
+index d832ac7..71f89b1 100644
+--- a/libs/ui/epg/src/lib/epg-timeline/epg-timeline.component.ts
++++ b/libs/ui/epg/src/lib/epg-timeline/epg-timeline.component.ts
+@@ -20,7 +20,7 @@ import { MatIcon } from '@angular/material/icon';
+ import { MatTooltip } from '@angular/material/tooltip';
+ import { normalizeDateLocale } from '@iptvnator/pipes';
+ import { injectTranslationTick } from '@iptvnator/services';
+-import { EpgProgram } from '@iptvnator/shared/interfaces';
++import { EpgProgram, plainDisplayText } from '@iptvnator/shared/interfaces';
+ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+ import {
+     EpgDateNavigationDirection,
+@@ -91,6 +91,7 @@ export type { EpgTimelineSummary } from './epg-summary.util';
+     ],
+ })
+ export class EpgTimelineComponent {
++    protected readonly plain = plainDisplayText;
+     readonly programs = input<EpgProgram[]>([]);
+     readonly channelName = input('');
+     readonly channelLogo = input('');
 diff --git a/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-command-runner.ts b/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-command-runner.ts
 index 926d545..7fbc74c 100644
 --- a/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-command-runner.ts
@@ -9999,6 +10149,41 @@ index de5a577..d4d6b5b 100644
              return;
          }
          const context = this.splitAudio.context();
+diff --git a/libs/ui/playback/src/lib/player-controls/player-controls.component.html b/libs/ui/playback/src/lib/player-controls/player-controls.component.html
+index 404e318..4ef9755 100644
+--- a/libs/ui/playback/src/lib/player-controls/player-controls.component.html
++++ b/libs/ui/playback/src/lib/player-controls/player-controls.component.html
+@@ -28,11 +28,11 @@
+         data-test-id="player-controls-media-title"
+     >
+         <div class="player-controls__title-primary">
+-            {{ mediaTitle.primary }}
++            {{ plain(mediaTitle.primary) }}
+         </div>
+         @if (mediaTitle.secondary) {
+             <div class="player-controls__title-secondary">
+-                {{ mediaTitle.secondary }}
++                {{ plain(mediaTitle.secondary) }}
+             </div>
+         }
+     </div>
+diff --git a/libs/ui/playback/src/lib/player-controls/player-controls.component.ts b/libs/ui/playback/src/lib/player-controls/player-controls.component.ts
+index 4ee3dc1..bf79bf2 100644
+--- a/libs/ui/playback/src/lib/player-controls/player-controls.component.ts
++++ b/libs/ui/playback/src/lib/player-controls/player-controls.component.ts
+@@ -1,3 +1,4 @@
++import { plainDisplayText } from '@iptvnator/shared/interfaces';
+ import {
+     ChangeDetectionStrategy,
+     Component,
+@@ -72,6 +73,7 @@ import { PlayerUpNextCardComponent } from './player-up-next-card.component';
+     },
+ })
+ export class PlayerControlsComponent implements OnDestroy {
++    protected readonly plain = plainDisplayText;
+     private readonly host = inject(ElementRef<HTMLElement>).nativeElement;
+     private readonly translate = inject(TranslateService);
+     readonly controller = input.required<PlayerController>();
 diff --git a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html
 index 688a3ed..526a7a4 100644
 --- a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html

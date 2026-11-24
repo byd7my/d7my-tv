@@ -11,6 +11,8 @@ struct D7TSheetModel {
     let subtitle: String?
     let icon: String?
     let checked: Bool
+    /// Short value at the trailing edge (e.g. a channel count).
+    let trailing: String?
   }
   struct Group: Identifiable {
     let id: Int
@@ -19,15 +21,19 @@ struct D7TSheetModel {
   }
   let title: String
   let groups: [Group]
+  /// Adds the system search field above the list.
+  let searchable: Bool
 
   init?(_ args: [String: Any]) {
     guard let rawGroups = args["groups"] as? [[String: Any]] else { return nil }
     title = args["title"] as? String ?? ""
+    searchable = args["searchable"] as? Bool ?? false
     groups = rawGroups.enumerated().map { index, group in
       let items = (group["items"] as? [[String: Any]] ?? []).compactMap { item -> Item? in
         guard let id = item["id"] as? String, let title = item["title"] as? String else { return nil }
         return Item(id: id, title: title, subtitle: item["subtitle"] as? String,
-                    icon: item["icon"] as? String, checked: item["checked"] as? Bool ?? false)
+                    icon: item["icon"] as? String, checked: item["checked"] as? Bool ?? false,
+                    trailing: item["trailing"] as? String)
       }
       return Group(id: index, heading: group["heading"] as? String, items: items)
     }
@@ -38,13 +44,22 @@ private struct D7TSheetView: View {
   let model: D7TSheetModel
   let onPick: (String) -> Void
   let onClose: () -> Void
+  @State private var query = ""
+
+  private func visibleItems(_ group: D7TSheetModel.Group) -> [D7TSheetModel.Item] {
+    let needle = query.trimmingCharacters(in: .whitespaces)
+    if needle.isEmpty { return group.items }
+    return group.items.filter { $0.title.localizedCaseInsensitiveContains(needle) }
+  }
 
   var body: some View {
     NavigationStack {
       List {
         ForEach(model.groups) { group in
+          let items = visibleItems(group)
+          if !items.isEmpty {
           Section {
-            ForEach(group.items) { item in
+            ForEach(items) { item in
               Button { onPick(item.id) } label: {
                 HStack(spacing: 12) {
                   if let icon = item.icon {
@@ -60,6 +75,9 @@ private struct D7TSheetView: View {
                     }
                   }
                   Spacer(minLength: 8)
+                  if let trailing = item.trailing {
+                    Text(trailing).font(.callout).foregroundStyle(.secondary).monospacedDigit()
+                  }
                   if item.checked {
                     Image(systemName: "checkmark").foregroundStyle(Color.accentColor)
                   }
@@ -69,8 +87,10 @@ private struct D7TSheetView: View {
           } header: {
             if let heading = group.heading { Text(heading) }
           }
+          }
         }
       }
+      .modifier(D7TSearchModifier(enabled: model.searchable, text: $query))
       .navigationTitle(model.title)
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
@@ -82,6 +102,19 @@ private struct D7TSheetView: View {
           }
         }
       }
+    }
+  }
+}
+
+private struct D7TSearchModifier: ViewModifier {
+  let enabled: Bool
+  @Binding var text: String
+
+  func body(content: Content) -> some View {
+    if enabled {
+      content.searchable(text: $text, placement: .navigationBarDrawer(displayMode: .always))
+    } else {
+      content
     }
   }
 }
