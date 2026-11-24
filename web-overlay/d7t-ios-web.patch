@@ -1,9 +1,9 @@
 diff --git a/apps/web/src/_ios-lume.scss b/apps/web/src/_ios-lume.scss
 new file mode 100644
-index 0000000..aaf7348
+index 0000000..ac56c32
 --- /dev/null
 +++ b/apps/web/src/_ios-lume.scss
-@@ -0,0 +1,1256 @@
+@@ -0,0 +1,1257 @@
 +// ─────────────────────────────────────────────────────────────────────────────
 +// One design language for the whole iPhone app, taken from Lume's SwiftUI source
 +// (sizes read from Lume/Views: PosterCardMetrics, CategoryTileMetrics,
@@ -40,7 +40,7 @@ index 0000000..aaf7348
 +    --l-font: -apple-system, 'SF Pro Text', system-ui, sans-serif;
 +}
 +
-+@media (max-width: 640px) {
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
 +    html.d7t-ios {
 +        // ── Page titles: Lume's large navigation title ───────────────────────
 +        .recently-added-page__title,
@@ -230,7 +230,7 @@ index 0000000..aaf7348
 +// 220 px pictures, three result rows, a verdict, a stepper, a chip row and two buttons — about
 +// 740 px tall.  Here it is Lume's settings pattern: an inset-grouped list of 44–52 px rows, the
 +// clock crops shrunk to thumbnails beside their readouts, one 44 px primary action.
-+@media (max-width: 640px) {
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
 +    html.d7t-ios {
 +        // One frame for both panels.
 +        .player-controls__split-audio-panel .split-audio,
@@ -881,7 +881,7 @@ index 0000000..aaf7348
 +}
 +
 +// ── Search filters: checkboxes become capsule toggles (Lume's filter chips) ───
-+@media (max-width: 640px) {
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
 +    html.d7t-ios app-search-results .mat-mdc-checkbox {
 +        .mdc-checkbox {
 +            display: none !important;
@@ -912,7 +912,7 @@ index 0000000..aaf7348
 +// ═════════ "More": the one place for everything the top bar used to hold ═════════
 +// A bottom sheet in Lume's sheet frame (36 radius glass, grabber, 17/700 title), grouped like
 +// its settings lists: 52-tall rows, 24 icons, 20 inset, hairlines inset past the icon.
-+@media (max-width: 640px) {
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
 +    html.d7t-ios {
 +        @keyframes l-sheet-in {
 +            from {
@@ -1080,7 +1080,7 @@ index 0000000..aaf7348
 +// ═════════ Now playing / stream status bar (EPG timeline toolbar) ═════════
 +// Two lines instead of one crushed line: the channel and programme on top (never truncated to
 +// "No pr…"), the controls underneath; 44-pt targets; no mono "TIMELINE" label.
-+@media (max-width: 640px) {
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
 +    html.d7t-ios {
 +        .epg-timeline .epg-timeline__toolbar {
 +            flex-wrap: wrap;
@@ -1177,7 +1177,7 @@ index 0000000..aaf7348
 +// The bottom bar is the system's own (UITabBarController: real Liquid Glass), laid over the app by
 +// the phone. The HTML bar stays in the DOM only so the native bar can activate its links; the More
 +// sheet it owns must remain visible.
-+@media (max-width: 640px) {
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
 +    html.d7t-ios.d7t-native-tabs {
 +        .app-rail::before,
 +        .app-rail::after {
@@ -1196,7 +1196,7 @@ index 0000000..aaf7348
 +// Same order as Live TV and Lume's player screen: the picture on top at 16:9, then what is
 +// playing, then the list. The title row and the desktop sidebar toggle are not needed while a
 +// picture is on screen, and the sidebar toggle never makes sense on a phone.
-+@media (max-width: 640px) {
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
 +    html.d7t-ios {
 +        app-unified-collection-page:has(app-unified-live-tab .video-player) .collection-header {
 +            display: none;
@@ -1216,15 +1216,16 @@ index 0000000..aaf7348
 +}
 +
 +// ═════════ Home: add another source ═════════
-+@media (max-width: 640px) {
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
 +    html.d7t-ios {
 +        .dashboard-add-source {
 +            display: flex;
 +            align-items: center;
 +            gap: 12px;
-+            width: calc(100% - 2 * var(--l-inset));
++            width: 100%;
++            box-sizing: border-box;
 +            min-height: var(--l-row);
-+            margin: 8px var(--l-inset) 0;
++            margin: 8px 0 0;
 +            padding: 0 16px;
 +            border: 0;
 +            border-radius: var(--l-r-card);
@@ -1262,10 +1263,10 @@ index 0000000..aaf7348
 +}
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..bc7753c
+index 0000000..93a8c03
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,738 @@
+@@ -0,0 +1,764 @@
 +@mixin phone-controls {
 +            grid-template-columns: auto minmax(0, 1fr) !important;
 +            grid-template-areas:
@@ -1370,7 +1371,7 @@ index 0000000..bc7753c
 +//  - the navigation bar moves to the bottom (like every iPhone app),
 +//  - the live player sits on top at 16:9 and the channel list fills the rest,
 +//  - the player's controls float over the picture instead of taking a strip below it.
-+@media (max-width: 640px) {
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
 +    html.d7t-ios {
 +        // The top bar is contextual now (see WorkspaceShellHeaderComponent.phoneApp): 52 px when
 +        // it holds Back / a page action / a search field, and gone — no blank strip — otherwise.
@@ -1787,7 +1788,7 @@ index 0000000..bc7753c
 +
 +// "Audio from another channel": on a phone the panel opens as a sheet over the page (the inline
 +// picture is far too short to hold a channel list) and, in fullscreen, over the whole picture.
-+@media (max-width: 640px) {
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
 +    html.d7t-ios .player-controls__split-audio-panel {
 +        position: fixed !important;
 +        inset: auto 12px calc(92px + env(safe-area-inset-bottom)) 12px !important;
@@ -1809,7 +1810,7 @@ index 0000000..bc7753c
 +
 +// The clock-picking window: a sheet over the top of the screen on a phone; the audio list
 +// steps aside while it is open (both would otherwise cover the 200 px picture).
-+@media (max-width: 640px) {
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
 +    html.d7t-ios app-audio-sync-window {
 +        position: fixed !important;
 +        left: 8px !important;
@@ -1834,7 +1835,7 @@ index 0000000..bc7753c
 +// ── Live TV channel list (iPhone): plain rows after the Live TV reference ─────
 +// Large rounded logo on the left, name over the EPG line, chevron at the end and
 +// hairline separators inset from the logo. Only the iPhone shell is affected.
-+@media (max-width: 640px) {
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
 +    html.d7t-ios app-ios-live-panel app-portal-channels-list {
 +        .scroll-viewport-portals {
 +            padding: 0 !important;
@@ -2002,6 +2003,32 @@ index 0000000..bc7753c
 +        position: fixed !important;
 +        inset: 0 !important;
 +        pointer-events: none;
++    }
++}
++
++
++// Glass "More" button (native, top-trailing): it gets its own strip under the status bar instead of
++// floating over page content ("See all", section titles).
++html.d7t-ios.d7t-more-btn:not(.d7t-has-fullscreen) body {
++    padding-top: calc(env(safe-area-inset-top, 0px) + 54px);
++}
++
++// Fullscreen stand-in covers the status bar / notch / home indicator: keep the title, the
++// stream-info button and the controls inside the safe area.
++html.d7t-ios .d7t-fullscreen {
++    .player-controls__title {
++        padding-top: calc(env(safe-area-inset-top, 0px) + 14px) !important;
++        padding-left: max(28px, calc(env(safe-area-inset-left, 0px) + 16px)) !important;
++        padding-right: max(28px, calc(env(safe-area-inset-right, 0px) + 16px)) !important;
++    }
++
++    .player-controls__title:has(~ .player-controls__corner) {
++        padding-right: calc(72px + env(safe-area-inset-right, 0px)) !important;
++    }
++
++    .player-controls__corner {
++        top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
++        right: max(20px, calc(env(safe-area-inset-right, 0px) + 12px)) !important;
 +    }
 +}
 diff --git a/apps/web/src/app/app.component.ts b/apps/web/src/app/app.component.ts
@@ -3336,10 +3363,10 @@ index 0000000..7880bdf
 +}
 diff --git a/apps/web/src/app/ios/ios-native-tabs.ts b/apps/web/src/app/ios/ios-native-tabs.ts
 new file mode 100644
-index 0000000..2ffb65a
+index 0000000..765b294
 --- /dev/null
 +++ b/apps/web/src/app/ios/ios-native-tabs.ts
-@@ -0,0 +1,116 @@
+@@ -0,0 +1,128 @@
 +import { getD7tNative } from './ios-bridge';
 +
 +/**
@@ -3387,6 +3414,11 @@ index 0000000..2ffb65a
 +            )
 +            .map(([id]) => id);
 +        const sheetOpen = document.querySelector('.app-rail.native-more-open');
++        // Dialogs, the category sheet and the clock window are HTML on top of the page; the system
++        // bar must not float over them.
++        const overlayOpen = !!document.querySelector(
++            '.mat-mdc-dialog-container, .mat-bottom-sheet-container, app-ios-category-sheet, app-audio-sync-window'
++        );
 +        let active = 'none';
 +        if (!sheetOpen) {
 +            for (const [id, suffix] of Object.entries(TAB_LINKS)) {
@@ -3406,11 +3438,18 @@ index 0000000..2ffb65a
 +            '.video-player, app-web-player-view, .embedded-mpv-player__viewport'
 +        );
 +        const searchHeader = /\/(search|settings)(\/|$)/.test(path);
++        const more = !hasPlayer && !searchHeader && !sheetOpen && !overlayOpen;
++        // The glass More button owns a strip under the status bar (see _ios-shell.scss), so it never
++        // lies over page content such as "See all".
++        html.classList.toggle(
++            'd7t-more-btn',
++            !hasPlayer && !searchHeader && !hidden
++        );
 +        send({
 +            active,
-+            hidden,
++            hidden: hidden || overlayOpen,
 +            tabs,
-+            more: !hasPlayer && !searchHeader && !sheetOpen,
++            more,
 +        });
 +    };
 +
@@ -3441,7 +3480,7 @@ index 0000000..2ffb65a
 +        }
 +        schedule();
 +    };
-+    window.setInterval(watch, 700);
++    window.setInterval(watch, 300);
 +    window.addEventListener('popstate', schedule);
 +    watch();
 +
@@ -8209,10 +8248,10 @@ index 0000000..945a97e
 +}
 diff --git a/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.component.ts b/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.component.ts
 new file mode 100644
-index 0000000..7bbbb19
+index 0000000..1c656ac
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.component.ts
-@@ -0,0 +1,333 @@
+@@ -0,0 +1,334 @@
 +import {
 +    ChangeDetectionStrategy,
 +    Component,
@@ -8225,7 +8264,7 @@ index 0000000..7bbbb19
 +    signal,
 +    viewChild,
 +} from '@angular/core';
-+import { foldSearchText } from '@iptvnator/shared/interfaces';
++import { foldSearchText, plainDisplayText } from '@iptvnator/shared/interfaces';
 +
 +export type IosCategoryIcon = 'all' | 'favorites' | 'recent' | null;
 +
@@ -8344,7 +8383,7 @@ index 0000000..7bbbb19
 +                                            }
 +                                        </span>
 +                                    }
-+                                    <span class="ios-row__name">{{ row.name }}</span>
++                                    <span class="ios-row__name">{{ plain(row.name) }}</span>
 +                                    @if (row.count != null) {
 +                                        <span class="ios-row__count">{{ row.count }}</span>
 +                                    }
@@ -8384,7 +8423,7 @@ index 0000000..7bbbb19
 +                        @for (row of hiddenRows(); track row.key) {
 +                            <li class="ios-row">
 +                                <div class="ios-row__main ios-row__main--static">
-+                                    <span class="ios-row__name">{{ row.name }}</span>
++                                    <span class="ios-row__name">{{ plain(row.name) }}</span>
 +                                    <button
 +                                        type="button"
 +                                        class="ios-pill ios-pill--small"
@@ -8445,6 +8484,7 @@ index 0000000..7bbbb19
 +    styleUrl: './ios-category-sheet.component.scss',
 +})
 +export class IosCategorySheetComponent implements OnInit {
++    protected readonly plain = plainDisplayText;
 +    readonly rows = input.required<IosCategoryRow[]>();
 +    readonly hiddenRows = input<IosCategoryRow[]>([]);
 +    readonly selectedKey = input<string | null>(null);
@@ -8810,10 +8850,10 @@ index 0000000..5c87312
 +}
 diff --git a/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.ts b/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.ts
 new file mode 100644
-index 0000000..f6267e3
+index 0000000..2499732
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.ts
-@@ -0,0 +1,362 @@
+@@ -0,0 +1,364 @@
 +import {
 +    ChangeDetectionStrategy,
 +    Component,
@@ -8834,6 +8874,7 @@ index 0000000..f6267e3
 +    FavoritesService,
 +    XtreamStore,
 +} from '@iptvnator/portal/xtream/data-access';
++import { plainDisplayText } from '@iptvnator/shared/interfaces';
 +import { PortalChannelSortMode } from '@iptvnator/portal/shared/util';
 +import { EMPTY, fromEvent, merge, of, switchMap } from 'rxjs';
 +import { catchError, filter } from 'rxjs/operators';
@@ -8896,7 +8937,7 @@ index 0000000..f6267e3
 +                        <svg class="ios-live-title__icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2" /><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
 +                    }
 +                }
-+                <span class="ios-live-title__name">{{ title() }}</span>
++                <span class="ios-live-title__name">{{ plain(title()) }}</span>
 +                <svg class="ios-live-title__chev" viewBox="0 0 14 22" width="12" height="19" aria-hidden="true">
 +                    <path d="m2.5 8.5 4.5-5 4.5 5M2.5 13.5l4.5 5 4.5-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
 +                </svg>
@@ -8944,6 +8985,7 @@ index 0000000..f6267e3
 +    readonly playbackRequested = output<XtreamChannelListItem>();
 +
 +    readonly sortOptions = SORT_OPTIONS;
++    protected readonly plain = plainDisplayText;
 +
 +    private readonly store = inject(XtreamStore);
 +    private readonly favoritesService = inject(FavoritesService);
@@ -9684,6 +9726,54 @@ index 0000000..abb36bb
 +    };
 +    return host.electron ?? host.d7tMpv;
 +}
+diff --git a/libs/shared/interfaces/src/lib/search-text-fold.util.ts b/libs/shared/interfaces/src/lib/search-text-fold.util.ts
+index d3b37d1..eb5c63c 100644
+--- a/libs/shared/interfaces/src/lib/search-text-fold.util.ts
++++ b/libs/shared/interfaces/src/lib/search-text-fold.util.ts
+@@ -33,3 +33,15 @@ export function foldSearchText(value: string): string {
+         ? lowered.normalize('NFC').replace(COMBINING_MARKS_REGEXP, '')
+         : lowered;
+ }
++
++const STYLED_LETTERS = /[ʰ-˿ᴬ-ᶿ⁰-₟²³¹]+/g;
++
++/**
++ * Display only: provider names such as "ᴿᴬᵂ ⁴ᴷ" or "ᴴᴰ" use superscript / modifier letters that
++ * the system font draws one wide glyph at a time. Turn them into the plain letters ("RAW 4K",
++ * "HD"). The stored name (used for search, matching and saved settings) is never changed.
++ */
++export function plainDisplayText(value: string): string {
++    if (!value) return value;
++    return value.replace(STYLED_LETTERS, (run) => run.normalize('NFKC'));
++}
+diff --git a/libs/ui/components/src/lib/channel-list-container/channel-list-item/channel-list-item.component.ts b/libs/ui/components/src/lib/channel-list-container/channel-list-item/channel-list-item.component.ts
+index 16c0d1e..fa760e1 100644
+--- a/libs/ui/components/src/lib/channel-list-container/channel-list-item/channel-list-item.component.ts
++++ b/libs/ui/components/src/lib/channel-list-container/channel-list-item/channel-list-item.component.ts
+@@ -15,7 +15,7 @@ import { MatIcon } from '@angular/material/icon';
+ import { MatTooltip } from '@angular/material/tooltip';
+ import { TranslatePipe } from '@ngx-translate/core';
+ import { EpgProgrammeDialogService, getProgramTimeMs } from '@iptvnator/ui/epg';
+-import { EpgProgram } from '@iptvnator/shared/interfaces';
++import { EpgProgram, plainDisplayText } from '@iptvnator/shared/interfaces';
+ import { SettingsStore } from '@iptvnator/services';
+ import { applyChannelNameStrip } from '@iptvnator/shared/m3u-utils';
+ 
+@@ -46,9 +46,11 @@ export class ChannelListItemComponent {
+     readonly disabled = input(false);
+     readonly statusLabel = input('');
+     readonly displayName = computed(() =>
+-        applyChannelNameStrip(
+-            this.name(),
+-            this.settingsStore.stripCountryPrefix?.()
++        plainDisplayText(
++            applyChannelNameStrip(
++                this.name(),
++                this.settingsStore.stripCountryPrefix?.()
++            )
+         )
+     );
+     readonly showFavoriteButton = input(false);
 diff --git a/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-command-runner.ts b/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-command-runner.ts
 index 926d545..7fbc74c 100644
 --- a/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-command-runner.ts
