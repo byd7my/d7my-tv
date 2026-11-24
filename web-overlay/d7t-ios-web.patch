@@ -1263,10 +1263,10 @@ index 0000000..ac56c32
 +}
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..9c797fc
+index 0000000..84ba59f
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,770 @@
+@@ -0,0 +1,808 @@
 +@mixin phone-controls {
 +            grid-template-columns: auto minmax(0, 1fr) !important;
 +            grid-template-areas:
@@ -2037,6 +2037,44 @@ index 0000000..9c797fc
 +html.d7t-ios.d7t-native-tabs .app-rail {
 +    pointer-events: none !important;
 +}
++
++
++// Fullscreen: glass back button (top-leading) that returns to the list; shown with the controls.
++html.d7t-ios .d7t-fullscreen {
++    .d7t-fs-back {
++        position: absolute;
++        top: calc(env(safe-area-inset-top, 0px) + 8px);
++        left: max(12px, calc(env(safe-area-inset-left, 0px) + 8px));
++        // Above the channel panel's edge hot-zone (z 6), which also sits at the left edge.
++        z-index: 20;
++        width: 44px;
++        height: 44px;
++        display: grid;
++        place-items: center;
++        padding: 0;
++        border: 0;
++        border-radius: 50%;
++        color: #fff;
++        background: rgba(40, 40, 44, 0.55);
++        -webkit-backdrop-filter: blur(20px) saturate(1.6);
++        backdrop-filter: blur(20px) saturate(1.6);
++        box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.22);
++        opacity: 0;
++        pointer-events: none;
++        transition: opacity 0.2s ease-out;
++        -webkit-tap-highlight-color: transparent;
++    }
++
++    &:has(.player-controls__title--visible) .d7t-fs-back {
++        opacity: 1;
++        pointer-events: auto;
++    }
++
++    // Title makes room for the button.
++    .player-controls__title {
++        padding-left: max(72px, calc(env(safe-area-inset-left, 0px) + 64px)) !important;
++    }
++}
 diff --git a/apps/web/src/app/app.component.ts b/apps/web/src/app/app.component.ts
 index 3f52add..ff1d90f 100644
 --- a/apps/web/src/app/app.component.ts
@@ -2520,10 +2558,10 @@ index 0000000..73e6ac9
 +}
 diff --git a/apps/web/src/app/ios/ios-fullscreen.ts b/apps/web/src/app/ios/ios-fullscreen.ts
 new file mode 100644
-index 0000000..35cacea
+index 0000000..2dd8486
 --- /dev/null
 +++ b/apps/web/src/app/ios/ios-fullscreen.ts
-@@ -0,0 +1,96 @@
+@@ -0,0 +1,119 @@
 +/**
 + * iPhone WebKit only allows fullscreen for <video>. The player asks for fullscreen on its own
 + * container, so give the page a small stand-in: the element fills the screen (CSS class
@@ -2551,7 +2589,29 @@ index 0000000..35cacea
 +    window.addEventListener('orientationchange', () => window.setTimeout(resetViewport, 120));
 +    window.addEventListener('resize', () => window.setTimeout(resetViewport, 0));
 +
++    // A way back to the list from inside the picture (the player's own exit icon is small and far
++    // from the thumb). It follows the controls: visible together with the title.
++    let backButton: HTMLButtonElement | null = null;
++    const addBackButton = (host: Element) => {
++        backButton?.remove();
++        const button = document.createElement('button');
++        button.type = 'button';
++        button.className = 'd7t-fs-back';
++        button.setAttribute('aria-label', 'Back to list');
++        button.innerHTML =
++            '<svg viewBox="0 0 12 20" width="11" height="18" aria-hidden="true"><path d="M10 2 2 10l8 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
++        button.addEventListener('click', (event) => {
++            event.stopPropagation();
++            enteredByRotation = false;
++            void exit();
++        });
++        host.appendChild(button);
++        backButton = button;
++    };
++
 +    const clear = () => {
++        backButton?.remove();
++        backButton = null;
 +        current?.classList.remove('d7t-fullscreen');
 +        root.classList.remove('d7t-has-fullscreen');
 +        current = null;
@@ -2590,6 +2650,7 @@ index 0000000..35cacea
 +            current = this;
 +            this.classList.add('d7t-fullscreen');
 +            root.classList.add('d7t-has-fullscreen');
++            addBackButton(this);
 +            notify();
 +            window.dispatchEvent(new Event('resize'));
 +        },
@@ -7924,10 +7985,10 @@ index 0000000..f536427
 +}
 diff --git a/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.component.scss b/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.component.scss
 new file mode 100644
-index 0000000..945a97e
+index 0000000..73df8a8
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.component.scss
-@@ -0,0 +1,334 @@
+@@ -0,0 +1,387 @@
 +// iOS "page sheet" for choosing categories. Values follow the supplied
 +// Categories reference: 17pt semibold title, capsule Done, inset hairline
 +// separators, 19pt rows, floating search capsule.
@@ -8262,12 +8323,65 @@ index 0000000..945a97e
 +        transition: none;
 +    }
 +}
++
++// Select / deselect view (same idea as the PC "manage groups" window).
++.ios-bulk {
++    display: flex;
++    flex-wrap: wrap;
++    align-items: center;
++    justify-content: space-between;
++    gap: 8px 10px;
++    padding: 12px 20px 8px;
++}
++
++.ios-bulk__count {
++    white-space: nowrap;
++    font-size: 15px;
++    color: rgba(235, 235, 245, 0.6);
++
++    b {
++        color: #fff;
++        font-weight: 600;
++    }
++}
++
++.ios-bulk__actions {
++    display: flex;
++    gap: 8px;
++
++    .ios-pill {
++        white-space: nowrap;
++    }
++}
++
++.ios-pill:disabled {
++    opacity: 0.35;
++    pointer-events: none;
++}
++
++.ios-check {
++    flex: 0 0 auto;
++    width: 26px;
++    height: 26px;
++    margin-inline-end: 12px;
++    border-radius: 50%;
++    border: 2px solid rgba(235, 235, 245, 0.3);
++    display: grid;
++    place-items: center;
++    color: #fff;
++    box-sizing: border-box;
++
++    &.is-on {
++        background: #0a84ff;
++        border-color: #0a84ff;
++    }
++}
 diff --git a/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.component.ts b/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.component.ts
 new file mode 100644
-index 0000000..1c656ac
+index 0000000..e30ea68
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.component.ts
-@@ -0,0 +1,334 @@
+@@ -0,0 +1,411 @@
 +import {
 +    ChangeDetectionStrategy,
 +    Component,
@@ -8292,6 +8406,8 @@ index 0000000..1c656ac
 +    readonly icon?: IosCategoryIcon;
 +    /** Only real provider categories can be hidden. */
 +    readonly hideable: boolean;
++    /** Edit view only: the category is currently left out of the app. */
++    readonly hidden?: boolean;
 +}
 +
 +/**
@@ -8360,23 +8476,62 @@ index 0000000..1c656ac
 +            </header>
 +
 +            <div class="ios-sheet__scroll" #scroller>
-+                @if (page() === 'list') {
++                @if (page() === 'list' && editing()) {
++                    <div class="ios-bulk">
++                        <div class="ios-bulk__count" data-test-id="ios-cat-selected">
++                            Selected <b>{{ shownCount() }}</b> / {{ editList().length }}
++                        </div>
++                        <div class="ios-bulk__actions">
++                            <button
++                                type="button"
++                                class="ios-pill ios-pill--small"
++                                data-test-id="ios-cat-select-all"
++                                [disabled]="shownCount() === editList().length"
++                                (click)="restoreAll.emit()"
++                            >
++                                Select all
++                            </button>
++                            <button
++                                type="button"
++                                class="ios-pill ios-pill--small"
++                                data-test-id="ios-cat-deselect-all"
++                                [disabled]="shownCount() === 0"
++                                (click)="deselectAll()"
++                            >
++                                Deselect all
++                            </button>
++                        </div>
++                    </div>
++                    <ul class="ios-list" role="list">
++                        @for (row of filteredEdit(); track row.key) {
++                            <li class="ios-row">
++                                <button
++                                    type="button"
++                                    class="ios-row__main"
++                                    role="checkbox"
++                                    data-test-id="ios-cat-toggle"
++                                    [attr.aria-checked]="!row.hidden"
++                                    (click)="toggle(row)"
++                                >
++                                    <span class="ios-check" [class.is-on]="!row.hidden" aria-hidden="true">
++                                        @if (!row.hidden) {
++                                            <svg viewBox="0 0 24 24" width="16" height="16"><path d="m5 12.5 4.6 4.6L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></svg>
++                                        }
++                                    </span>
++                                    <span class="ios-row__name">{{ plain(row.name) }}</span>
++                                    @if (row.count != null) {
++                                        <span class="ios-row__count">{{ row.count }}</span>
++                                    }
++                                </button>
++                            </li>
++                        } @empty {
++                            <li class="ios-empty">No categories match “{{ term() }}”.</li>
++                        }
++                    </ul>
++                } @else if (page() === 'list') {
 +                    <ul class="ios-list" role="list">
 +                        @for (row of filteredRows(); track row.key) {
 +                            <li class="ios-row" [class.is-selected]="row.key === selectedKey()">
-+                                @if (editing() && row.hideable) {
-+                                    <button
-+                                        type="button"
-+                                        class="ios-row__hide"
-+                                        data-test-id="ios-cat-hide"
-+                                        [attr.aria-label]="'Hide ' + row.name"
-+                                        (click)="hide.emit(row.key)"
-+                                    >
-+                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-+                                            <path d="M3 12s3.6-6.5 9-6.5c1.7 0 3.2.6 4.5 1.4M21 12s-3.6 6.5-9 6.5c-1.7 0-3.2-.6-4.5-1.4M4 4l16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-+                                        </svg>
-+                                    </button>
-+                                }
 +                                <button
 +                                    type="button"
 +                                    class="ios-row__main"
@@ -8413,7 +8568,7 @@ index 0000000..1c656ac
 +                        } @empty {
 +                            <li class="ios-empty">No categories match “{{ term() }}”.</li>
 +                        }
-+                        @if (hiddenRows().length > 0 || editing()) {
++                        @if (hiddenRows().length > 0) {
 +                            <li class="ios-row ios-row--manage">
 +                                <button
 +                                    type="button"
@@ -8505,11 +8660,14 @@ index 0000000..1c656ac
 +    readonly hiddenRows = input<IosCategoryRow[]>([]);
 +    readonly selectedKey = input<string | null>(null);
 +    readonly title = input('Categories');
++    /** Opens straight in the select/deselect view. */
++    readonly startEditing = input(false);
 +
 +    readonly picked = output<string>();
 +    readonly hide = output<string>();
 +    readonly restore = output<string>();
 +    readonly restoreAll = output<void>();
++    readonly hideAll = output<void>();
 +    readonly closed = output<void>();
 +
 +    readonly open = signal(false);
@@ -8533,11 +8691,32 @@ index 0000000..1c656ac
 +        return q ? all.filter((r) => foldSearchText(r.name).includes(q)) : all;
 +    });
 +
++    /** Every real category, shown or hidden, in the provider's order of the two lists. */
++    readonly editList = computed<IosCategoryRow[]>(() => [
++        ...this.rows()
++            .filter((r) => r.hideable)
++            .map((r) => ({ ...r, hidden: false })),
++        ...this.hiddenRows().map((r) => ({ ...r, hidden: true })),
++    ]);
++
++    readonly shownCount = computed(
++        () => this.editList().filter((r) => !r.hidden).length
++    );
++
++    readonly filteredEdit = computed(() => {
++        const q = foldSearchText(this.term().trim());
++        const all = this.editList();
++        return q ? all.filter((r) => foldSearchText(r.name).includes(q)) : all;
++    });
++
 +    readonly sheetTransform = computed(() =>
 +        this.dragY() > 0 ? `translateY(${this.dragY()}px)` : null
 +    );
 +
 +    ngOnInit(): void {
++        if (this.startEditing()) {
++            this.editing.set(true);
++        }
 +        // Next frame, so the slide-up transition has a starting state to run from.
 +        requestAnimationFrame(() => this.open.set(true));
 +    }
@@ -8549,6 +8728,18 @@ index 0000000..1c656ac
 +
 +    toggleEdit(): void {
 +        this.editing.update((v) => !v);
++    }
++
++    toggle(row: IosCategoryRow): void {
++        if (row.hidden) {
++            this.restore.emit(row.key);
++        } else {
++            this.hide.emit(row.key);
++        }
++    }
++
++    deselectAll(): void {
++        this.hideAll.emit();
 +    }
 +
 +    pick(row: IosCategoryRow): void {
@@ -8604,10 +8795,10 @@ index 0000000..1c656ac
 +}
 diff --git a/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.service.ts b/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.service.ts
 new file mode 100644
-index 0000000..0484c6e
+index 0000000..9c8e66f
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-live/ios-category-sheet.service.ts
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,80 @@
 +import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 +import { ComponentPortal } from '@angular/cdk/portal';
 +import {
@@ -8632,6 +8823,8 @@ index 0000000..0484c6e
 +    readonly onHide: (key: string) => void;
 +    readonly onRestore: (key: string) => void;
 +    readonly onRestoreAll: () => void;
++    /** Open directly in the select/deselect view. */
++    readonly startEditing?: boolean;
 +}
 +
 +/** Presents the Categories sheet above everything (CDK overlay, body level). */
@@ -8657,6 +8850,9 @@ index 0000000..0484c6e
 +        if (config.title) {
 +            sheet.setInput('title', config.title);
 +        }
++        if (config.startEditing) {
++            sheet.setInput('startEditing', true);
++        }
 +        const sync: EffectRef = effect(
 +            () => {
 +                sheet.setInput('rows', config.rows());
@@ -8670,6 +8866,12 @@ index 0000000..0484c6e
 +        instance.hide.subscribe((key) => config.onHide(key));
 +        instance.restore.subscribe((key) => config.onRestore(key));
 +        instance.restoreAll.subscribe(() => config.onRestoreAll());
++        // "Deselect all": every category still shown is hidden, the same way one tap would.
++        instance.hideAll.subscribe(() => {
++            for (const row of config.rows()) {
++                if (row.hideable) config.onHide(row.key);
++            }
++        });
 +        instance.closed.subscribe(() => {
 +            sync.destroy();
 +            ref.dispose();
@@ -8869,10 +9071,10 @@ index 0000000..d238385
 +}
 diff --git a/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.ts b/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.ts
 new file mode 100644
-index 0000000..60e0ba2
+index 0000000..d5b4531
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-live/ios-live-panel.component.ts
-@@ -0,0 +1,427 @@
+@@ -0,0 +1,428 @@
 +import {
 +    ChangeDetectionStrategy,
 +    Component,
@@ -9203,7 +9405,7 @@ index 0000000..60e0ba2
 +                        items: [
 +                            {
 +                                id: '__edit',
-+                                title: 'Hide or restore categories',
++                                title: 'Choose which categories to show',
 +                                icon: 'eye.slash',
 +                            },
 +                        ],
@@ -9211,7 +9413,7 @@ index 0000000..60e0ba2
 +                ],
 +            });
 +            if (picked === '__edit') {
-+                this.openHtmlSheet();
++                this.openHtmlSheet(true);
 +            } else if (picked) {
 +                this.select(picked);
 +            }
@@ -9220,8 +9422,9 @@ index 0000000..60e0ba2
 +        }
 +    }
 +
-+    private openHtmlSheet(): void {
++    private openHtmlSheet(startEditing = false): void {
 +        this.sheets.open({
++            startEditing,
 +            rows: this.sheetRows,
 +            hiddenRows: this.hiddenRows,
 +            selectedKey: this.selectedKey,
