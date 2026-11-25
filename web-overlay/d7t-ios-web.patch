@@ -1,9 +1,9 @@
 diff --git a/apps/web/src/_ios-lume.scss b/apps/web/src/_ios-lume.scss
 new file mode 100644
-index 0000000..ac56c32
+index 0000000..9d562c2
 --- /dev/null
 +++ b/apps/web/src/_ios-lume.scss
-@@ -0,0 +1,1257 @@
+@@ -0,0 +1,1258 @@
 +// ─────────────────────────────────────────────────────────────────────────────
 +// One design language for the whole iPhone app, taken from Lume's SwiftUI source
 +// (sizes read from Lume/Views: PosterCardMetrics, CategoryTileMetrics,
@@ -902,9 +902,10 @@ index 0000000..ac56c32
 +            cursor: pointer;
 +        }
 +
++        // Selected = white capsule with black text, like the design's scope tabs.
 +        &.mat-mdc-checkbox-checked .mdc-form-field {
-+            background: var(--l-tint);
-+            color: #fff;
++            background: #fff;
++            color: #000;
 +        }
 +    }
 +}
@@ -1263,10 +1264,10 @@ index 0000000..ac56c32
 +}
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..96ae883
+index 0000000..b7f827f
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,872 @@
+@@ -0,0 +1,1007 @@
 +@mixin phone-controls {
 +            grid-template-columns: auto minmax(0, 1fr) !important;
 +            grid-template-areas:
@@ -2085,7 +2086,8 @@ index 0000000..96ae883
 +        min-height: 300px !important;
 +        margin: 4px 0 22px !important;
 +        border-radius: 24px !important;
-+        box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
++        background: linear-gradient(160deg, #1a2a44 0%, #12141a 70%) !important;
++        box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.18);
 +    }
 +
 +    [data-test-id='dashboard-hero'] .hero__content {
@@ -2129,8 +2131,38 @@ index 0000000..96ae883
 +        font-weight: 700 !important;
 +    }
 +
-+    [data-test-id='dashboard-hero'] .hero__controls {
++    // Page dots stay (like the design); the pause button is not needed on a phone.
++    [data-test-id='dashboard-hero'] .hero__pause {
 +        display: none !important;
++    }
++
++    // Rail headings: one line, bold white, no count badge, a blue "See all" that never wraps.
++    [data-test-id='dashboard-page'] .rail__title {
++        font-size: 21px !important;
++        font-weight: 700 !important;
++        letter-spacing: -0.01em;
++        min-width: 0;
++    }
++
++    [data-test-id='dashboard-page'] .rail__label {
++        display: block;
++        overflow: hidden;
++        text-overflow: ellipsis;
++        white-space: nowrap;
++    }
++
++    [data-test-id='dashboard-page'] .rail__count {
++        display: none !important;
++    }
++
++    [data-test-id='dashboard-page'] .rail__see-all {
++        flex: none;
++        color: #0a84ff !important;
++        white-space: nowrap;
++    }
++
++    [data-test-id='dashboard-page'] .rail__see-all-label {
++        white-space: nowrap;
 +    }
 +}
 +
@@ -2138,6 +2170,110 @@ index 0000000..96ae883
 +// laid the cast rail over the hero's own text.
 +html.d7t-ios .shell__hero {
 +    margin-bottom: 0 !important;
++}
++
++// ── Landscape phone: the audio panel is two columns (picture/audio + sync | channel list) ───────────
++// The portrait sheet is 62 vh tall; on a 393 pt-high screen that left the channel list no room at all.
++@media (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios body .player-controls__split-audio-panel {
++        inset: calc(8px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right))
++            calc(8px + env(safe-area-inset-bottom)) auto !important;
++        justify-content: flex-end;
++        align-items: stretch;
++
++        .split-audio {
++            display: grid !important;
++            grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
++            grid-template-rows: auto auto minmax(0, 1fr);
++            width: min(720px, calc(100vw - 72px)) !important;
++            max-width: none !important;
++            max-height: none !important;
++            height: 100%;
++            overflow: hidden !important;
++        }
++
++        .split-audio__header {
++            grid-column: 1 / -1;
++        }
++
++        .split-audio > .split-audio__error,
++        .split-audio > .split-audio__source {
++            grid-column: 1 / -1;
++        }
++
++        .split-audio__link {
++            grid-column: 1;
++            grid-row: 2;
++            flex-direction: column;
++            margin: 10px 12px 0 !important;
++        }
++
++        .split-audio__link-icon {
++            display: none;
++        }
++
++        .split-audio__browse {
++            display: flex;
++            flex-direction: column;
++            grid-column: 2;
++            grid-row: 2 / span 2;
++            min-height: 0;
++        }
++
++        .split-audio__browse .split-audio__list {
++            flex: 1 1 auto;
++            min-height: 0;
++            overflow-y: auto !important;
++            margin-bottom: 10px;
++        }
++
++        .split-audio__side {
++            padding: 6px 10px;
++            gap: 0;
++        }
++
++        .split-audio__side-label {
++            font-size: 10px;
++        }
++
++        .split-audio__side-name {
++            font-size: 13px;
++        }
++
++        .split-audio__side-src {
++            min-height: 0;
++            font-size: 11px;
++        }
++
++        .sync-section__hint {
++            display: none;
++        }
++
++        .split-audio__after {
++            display: block;
++            grid-column: 1;
++            grid-row: 3;
++            min-height: 0;
++            overflow-y: auto;
++        }
++    }
++
++    // The clock-picking window: narrower, and the picture crops no taller than the screen allows.
++    html.d7t-ios body app-audio-sync-window {
++        left: auto !important;
++        right: calc(12px + env(safe-area-inset-right)) !important;
++        top: calc(6px + env(safe-area-inset-top)) !important;
++        width: min(560px, calc(100vw - 72px)) !important;
++
++        > * {
++            max-height: calc(100dvh - 12px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
++            overflow-y: auto !important;
++        }
++
++        .sync__shot {
++            max-height: 34dvh !important;
++        }
++    }
 +}
 diff --git a/apps/web/src/app/app.component.ts b/apps/web/src/app/app.component.ts
 index 3f52add..207b56a 100644
@@ -7391,10 +7527,10 @@ index ea495cc..470783a 100644
  export * from './split-audio-source.service';
 diff --git a/libs/portal/xtream/data-access/src/lib/services/split-audio-catalog.service.ts b/libs/portal/xtream/data-access/src/lib/services/split-audio-catalog.service.ts
 new file mode 100644
-index 0000000..ba21a5c
+index 0000000..2c38f0b
 --- /dev/null
 +++ b/libs/portal/xtream/data-access/src/lib/services/split-audio-catalog.service.ts
-@@ -0,0 +1,148 @@
+@@ -0,0 +1,174 @@
 +import { inject, Injectable, signal } from '@angular/core';
 +import { firstValueFrom } from 'rxjs';
 +import {
@@ -7436,6 +7572,7 @@ index 0000000..ba21a5c
 +    private readonly all = signal<readonly SplitAudioCatalogChannel[]>([]);
 +    private readonly isLoading = signal(false);
 +    private readonly failedCount = signal(0);
++    private readonly failedNames = signal<readonly string[]>([]);
 +    private loadedAt = 0;
 +    private running: Promise<void> | null = null;
 +
@@ -7461,6 +7598,19 @@ index 0000000..ba21a5c
 +        return this.failedCount();
 +    }
 +
++    failedTitles(): readonly string[] {
++        return this.failedNames();
++    }
++
++    /** Tries again only for what failed: a provider that was busy streaming often answers a moment later. */
++    retry(): void {
++        if (this.running) return;
++        this.loadedAt = 0;
++        this.running = this.load(true).finally(() => {
++            this.running = null;
++        });
++    }
++
 +    ensureLoaded(): void {
 +        if (this.running) return;
 +        if (Date.now() - this.loadedAt < CATALOG_TTL_MS && this.all().length) {
@@ -7471,14 +7621,21 @@ index 0000000..ba21a5c
 +        });
 +    }
 +
-+    private async load(): Promise<void> {
++    private async load(onlyFailed = false): Promise<void> {
 +        this.isLoading.set(true);
 +        this.failedCount.set(0);
++        const previouslyFailed = new Set(this.failedNames());
++        this.failedNames.set([]);
 +        try {
-+            const playlists = (
++            const everything = (
 +                await firstValueFrom(this.playlists.getAllPlaylists())
 +            ).filter(isXtreamSubscription);
-+            const merged: SplitAudioCatalogChannel[] = [];
++            const playlists = onlyFailed
++                ? everything.filter((p) => previouslyFailed.has(p.title))
++                : everything;
++            const merged: SplitAudioCatalogChannel[] = onlyFailed
++                ? [...this.all()]
++                : [];
 +            let next = 0;
 +            const worker = async (): Promise<void> => {
 +                while (next < playlists.length) {
@@ -7504,6 +7661,10 @@ index 0000000..ba21a5c
 +                            error
 +                        );
 +                        this.failedCount.update((count) => count + 1);
++                        this.failedNames.update((names) => [
++                            ...names,
++                            playlist.title,
++                        ]);
 +                    }
 +                }
 +            };
@@ -7513,7 +7674,8 @@ index 0000000..ba21a5c
 +                    worker
 +                )
 +            );
-+            this.loadedAt = Date.now();
++            // A failed subscription is asked for again the next time the picker opens, not after ten minutes.
++            if (this.failedCount() === 0) this.loadedAt = Date.now();
 +        } catch (error) {
 +            console.warn('Could not list the subscriptions', error);
 +            this.failedCount.update((count) => count + 1);
@@ -10314,10 +10476,10 @@ index 2d547dc..0c16ccb 100644
                      return;
                  }
 diff --git a/libs/services/src/lib/split-audio.service.ts b/libs/services/src/lib/split-audio.service.ts
-index 33e3bd5..70bfe08 100644
+index 33e3bd5..489c7fe 100644
 --- a/libs/services/src/lib/split-audio.service.ts
 +++ b/libs/services/src/lib/split-audio.service.ts
-@@ -59,6 +59,28 @@ export interface SplitAudioSourceOption {
+@@ -59,6 +59,32 @@ export interface SplitAudioSourceOption {
      readonly title: string;
  }
  
@@ -10339,14 +10501,18 @@ index 33e3bd5..70bfe08 100644
 +    loading(): boolean;
 +    /** Number of subscriptions that could not be loaded. */
 +    failed(): number;
++    /** Names of the subscriptions that could not be loaded (empty when all loaded). */
++    failedTitles?(): readonly string[];
 +    /** Starts (or refreshes) loading every subscription; cheap when cached. */
 +    ensureLoaded(): void;
++    /** Loads the subscriptions that failed again (the ones that loaded are kept). */
++    retry?(): void;
 +}
 +
  /** Progress of loading the chosen sound subscription's channel list. */
  export type SplitAudioSourceStatus = 'idle' | 'loading' | 'ready' | 'error';
  
-@@ -77,6 +99,8 @@ export class SplitAudioService {
+@@ -77,6 +103,8 @@ export class SplitAudioService {
       * control bar can offer "audio from another channel" for it.
       */
      readonly context = signal<SplitAudioContext | null>(null);
@@ -10669,7 +10835,7 @@ index 8b40b03..7c6fc59 100644
  
      private notAvailableMessage(): string {
 diff --git a/libs/ui/playback/src/lib/player-controls/controls-split-audio.ts b/libs/ui/playback/src/lib/player-controls/controls-split-audio.ts
-index de5a577..86de997 100644
+index de5a577..4824f08 100644
 --- a/libs/ui/playback/src/lib/player-controls/controls-split-audio.ts
 +++ b/libs/ui/playback/src/lib/player-controls/controls-split-audio.ts
 @@ -1,3 +1,4 @@
@@ -10677,7 +10843,7 @@ index de5a577..86de997 100644
  import {
      computed,
      DestroyRef,
-@@ -84,14 +85,31 @@ export class ControlsSplitAudio {
+@@ -84,14 +85,38 @@ export class ControlsSplitAudio {
       * is still working out what it plays. Other players need the channel list.
       */
      readonly available = computed(() => {
@@ -10705,13 +10871,20 @@ index de5a577..86de997 100644
 +    readonly catalogFailed = computed(
 +        () => this.splitAudio.catalog()?.failed() ?? 0
 +    );
++    /** Which subscriptions could not be loaded, for the message under the search field. */
++    readonly catalogFailedTitles = computed(
++        () => this.splitAudio.catalog()?.failedTitles?.() ?? []
++    );
++    retryCatalog(): void {
++        this.splitAudio.catalog()?.retry?.();
++    }
 +    /** Channels of all subscriptions; built only while the panel is open. */
 +    readonly catalogChannels = computed(() =>
 +        this.panelOpen() ? (this.splitAudio.catalog()?.channels() ?? []) : []
      );
  
      /** The channels audio can come from. Built only while the panel is open. */
-@@ -154,6 +172,10 @@ export class ControlsSplitAudio {
+@@ -154,6 +179,10 @@ export class ControlsSplitAudio {
      readonly videoUrl = computed(
          () => this.splitAudio.context()?.video.url ?? ''
      );
@@ -10722,7 +10895,7 @@ index de5a577..86de997 100644
  
      /**
       * Two-session audio: the sound plays in a hidden session, so the sync
-@@ -174,7 +196,7 @@ export class ControlsSplitAudio {
+@@ -174,7 +203,7 @@ export class ControlsSplitAudio {
       * picture and of the audio channel and suggests the delay.
       */
      readonly sync = new AudioSyncController({
@@ -10731,7 +10904,7 @@ index de5a577..86de997 100644
          audio: this.activeAudio,
          videoUrl: this.videoUrl,
          setDelay: (seconds) => this.setDelay(seconds),
-@@ -234,7 +256,10 @@ export class ControlsSplitAudio {
+@@ -234,7 +263,10 @@ export class ControlsSplitAudio {
      open(): void {
          if (this.usesPanel()) {
              this.panelOpen.update((open) => !open);
@@ -10779,7 +10952,7 @@ index 4ee3dc1..bf79bf2 100644
      private readonly translate = inject(TranslateService);
      readonly controller = input.required<PlayerController>();
 diff --git a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html
-index 688a3ed..94df382 100644
+index 688a3ed..1fa79e3 100644
 --- a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html
 +++ b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html
 @@ -31,7 +31,23 @@
@@ -10807,10 +10980,11 @@ index 688a3ed..94df382 100644
          <label class="split-audio__source">
              <span>{{ 'CHANNELS.SPLIT_AUDIO.SOURCE_LABEL' | translate }}</span>
              <select
-@@ -93,6 +109,40 @@
+@@ -93,6 +109,41 @@
          </p>
      }
  
++    <div class="split-audio__browse">
 +    @if (controls().hasCatalog() && scopes().length > 0) {
 +        <div
 +            class="split-audio__scopes"
@@ -10848,7 +11022,7 @@ index 688a3ed..94df382 100644
      @if (searching()) {
          <input
              #searchInput
-@@ -108,6 +158,18 @@
+@@ -108,6 +159,19 @@
          />
      }
  
@@ -10858,8 +11032,9 @@ index 688a3ed..94df382 100644
 +                Loading channels from all subscriptions…
 +            </p>
 +        } @else if (controls().catalogFailed() > 0) {
-+            <p class="split-audio__error" role="status" data-test-id="split-audio-catalog-failed">
-+                {{ controls().catalogFailed() }} subscription(s) could not be loaded.
++            <p class="split-audio__error split-audio__failed" role="status" data-test-id="split-audio-catalog-failed">
++                <span>Could not load {{ controls().catalogFailedTitles().join(', ') || controls().catalogFailed() + ' subscription(s)' }}.</span>
++                <button type="button" class="split-audio__retry" data-test-id="split-audio-catalog-retry" (click)="controls().retryCatalog()">Retry</button>
 +            </p>
 +        }
 +    }
@@ -10867,7 +11042,7 @@ index 688a3ed..94df382 100644
      @if (!controls().hasChannelList()) {
          <p
              class="split-audio__error"
-@@ -142,6 +204,9 @@
+@@ -142,6 +206,9 @@
                          >
                      }
                      <span class="split-audio__name">{{ channel.name }}</span>
@@ -10877,11 +11052,29 @@ index 688a3ed..94df382 100644
                  </button>
                  @if (controls().canCheck()) {
                      @if (checkOf(channel); as check) {
+@@ -221,8 +288,10 @@
+             </li>
+         }
+     </ul>
++    </div>
+ 
+     @if (active(); as audio) {
++        <div class="split-audio__after">
+         <div class="split-audio__divider"></div>
+ 
+         @if (controls().splitActive()) {
+@@ -322,5 +391,6 @@
+                 {{ 'CHANNELS.SPLIT_AUDIO.BACK_TO_ORIGINAL' | translate }}
+             </button>
+         </div>
++        </div>
+     }
+ </div>
 diff --git a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.scss b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.scss
-index a1ac048..b5ae4a0 100644
+index a1ac048..b870f4b 100644
 --- a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.scss
 +++ b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.scss
-@@ -483,3 +483,107 @@
+@@ -483,3 +483,129 @@
  .split-audio__check-result--bad {
      color: #ffd0cc;
  }
@@ -10988,6 +11181,28 @@ index a1ac048..b5ae4a0 100644
 +    font-size: 22px;
 +    width: 22px;
 +    height: 22px;
++}
++
++// The two blocks only matter in the landscape phone layout (see _ios-shell.scss); elsewhere they add nothing.
++.split-audio__browse,
++.split-audio__after {
++    display: contents;
++}
++
++.split-audio__failed {
++    display: flex;
++    align-items: center;
++    justify-content: space-between;
++    gap: 10px;
++}
++
++.split-audio__retry {
++    flex: none;
++    padding: 6px 14px;
++    border: 0;
++    border-radius: 999px;
++    background: rgba(255, 255, 255, 0.16);
++    font-weight: 600;
 +}
 diff --git a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.ts b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.ts
 index 1ab7542..6932214 100644
@@ -11136,10 +11351,34 @@ index 1ab7542..6932214 100644
          const next = !this.searching();
          this.searching.set(next);
 diff --git a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html
-index 0d6bdad..2c20efe 100644
+index 0d6bdad..bb86b35 100644
 --- a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html
 +++ b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html
-@@ -128,6 +128,19 @@
+@@ -8,6 +8,23 @@
+     <h1 class="visually-hidden" data-test-id="dashboard-page-heading">
+         {{ 'WORKSPACE.SHELL.RAIL_DASHBOARD' | translate }}
+     </h1>
++    <!-- iPhone app only (hidden elsewhere by CSS): brand row above the hero, like the design. -->
++    <div class="ios-home-top" data-test-id="ios-home-top">
++        <span class="ios-home-top__avatar" aria-hidden="true">D</span>
++        <span class="ios-home-top__name">D7T</span>
++        <button
++            type="button"
++            class="ios-home-top__search"
++            aria-label="Search"
++            data-test-id="ios-home-search"
++            (click)="openIosSearch()"
++        >
++            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
++                <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2" />
++                <path d="M16 16l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
++            </svg>
++        </button>
++    </div>
+     @if (data.playlistsLoaded() && !hasPlaylists()) {
+         <app-empty-state
+             [type]="'welcome-dashboard'"
+@@ -128,6 +145,19 @@
              />
          }
  
@@ -11159,8 +11398,61 @@ index 0d6bdad..2c20efe 100644
          <!-- Xtream recently-added rail (only relevant if there are Xtream playlists) -->
          @if (
              dashboardRails().xtreamRecentlyAdded &&
+diff --git a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
+index df193cc..98c7992 100644
+--- a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
++++ b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
+@@ -57,3 +57,48 @@
+         gap: 24px;
+     }
+ }
++
++// Brand row: only inside the iPhone app (html.d7t-ios); the desktop and web builds never show it.
++.ios-home-top {
++    display: none;
++}
++
++:host-context(html.d7t-ios) .ios-home-top {
++    display: flex;
++    align-items: center;
++    gap: 10px;
++    padding: 4px 0 12px;
++}
++
++.ios-home-top__avatar {
++    display: grid;
++    place-items: center;
++    width: 34px;
++    height: 34px;
++    border-radius: 50%;
++    background: linear-gradient(135deg, #0a84ff, #5e5ce6);
++    color: #fff;
++    font-size: 16px;
++    font-weight: 700;
++}
++
++.ios-home-top__name {
++    flex: 1;
++    font-size: 20px;
++    font-weight: 700;
++    letter-spacing: -0.01em;
++}
++
++.ios-home-top__search {
++    display: grid;
++    place-items: center;
++    width: 40px;
++    height: 40px;
++    padding: 0;
++    border: 0;
++    border-radius: 50%;
++    color: #fff;
++    background: rgba(118, 118, 128, 0.3);
++    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
++    -webkit-tap-highlight-color: transparent;
++}
 diff --git a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts
-index 9eca42f..23d7ff6 100644
+index 9eca42f..d3b8325 100644
 --- a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts
 +++ b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts
 @@ -126,6 +126,13 @@ export class WorkspaceDashboardRailsComponent {
@@ -11177,6 +11469,20 @@ index 9eca42f..23d7ff6 100644
      private readonly runtime = inject(RuntimeCapabilitiesService);
      private readonly settingsStore = inject(SettingsStore);
      private readonly sourceExpiry = inject(DashboardSourceExpiryService);
+@@ -712,4 +719,13 @@ export class WorkspaceDashboardRailsComponent {
+     private t(key: string): string {
+         return this.translate.instant(key);
+     }
++
++    /** iPhone app: the same path the bottom bar takes to open Search. */
++    openIosSearch(): void {
++        (
++            window as unknown as {
++                __d7tEmit?: (event: string, payload: unknown) => void;
++            }
++        ).__d7tEmit?.('tab', 'search');
++    }
+ }
 diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-header/workspace-shell-header.component.html b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-header/workspace-shell-header.component.html
 index 7ac2c4a..47a768e 100644
 --- a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-header/workspace-shell-header.component.html
