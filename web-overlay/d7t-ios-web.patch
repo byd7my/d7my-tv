@@ -9407,7 +9407,7 @@ index 0000000..8bf824e
 +</div>
 diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss
 new file mode 100644
-index 0000000..a6bde20
+index 0000000..2a7ed33
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss
 @@ -0,0 +1,527 @@
@@ -9800,7 +9800,7 @@ index 0000000..a6bde20
 +}
 +
 +.ios-browse__rank {
-+    margin-inline-end: -20px;
++    margin-inline-end: -10px;
 +    z-index: 0;
 +    font-size: 96px;
 +    font-weight: 800;
@@ -13535,7 +13535,7 @@ index 4171992..d654125 100644
      readonly remainingLabel?: DashboardRemainingLabel | null;
      readonly testId: string;
 diff --git a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html
-index 0d6bdad..bb86b35 100644
+index 0d6bdad..638e703 100644
 --- a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html
 +++ b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html
 @@ -8,6 +8,23 @@
@@ -13562,31 +13562,88 @@ index 0d6bdad..bb86b35 100644
      @if (data.playlistsLoaded() && !hasPlaylists()) {
          <app-empty-state
              [type]="'welcome-dashboard'"
-@@ -128,6 +145,19 @@
+@@ -42,6 +59,7 @@
+ 
+         <!-- Live favorites: no fallback. Recently watched live gets its own rail. -->
+         @if (
++            !isIosApp &&
+             dashboardRails().liveFavorites &&
+             !showLiveFavoritesSkeleton() &&
+             liveFavoriteCardsEnriched().length > 0
+@@ -58,7 +76,7 @@
+                     liveEpg.setVisibleCards('favorites', $event)
+                 "
+             />
+-        } @else if (railSkeletons.liveFavorites()) {
++        } @else if (!isIosApp && railSkeletons.liveFavorites()) {
+             <lib-dashboard-rail-skeleton
+                 layout="channel"
+                 testId="dashboard-live-favorites-rail-skeleton"
+@@ -66,6 +84,7 @@
+         }
+ 
+         @if (
++            !isIosApp &&
+             dashboardRails().recentlyWatchedLive &&
+             recentLiveCardsEnriched().length > 0
+         ) {
+@@ -110,7 +129,11 @@
+         }
+ 
+         <!-- Sources rail -->
+-        @if (dashboardRails().recentSources && sourceCards().length > 0) {
++        @if (
++            !isIosApp &&
++            dashboardRails().recentSources &&
++            sourceCards().length > 0
++        ) {
+             <lib-dashboard-rail
+                 [label]="'WORKSPACE.DASHBOARD.RECENT_SOURCES' | translate"
+                 [items]="sourceCards()"
+@@ -121,13 +144,37 @@
+                 [reserveMetaLine]="true"
+                 (actionSelected)="onSourceActionSelected($event)"
+             />
+-        } @else if (railSkeletons.sources()) {
++        } @else if (!isIosApp && railSkeletons.sources()) {
+             <lib-dashboard-rail-skeleton
+                 aspectRatio="16 / 9"
+                 testId="dashboard-recent-sources-rail-skeleton"
              />
          }
  
-+        <!-- iPhone app: add another source from Home, next to the ones already here -->
-+        @if (isIosApp) {
-+            <button
-+                type="button"
-+                class="dashboard-add-source"
-+                data-test-id="dashboard-add-source"
-+                (click)="addSource()"
-+            >
-+                <span class="dashboard-add-source__plus" aria-hidden="true">+</span>
-+                <span>Add source</span>
-+            </button>
++        <!-- iPhone app: nothing to continue -> "Top 10 This Week" (TMDB), as in the design -->
++        @if (isIosApp && continueWatchingCards().length === 0 && iosTop().length >= 5) {
++            <section class="ios-top" data-test-id="ios-home-top-ten">
++                <h2 class="ios-top__title">Top 10 This Week</h2>
++                <div class="ios-top__track">
++                    @for (entry of iosTop(); track entry.tmdbId) {
++                        <button
++                            type="button"
++                            class="ios-top__item"
++                            (click)="openTitle(entry.title)"
++                        >
++                            <span class="ios-top__rank">{{ $index + 1 }}</span>
++                            <span class="ios-top__poster">
++                                @if (entry.posterUrl; as src) {
++                                    <img [src]="src" alt="" loading="lazy" />
++                                }
++                                <span class="ios-top__name">{{ entry.title }}</span>
++                            </span>
++                        </button>
++                    }
++                </div>
++            </section>
 +        }
 +
          <!-- Xtream recently-added rail (only relevant if there are Xtream playlists) -->
          @if (
              dashboardRails().xtreamRecentlyAdded &&
 diff --git a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
-index df193cc..30bffd7 100644
+index df193cc..23e1bd2 100644
 --- a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
 +++ b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
-@@ -57,3 +57,61 @@
+@@ -57,3 +57,149 @@
          gap: 24px;
      }
  }
@@ -13648,11 +13705,117 @@ index df193cc..30bffd7 100644
 +    letter-spacing: 0;
 +    color: rgba(235, 235, 245, 0.4);
 +}
++
++// iPhone Home: numbered "Top 10 This Week" rail (design #2, same look as the Movies tab).
++.ios-top {
++    margin: 4px 0 0;
++
++    &__title {
++        margin: 0 0 12px;
++        font-size: 22px;
++        font-weight: 700;
++        letter-spacing: -0.015em;
++        color: #fff;
++    }
++
++    &__track {
++        display: flex;
++        gap: 14px;
++        overflow-x: auto;
++        margin: 0 calc(-1 * var(--dashboard-gutter, 16px));
++        padding: 0 var(--dashboard-gutter, 16px);
++        scrollbar-width: none;
++
++        &::-webkit-scrollbar {
++            display: none;
++        }
++    }
++
++    &__item {
++        display: flex;
++        align-items: flex-end;
++        flex: 0 0 auto;
++        padding: 0;
++        border: 0;
++        background: none;
++        color: inherit;
++        font: inherit;
++        cursor: pointer;
++    }
++
++    &__rank {
++        margin-inline-end: -10px;
++        font-size: 96px;
++        font-weight: 800;
++        line-height: 0.8;
++        letter-spacing: -0.06em;
++        color: #0b0b0e;
++        -webkit-text-stroke: 2px rgba(255, 255, 255, 0.85);
++        paint-order: stroke fill;
++    }
++
++    &__poster {
++        position: relative;
++        z-index: 1;
++        width: 108px;
++        aspect-ratio: 2 / 3;
++        border-radius: 12px;
++        overflow: hidden;
++        background: rgba(255, 255, 255, 0.08);
++
++        img {
++            width: 100%;
++            height: 100%;
++            object-fit: cover;
++            display: block;
++        }
++
++        &::after {
++            content: '';
++            position: absolute;
++            inset: 45% 0 0;
++            background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.78));
++        }
++    }
++
++    &__name {
++        position: absolute;
++        inset-inline: 8px;
++        bottom: 8px;
++        z-index: 1;
++        display: -webkit-box;
++        font-size: 13px;
++        font-weight: 700;
++        line-height: 1.2;
++        color: #fff;
++        -webkit-line-clamp: 2;
++        -webkit-box-orient: vertical;
++        overflow: hidden;
++    }
++}
 diff --git a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts
-index 9eca42f..d3b8325 100644
+index 9eca42f..1a344ba 100644
 --- a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts
 +++ b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts
-@@ -126,6 +126,13 @@ export class WorkspaceDashboardRailsComponent {
+@@ -4,6 +4,7 @@ import {
+     computed,
+     effect,
+     inject,
++    signal,
+     untracked,
+ } from '@angular/core';
+ import {
+@@ -35,7 +36,9 @@ import {
+     PlaylistDeleteActionService,
+     RuntimeCapabilitiesService,
+     SettingsStore,
++    TmdbEnrichmentService,
+     injectTranslationTick,
++    type TmdbHeroEntry,
+ } from '@iptvnator/services';
+ import {
+     DashboardDataService,
+@@ -126,6 +129,24 @@ export class WorkspaceDashboardRailsComponent {
      private readonly translate = inject(TranslateService);
      private readonly languageTick = injectTranslationTick();
      private readonly shellActions = inject(WORKSPACE_SHELL_ACTIONS);
@@ -13660,13 +13823,46 @@ index 9eca42f..d3b8325 100644
 +    protected readonly isIosApp = !!(window as unknown as { d7tNative?: unknown })
 +        .d7tNative;
 +
++    private readonly tmdbEnrichment = inject(TmdbEnrichmentService);
++    /** iPhone Home: this week's TMDB trending, shown as "Top 10" when there is nothing to continue. */
++    protected readonly iosTop = signal<readonly TmdbHeroEntry[]>([]);
++
++    /** A trending title opens the same library search as the hero button. */
++    protected openTitle(title: string): void {
++        void this.router.navigate(['/workspace', 'search'], {
++            queryParams: { q: title },
++        });
++    }
++
 +    protected addSource(): void {
 +        this.shellActions.openAddPlaylistDialog();
 +    }
      private readonly runtime = inject(RuntimeCapabilitiesService);
      private readonly settingsStore = inject(SettingsStore);
      private readonly sourceExpiry = inject(DashboardSourceExpiryService);
-@@ -712,4 +719,13 @@ export class WorkspaceDashboardRailsComponent {
+@@ -327,6 +348,21 @@ export class WorkspaceDashboardRailsComponent {
+ 
+         this.liveEpg.connect(this.enabledLiveCards);
+ 
++        if (this.isIosApp) {
++            effect(() => {
++                if (!this.tmdbEnrichment.isEnabled()) {
++                    this.iosTop.set([]);
++                    return;
++                }
++                untracked(() => {
++                    void this.tmdbEnrichment
++                        .getTrendingHero(10)
++                        .then((entries) => this.iosTop.set(entries))
++                        .catch(() => this.iosTop.set([]));
++                });
++            });
++        }
++
+         // Refresh when Xtream playlist count changes so a newly added provider
+         // populates the rail without a manual dashboard reload. The Xtream
+         // recently-added query can be the slowest dashboard worker request on
+@@ -712,4 +748,13 @@ export class WorkspaceDashboardRailsComponent {
      private t(key: string): string {
          return this.translate.instant(key);
      }
