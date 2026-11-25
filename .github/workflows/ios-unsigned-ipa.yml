@@ -32,9 +32,12 @@ jobs:
         env:
           NX_DAEMON: 'false'
           NODE_OPTIONS: --max-old-space-size=6144
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
         run: |
           set -e
           git apply --whitespace=nowarn ../web-overlay/d7t-ios-web.patch
+          # Optional: embeds the TMDB key from the repository secret (no-op when it is missing).
+          node tools/tmdb/inject-tmdb-key.mjs
           npm i -g pnpm@10.33.0
           pnpm install --frozen-lockfile --ignore-scripts
           pnpm nx build web --configuration=pwa --skip-nx-cache
