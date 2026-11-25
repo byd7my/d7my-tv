@@ -2276,7 +2276,7 @@ index 0000000..b7f827f
 +    }
 +}
 diff --git a/apps/web/src/app/app.component.ts b/apps/web/src/app/app.component.ts
-index 3f52add..207b56a 100644
+index 3f52add..2b611e6 100644
 --- a/apps/web/src/app/app.component.ts
 +++ b/apps/web/src/app/app.component.ts
 @@ -1,3 +1,4 @@
@@ -2296,7 +2296,7 @@ index 3f52add..207b56a 100644
          startAppMenuActions();
          syncDocumentLanguage();
  
-@@ -151,6 +157,60 @@ export class AppComponent implements OnInit {
+@@ -151,6 +157,93 @@ export class AppComponent implements OnInit {
  
          this.initSettings();
          this.triggerAutoUpdatePlaylists();
@@ -2311,16 +2311,13 @@ index 3f52add..207b56a 100644
 +     * now (otherwise it is used the next time the app starts).
 +     */
 +    private watchIosUpdates(): void {
-+        const native = (
-+            window as unknown as {
-+                d7tNative?: {
-+                    on?: (event: string, handler: (payload: unknown) => void) => unknown;
-+                    call?: (method: string, args?: unknown) => Promise<unknown>;
-+                };
-+            }
-+        ).d7tNative;
-+        native?.on?.('ota', (payload) => {
-+            if ((payload as { state?: string } | null)?.state !== 'ready') return;
++        type Native = {
++            on?: (event: string, handler: (payload: unknown) => void) => unknown;
++            call?: (method: string, args?: unknown) => Promise<unknown>;
++        };
++        const native = (window as unknown as { d7tNative?: Native }).d7tNative;
++        if (!native) return;
++        const offer = () => {
 +            void this.snackBar
 +                .open('Update ready', 'Reload', { duration: 0 })
 +                .then((ref) =>
@@ -2328,7 +2325,43 @@ index 3f52add..207b56a 100644
 +                        void native.call?.('ota.apply');
 +                    })
 +                );
++        };
++        // Downloaded while this page was still starting (or last time): the signal may have come too early.
++        native.on?.('ota', (payload) => {
++            if ((payload as { state?: string } | null)?.state === 'ready') offer();
 +        });
++        void (async () => {
++            try {
++                const info = (await native.call?.('ota.info')) as
++                    | { bundled?: string; downloaded?: string }
++                    | undefined;
++                let running = info?.bundled ?? '';
++                try {
++                    const response = await fetch('d7t://localhost/version.json', {
++                        cache: 'no-store',
++                    });
++                    if (response.ok) {
++                        running =
++                            ((await response.json()) as { version?: string })
++                                .version ?? running;
++                    }
++                } catch {
++                    // an older build has no version.json
++                }
++                if (running) {
++                    // Shown small next to the name on Home, so it is clear which web build is running.
++                    document.documentElement.style.setProperty(
++                        '--d7t-build',
++                        `"${running.slice(0, 7)}"`
++                    );
++                }
++                if (info?.downloaded && running && info.downloaded !== running) {
++                    offer();
++                }
++            } catch {
++                // no update information: nothing to offer
++            }
++        })();
 +    }
 +
 +    /**
@@ -2357,7 +2390,7 @@ index 3f52add..207b56a 100644
      }
  
      /**
-@@ -194,7 +254,11 @@ export class AppComponent implements OnInit {
+@@ -194,7 +287,11 @@ export class AppComponent implements OnInit {
       * Applies the operating system color scheme when no explicit theme is set
       */
      detectDarkMode(): void {
@@ -11399,10 +11432,10 @@ index 0d6bdad..bb86b35 100644
          @if (
              dashboardRails().xtreamRecentlyAdded &&
 diff --git a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
-index df193cc..98c7992 100644
+index df193cc..4fd7f70 100644
 --- a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
 +++ b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
-@@ -57,3 +57,48 @@
+@@ -57,3 +57,57 @@
          gap: 24px;
      }
  }
@@ -11450,6 +11483,15 @@ index df193cc..98c7992 100644
 +    background: rgba(118, 118, 128, 0.3);
 +    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
 +    -webkit-tap-highlight-color: transparent;
++}
++
++.ios-home-top__name::after {
++    content: var(--d7t-build, '');
++    margin-inline-start: 8px;
++    font-size: 11px;
++    font-weight: 500;
++    letter-spacing: 0;
++    color: rgba(235, 235, 245, 0.4);
 +}
 diff --git a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts
 index 9eca42f..d3b8325 100644

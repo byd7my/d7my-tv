@@ -19,6 +19,9 @@ const version = process.env.GITHUB_SHA || 'dev';
 const repo = process.env.GITHUB_REPOSITORY || 'byd7my/d7my-tv';
 const SKIP = new Set(['ota.json', 'manifest.json', '.DS_Store']);
 
+// The page reads this to know which build it is (and to tell when a newer one is waiting).
+fs.writeFileSync(path.join(dir, 'version.json'), JSON.stringify({ version }));
+
 const files = [];
 (function walk(rel) {
   for (const name of fs.readdirSync(path.join(dir, rel)).sort()) {
