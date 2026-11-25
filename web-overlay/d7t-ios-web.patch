@@ -1264,10 +1264,10 @@ index 0000000..9d562c2
 +}
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..b7f827f
+index 0000000..6820aa6
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,1007 @@
+@@ -0,0 +1,1035 @@
 +@mixin phone-controls {
 +            grid-template-columns: auto minmax(0, 1fr) !important;
 +            grid-template-areas:
@@ -2079,21 +2079,37 @@ index 0000000..b7f827f
 +
 +// ── Home (workspace dashboard) on the phone: inset rounded hero card, pill buttons, quiet rail headings ──
 +html.d7t-ios {
++    // Full-bleed hero (design #1): the artwork runs edge to edge, behind the brand row, and fades into the page.
 +    .hero[data-test-id='dashboard-hero'] {
 +        --hero-tail: 0px !important;
 +        --hero-inset: 20px !important;
 +        --hero-text-width: 100% !important;
-+        min-height: 300px !important;
-+        margin: 4px 0 22px !important;
-+        border-radius: 24px !important;
-+        background: linear-gradient(160deg, #1a2a44 0%, #12141a 70%) !important;
-+        box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.18);
++        min-height: 470px !important;
++        margin: 0 calc(-1 * var(--dashboard-gutter, 16px)) 8px !important;
++        border-radius: 0 !important;
++        background: linear-gradient(160deg, #1a2a44 0%, #0b0d12 75%) !important;
++        box-shadow: none;
++    }
++
++    [data-test-id='dashboard-hero'] .hero__stage::after {
++        content: '';
++        position: absolute;
++        inset: 0;
++        pointer-events: none;
++        background: linear-gradient(
++            180deg,
++            rgba(0, 0, 0, 0.6) 0,
++            rgba(0, 0, 0, 0) 24%,
++            rgba(0, 0, 0, 0) 42%,
++            #000 100%
++        );
 +    }
 +
 +    [data-test-id='dashboard-hero'] .hero__content {
 +        margin-left: 0 !important;
-+        padding: 56px 18px 18px !important;
++        padding: 56px 20px 34px !important;
 +        gap: 8px !important;
++        justify-content: flex-end !important;
 +        max-width: 100% !important;
 +    }
 +
@@ -2104,7 +2120,7 @@ index 0000000..b7f827f
 +    }
 +
 +    [data-test-id='dashboard-hero'] .hero__title {
-+        font-size: 28px !important;
++        font-size: 34px !important;
 +        font-weight: 700 !important;
 +        letter-spacing: -0.02em !important;
 +        line-height: 1.1 !important;
@@ -2129,6 +2145,18 @@ index 0000000..b7f827f
 +        border-radius: 999px !important;
 +        font-size: 16px !important;
 +        font-weight: 700 !important;
++    }
++
++    // Page dots: centred under the buttons, no pill behind them (design #1).
++    [data-test-id='dashboard-hero'] .hero__controls {
++        top: auto !important;
++        bottom: 12px !important;
++        left: 0 !important;
++        right: 0 !important;
++        justify-content: center;
++        background: none !important;
++        -webkit-backdrop-filter: none !important;
++        backdrop-filter: none !important;
 +    }
 +
 +    // Page dots stay (like the design); the pause button is not needed on a phone.
@@ -7762,7 +7790,7 @@ index 0b3bb2a..897b3a3 100644
              this.playlists.getPlaylistById(id)
 diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.html b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.html
 new file mode 100644
-index 0000000..fd1d511
+index 0000000..e95cd7c
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.html
 @@ -0,0 +1,146 @@
@@ -7827,7 +7855,7 @@ index 0000000..fd1d511
 +        @if (topTen().length >= 5) {
 +            <section class="ios-browse__rail" data-test-id="ios-browse-top">
 +                <header class="ios-browse__head">
-+                    <h2>Newest 10</h2>
++                    <h2>{{ topIsTrending() ? (topTen().length >= 10 ? 'Top 10 This Week' : 'Trending This Week') : 'Newest 10' }}</h2>
 +                </header>
 +                <div class="ios-browse__track ios-browse__track--ranked">
 +                    @for (item of topTen(); track item.xtream_id ?? $index) {
@@ -8291,10 +8319,10 @@ index 0000000..08b70da
 +}
 diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts
 new file mode 100644
-index 0000000..c4ddaee
+index 0000000..5a81d2f
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts
-@@ -0,0 +1,263 @@
+@@ -0,0 +1,328 @@
 +import {
 +    ChangeDetectionStrategy,
 +    Component,
@@ -8313,9 +8341,11 @@ index 0000000..c4ddaee
 +    XtreamStore,
 +} from '@iptvnator/portal/xtream/data-access';
 +import {
++    normalizeTitleKeys,
 +    plainDisplayText,
 +    toXtreamRecentlyAddedTimestamp,
 +} from '@iptvnator/shared/interfaces';
++import { TmdbApiService, TmdbRuntimeService } from '@iptvnator/services';
 +import { IosCategoryRow } from '../ios-live/ios-category-sheet.component';
 +import { IosCategorySheetService } from '../ios-live/ios-category-sheet.service';
 +import { IosHiddenCategoriesService } from '../ios-live/ios-hidden-categories.service';
@@ -8350,6 +8380,8 @@ index 0000000..c4ddaee
 +const RAIL_ITEMS = 20;
 +const MAX_RAILS = 4;
 +const RECENT_ITEMS = 20;
++/** A "Top 10 This Week" rail needs at least this many titles that are really in the library. */
++const MIN_TRENDING_MATCHES = 5;
 +
 +/**
 + * Movies / Series on the phone: a big title, "Recently Added" and one poster rail per category,
@@ -8369,6 +8401,11 @@ index 0000000..c4ddaee
 +    private readonly getVisible = this.store.getVisibleContentByType();
 +    private readonly hiddenService = inject(IosHiddenCategoriesService);
 +    private readonly sheets = inject(IosCategorySheetService);
++    private readonly tmdbApi = inject(TmdbApiService);
++    private readonly tmdbRuntime = inject(TmdbRuntimeService);
++
++    /** TMDB weekly trending for this kind of title, English (library titles are mostly English). */
++    private readonly trending = signal<string[]>([]);
 +
 +    readonly type: ContentType =
 +        this.route.parent?.snapshot.routeConfig?.path === 'series'
@@ -8432,8 +8469,42 @@ index 0000000..c4ddaee
 +        () => this.recent()[0] ?? this.categories()[0]?.items[0] ?? null
 +    );
 +
-+    /** Numbered rail: the ten newest titles (ranked by date added, not by popularity). */
-+    readonly topTen = computed<BrowseItem[]>(() => this.recent().slice(0, 10));
++    /**
++     * Trending titles (TMDB, this week) that are really in the library, in TMDB's order. Matching is
++     * by normalised title only, so it never guesses: a title that is not found is simply left out.
++     */
++    private readonly trendingInLibrary = computed<BrowseItem[]>(() => {
++        const wanted = this.trending();
++        if (!wanted.length) return [];
++        const byKey = new Map<string, BrowseItem>();
++        for (const item of this.all()) {
++            const key = normalizeTitleKeys(item.title || item.name || '').exact;
++            if (key && !byKey.has(key)) byKey.set(key, item);
++        }
++        const out: BrowseItem[] = [];
++        const seen = new Set<BrowseItem>();
++        for (const title of wanted) {
++            const hit = byKey.get(normalizeTitleKeys(title).exact);
++            if (hit && !seen.has(hit)) {
++                seen.add(hit);
++                out.push(hit);
++            }
++            if (out.length >= 10) break;
++        }
++        return out;
++    });
++
++    /** True when the numbered rail is TMDB's trending list, false when it is the newest ten. */
++    readonly topIsTrending = computed(
++        () => this.trendingInLibrary().length >= MIN_TRENDING_MATCHES
++    );
++
++    /** Numbered rail: this week's trending titles found in the library, else the ten newest. */
++    readonly topTen = computed<BrowseItem[]>(() =>
++        this.topIsTrending()
++            ? this.trendingInLibrary()
++            : this.recent().slice(0, 10)
++    );
 +
 +    /** Category pills under the title; "Show All" for the rest stays in Categories. */
 +    readonly genres = computed(() =>
@@ -8512,6 +8583,28 @@ index 0000000..c4ddaee
 +
 +    constructor() {
 +        effect(() => this.store.setSelectedContentType(this.type));
++        void this.loadTrending();
++    }
++
++    /** Best effort: with TMDB off, no key or no network the rail simply stays "Newest 10". */
++    private async loadTrending(): Promise<void> {
++        try {
++            if (!this.tmdbRuntime.isEnabled()) return;
++            const results = await this.tmdbApi.getTrending(
++                this.type === 'series' ? 'tv' : 'movie',
++                'en-US',
++                this.tmdbRuntime.apiKey()
++            );
++            const titles: string[] = [];
++            for (const r of results) {
++                for (const t of [r.title ?? r.name, r.original_title ?? r.original_name]) {
++                    if (t) titles.push(t);
++                }
++            }
++            this.trending.set(titles);
++        } catch (error) {
++            console.warn('TMDB trending (browse) failed:', error);
++        }
 +    }
 +
 +    openCategories(): void {
@@ -11432,10 +11525,10 @@ index 0d6bdad..bb86b35 100644
          @if (
              dashboardRails().xtreamRecentlyAdded &&
 diff --git a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
-index df193cc..4fd7f70 100644
+index df193cc..30bffd7 100644
 --- a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
 +++ b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
-@@ -57,3 +57,57 @@
+@@ -57,3 +57,61 @@
          gap: 24px;
      }
  }
@@ -11450,6 +11543,10 @@ index df193cc..4fd7f70 100644
 +    align-items: center;
 +    gap: 10px;
 +    padding: 4px 0 12px;
++    // Sits on top of the full-bleed hero (design #1); the hero's top gradient keeps it readable.
++    position: relative;
++    z-index: 3;
++    margin-bottom: -56px;
 +}
 +
 +.ios-home-top__avatar {
