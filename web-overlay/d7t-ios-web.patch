@@ -10393,7 +10393,7 @@ index 4ee3dc1..bf79bf2 100644
      private readonly translate = inject(TranslateService);
      readonly controller = input.required<PlayerController>();
 diff --git a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html
-index 688a3ed..526a7a4 100644
+index 688a3ed..f2a5509 100644
 --- a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html
 +++ b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html
 @@ -31,7 +31,7 @@
@@ -10405,11 +10405,52 @@ index 688a3ed..526a7a4 100644
          <label class="split-audio__source">
              <span>{{ 'CHANNELS.SPLIT_AUDIO.SOURCE_LABEL' | translate }}</span>
              <select
-@@ -108,6 +108,18 @@
+@@ -93,6 +93,40 @@
+         </p>
+     }
+ 
++    @if (controls().hasCatalog() && scopes().length > 0) {
++        <div
++            class="split-audio__scopes"
++            role="tablist"
++            aria-label="Audio from"
++            data-test-id="split-audio-scopes"
++        >
++            <button
++                type="button"
++                role="tab"
++                class="split-audio__scope"
++                data-test-id="split-audio-scope-favorites"
++                [class.split-audio__scope--on]="scope() === 'favorites'"
++                [attr.aria-selected]="scope() === 'favorites'"
++                (click)="setScope('favorites')"
++            >
++                Favorites
++            </button>
++            @for (entry of scopes(); track entry.id) {
++                <button
++                    type="button"
++                    role="tab"
++                    class="split-audio__scope"
++                    data-test-id="split-audio-scope"
++                    [class.split-audio__scope--on]="scope() === entry.id"
++                    [attr.aria-selected]="scope() === entry.id"
++                    (click)="setScope(entry.id)"
++                >
++                    {{ entry.title }}
++                </button>
++            }
++        </div>
++    }
++
+     @if (searching()) {
+         <input
+             #searchInput
+@@ -108,6 +142,18 @@
          />
      }
  
-+    @if (controls().hasCatalog() && searching()) {
++    @if (controls().hasCatalog() && (searching() || scope() !== 'favorites')) {
 +        @if (controls().catalogLoading()) {
 +            <p class="split-audio__hints" role="status" data-test-id="split-audio-catalog-loading">
 +                Loading channels from all subscriptions…
@@ -10424,7 +10465,7 @@ index 688a3ed..526a7a4 100644
      @if (!controls().hasChannelList()) {
          <p
              class="split-audio__error"
-@@ -142,6 +154,9 @@
+@@ -142,6 +188,9 @@
                          >
                      }
                      <span class="split-audio__name">{{ channel.name }}</span>
@@ -10435,10 +10476,10 @@ index 688a3ed..526a7a4 100644
                  @if (controls().canCheck()) {
                      @if (checkOf(channel); as check) {
 diff --git a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.scss b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.scss
-index a1ac048..2a81dcb 100644
+index a1ac048..ae6793a 100644
 --- a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.scss
 +++ b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.scss
-@@ -483,3 +483,16 @@
+@@ -483,3 +483,50 @@
  .split-audio__check-result--bad {
      color: #ffd0cc;
  }
@@ -10455,11 +10496,101 @@ index a1ac048..2a81dcb 100644
 +    font-size: 0.72rem;
 +    opacity: 0.62;
 +}
++
++.split-audio__scopes {
++    display: flex;
++    gap: 8px;
++    padding: 0 12px 10px;
++    overflow-x: auto;
++    scrollbar-width: none;
++    -webkit-overflow-scrolling: touch;
++}
++
++.split-audio__scopes::-webkit-scrollbar {
++    display: none;
++}
++
++.split-audio__scope {
++    flex: 0 0 auto;
++    min-height: 36px;
++    padding: 0 14px;
++    border: 0;
++    border-radius: 999px;
++    background: rgba(255, 255, 255, 0.1);
++    color: rgba(255, 255, 255, 0.85) !important;
++    font: inherit;
++    font-size: 14px;
++    font-weight: 600;
++    white-space: nowrap;
++    cursor: pointer;
++    touch-action: manipulation;
++}
++
++.split-audio__scopes .split-audio__scope--on {
++    background: #fff;
++    color: #111 !important;
++}
 diff --git a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.ts b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.ts
-index 1ab7542..d1bd3a9 100644
+index 1ab7542..968f2f2 100644
 --- a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.ts
 +++ b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.ts
-@@ -53,9 +53,15 @@ export class SplitAudioPanelComponent {
+@@ -16,6 +16,8 @@ import { SplitSyncSectionComponent } from './split-sync-section.component';
+ 
+ /** Search results beyond this are cut: refine the search instead of scrolling. */
+ const MAX_SEARCH_RESULTS = 40;
++/** Channels listed when a subscription is opened without a search. */
++const MAX_BROWSE_ROWS = 80;
+ const DELAY_STEPS = [0.5, 1, 5, 10] as const;
+ 
+ /**
+@@ -49,13 +51,71 @@ export class SplitAudioPanelComponent {
+ 
+     protected readonly active = computed(() => this.controls().activeAudio());
+ 
+-    /** Rows shown: search matches while typing, else the favorites. */
++    /** Subscriptions whose channels the app has loaded (iPhone app: every saved subscription). */
++    protected readonly scopes = computed(() => {
++        const seen = new Map<string, { id: string; title: string; count: number }>();
++        for (const channel of this.controls().catalogChannels()) {
++            const entry = seen.get(channel.sourceId);
++            if (entry) entry.count++;
++            else {
++                seen.set(channel.sourceId, {
++                    id: channel.sourceId,
++                    title: channel.sourceTitle,
++                    count: 1,
++                });
++            }
++        }
++        return [...seen.values()];
++    });
++
++    private readonly userScope = signal<string | null>(null);
++
++    /**
++     * What the list shows: 'favorites', or a subscription id. Until the person picks one, a
++     * panel without favorites opens on another subscription, so the sound from a second
++     * subscription is visible at once instead of hiding behind the search icon.
++     */
++    protected readonly scope = computed<string>(() => {
++        const chosen = this.userScope();
++        if (chosen !== null) return chosen;
++        if (!this.controls().hasCatalog()) return 'favorites';
++        const channels = this.controls().catalogChannels();
++        if (channels.some((channel) => this.controls().isFavorite(channel))) {
++            return 'favorites';
++        }
++        const videoSource = this.sourceByUrl().get(this.controls().videoUrl());
++        const scopes = this.scopes();
++        const other = scopes.find((entry) => entry.title !== videoSource);
++        return (other ?? scopes[0])?.id ?? 'favorites';
++    });
++
++    protected setScope(id: string): void {
++        this.userScope.set(id);
++    }
++
++    /** Rows shown: search matches while typing, else a subscription's channels or the favorites. */
      protected readonly rows = computed<readonly Channel[]>(() => {
          const controls = this.controls();
          const videoUrl = controls.videoUrl();
@@ -10472,13 +10603,46 @@ index 1ab7542..d1bd3a9 100644
 +        const others = controls
 +            .catalogChannels()
 +            .filter((channel) => !seen.has(channel.url));
-+        const channels = [...own, ...others].filter(
++        let channels = [...own, ...others].filter(
 +            (channel) => channel.url !== videoUrl
 +        );
++        const scope = this.scope();
++        const inScope = scope !== 'favorites' && controls.hasCatalog();
++        if (inScope) {
++            channels = channels.filter(
++                (channel) =>
++                    (channel as { sourceId?: string }).sourceId === scope ||
++                    (!(channel as { sourceId?: string }).sourceId &&
++                        this.sourceIdByUrl().get(channel.url) === scope)
++            );
++        }
          const needle = foldSearchText(this.query().trim());
          let rows: Channel[];
          if (needle) {
-@@ -87,6 +93,22 @@ export class SplitAudioPanelComponent {
+@@ -68,6 +128,7 @@ export class SplitAudioPanelComponent {
+             }
+             return rows;
+         }
++        if (inScope) return channels.slice(0, MAX_BROWSE_ROWS);
+         rows = channels.filter((channel) => controls.isFavorite(channel));
+         // The channel in use stays on top even when it is not a favorite.
+         const activeUrl = this.active()?.streamUrl;
+@@ -78,6 +139,14 @@ export class SplitAudioPanelComponent {
+         return rows;
+     });
+ 
++    private readonly sourceIdByUrl = computed(() => {
++        const map = new Map<string, string>();
++        for (const channel of this.controls().catalogChannels()) {
++            map.set(channel.url, channel.sourceId);
++        }
++        return map;
++    });
++
+     protected readonly isSearchMode = computed(
+         () => this.query().trim().length > 0
+     );
+@@ -87,6 +156,22 @@ export class SplitAudioPanelComponent {
          return `${delay > 0 ? '+' : ''}${delay}`;
      });
  
