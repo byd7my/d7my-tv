@@ -49,6 +49,26 @@ jobs:
           ls ../modules/d7t-native/ios/web | head -n 20
           du -sh ../modules/d7t-native/ios/web
 
+      # The app checks this branch for newer web builds (no new IPA needed for web-only changes).
+      # ios-app publishes to ios-web-ota, the redesign branch to ios-web-ota-redesign.
+      - name: Publish web update (over the air)
+        continue-on-error: true
+        run: |
+          set -e
+          if [ "${GITHUB_REF_NAME}" = "ios-app" ]; then OTA_BRANCH=ios-web-ota; else OTA_BRANCH=ios-web-ota-redesign; fi
+          node scripts/make-ota.js modules/d7t-native/ios/web "$OTA_BRANCH"
+          rm -rf ota-out && mkdir ota-out
+          cp -R modules/d7t-native/ios/web/. ota-out/
+          cd ota-out
+          git init -q
+          git config user.name "ci"; git config user.email "ci@users.noreply.github.com"
+          git checkout -q -b "$OTA_BRANCH"
+          git add -A -f && git commit -q -m "Web build from ${GITHUB_SHA}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" "$OTA_BRANCH"
+          echo "published $OTA_BRANCH"
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+
       - name: Select Xcode 26 (Swift 6.2 needed by Expo modules)
         run: sudo xcode-select -s /Applications/Xcode_26.3.app
 

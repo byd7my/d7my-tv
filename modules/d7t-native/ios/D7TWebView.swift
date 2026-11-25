@@ -90,6 +90,14 @@ final class D7TWebView: ExpoView, WKURLSchemeHandler {
     webView = view
     addSubview(view)
     view.load(URLRequest(url: URL(string: "d7t://localhost/index.html")!))
+    // Web updates: tell the page when a newer copy has been downloaded, and look again whenever the app returns.
+    D7TOta.shared.onReady = { [weak self] version in
+      self?.emit("ota", json: "{\"state\":\"ready\",\"version\":\"\(version)\"}")
+    }
+    D7TOta.shared.check(force: true)
+    NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main) { _ in
+      D7TOta.shared.check()
+    }
   }
 
   override func layoutSubviews() {
@@ -104,7 +112,17 @@ final class D7TWebView: ExpoView, WKURLSchemeHandler {
           let id = body["id"] as? Int,
           let method = body["method"] as? String else { return }
     let args = body["args"] as? [String: Any] ?? [:]
+    D7TOta.shared.confirmBoot()
     switch method {
+    case "ota.apply":
+      // Reload the page from the newest downloaded copy.
+      D7TOta.shared.useLatest()
+      resolve(id, ok: true, value: true)
+      DispatchQueue.main.async { [weak self] in
+        self?.webView.load(URLRequest(url: URL(string: "d7t://localhost/index.html")!))
+      }
+    case "ota.info":
+      resolve(id, ok: true, value: D7TOta.shared.describe())
     case "httpGet":
       let url = args["url"] as? String ?? ""
       let headers = args["headers"] as? [String: String] ?? [:]
@@ -156,14 +174,6 @@ final class D7TWebView: ExpoView, WKURLSchemeHandler {
 
   // MARK: - d7t://localhost/... served from the app bundle
 
-  private static let webRoot: URL? = {
-    guard let bundleURL = Bundle.main.url(forResource: "D7TWeb", withExtension: "bundle") else { return nil }
-    let nested = bundleURL.appendingPathComponent("web", isDirectory: true)
-    var isDir: ObjCBool = false
-    if FileManager.default.fileExists(atPath: nested.path, isDirectory: &isDir), isDir.boolValue { return nested }
-    return bundleURL
-  }()
-
   private static func mime(_ ext: String) -> String {
     switch ext.lowercased() {
     case "html": return "text/html; charset=utf-8"
@@ -188,7 +198,7 @@ final class D7TWebView: ExpoView, WKURLSchemeHandler {
   }
 
   func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
-    guard let url = urlSchemeTask.request.url, let root = D7TWebView.webRoot else {
+    guard let url = urlSchemeTask.request.url, let root = D7TOta.shared.root() else {
       urlSchemeTask.didFailWithError(NSError(domain: "D7T", code: 1, userInfo: [NSLocalizedDescriptionKey: "web bundle missing"]))
       return
     }
