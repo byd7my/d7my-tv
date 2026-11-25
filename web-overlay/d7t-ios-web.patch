@@ -1264,10 +1264,10 @@ index 0000000..9d562c2
 +}
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..d782692
+index 0000000..dc51626
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,1451 @@
+@@ -0,0 +1,1917 @@
 +@mixin phone-controls {
 +            grid-template-columns: auto minmax(0, 1fr) !important;
 +            grid-template-areas:
@@ -2717,6 +2717,472 @@ index 0000000..d782692
 +    // Rail heading: "See all" without the chevron, like the design.
 +    html.d7t-ios [data-test-id='dashboard-page'] .rail__see-all mat-icon {
 +        display: none !important;
++    }
++}
++
++// ── Player controls, exact to the Browse design (#3 Live + #33 player) ───────────────────────────
++// LIVE badge top-left, fullscreen top-right, one big glass pause in the middle, volume bottom-left,
++// "Audio" + tune bottom-right. The row/bar boxes stay click-through so a tap on the picture still
++// shows/hides the controls. Phone only; the shared (desktop) controls are not touched.
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios app-player-controls {
++        --d7t-glass: rgba(44, 44, 48, 0.58);
++
++        .player-controls__bottom-scrim {
++            top: 0 !important;
++            height: auto !important;
++            background: linear-gradient(
++                to bottom,
++                rgba(0, 0, 0, 0.4) 0,
++                rgba(0, 0, 0, 0) 28%,
++                rgba(0, 0, 0, 0) 58%,
++                rgba(0, 0, 0, 0.55) 100%
++            ) !important;
++        }
++
++        .player-controls__bar {
++            inset: 0 !important;
++            padding: 0 !important;
++            gap: 0 !important;
++            display: block !important;
++            transform: none !important;
++            pointer-events: none !important;
++        }
++
++        .player-controls__row {
++            position: absolute;
++            inset: 0;
++            display: block !important;
++            pointer-events: none;
++        }
++
++        .player-controls__bar--visible .player-controls__row > *,
++        .player-controls__bar--visible .player-controls__actions > *,
++        .player-controls__bar--visible app-player-timeline > * {
++            pointer-events: auto;
++        }
++
++        // Glass buttons (same material as the header controls).
++        .player-controls__audio-pill,
++        .player-controls__tune,
++        .player-controls__actions > button:last-child:not(.player-controls__tune),
++        .player-controls__corner .player-controls__button {
++            background: var(--d7t-glass) !important;
++            -webkit-backdrop-filter: blur(20px) saturate(1.6);
++            backdrop-filter: blur(20px) saturate(1.6);
++            box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.2) !important;
++            color: #fff !important;
++        }
++
++        // Volume: bottom-left.
++        .player-controls__left {
++            position: absolute;
++            left: 6px;
++            bottom: 6px;
++        }
++
++        // Pause: centred, big, glass ring.
++        .player-controls__transport {
++            position: absolute;
++            top: 50%;
++            left: 50%;
++            transform: translate(-50%, -50%);
++            gap: 14px;
++        }
++
++        .player-controls__play {
++            width: 68px !important;
++            height: 68px !important;
++            margin: 0 !important;
++            background: rgba(255, 255, 255, 0.16) !important;
++            -webkit-backdrop-filter: blur(20px);
++            backdrop-filter: blur(20px);
++            box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.4) !important;
++        }
++
++        .player-controls__play mat-icon {
++            width: 34px;
++            height: 34px;
++            font-size: 34px;
++        }
++
++        .player-controls__actions {
++            display: contents !important;
++        }
++
++        // Only the buttons of the design stay: Audio, tune, fullscreen.
++        .player-controls__actions > button:not(.player-controls__tune):not(.player-controls__audio-pill):not(:last-child),
++        .player-controls__chip {
++            display: none !important;
++        }
++
++        .player-controls__audio-pill {
++            position: absolute;
++            right: 52px;
++            bottom: 6px;
++            height: 36px;
++            padding: 0 14px;
++            font-size: 14px;
++            font-weight: 600;
++        }
++
++        .player-controls__tune {
++            position: absolute !important;
++            inset: auto 8px 6px auto !important;
++            width: 36px !important;
++            height: 36px !important;
++            border-radius: 50% !important;
++        }
++
++        .player-controls__actions > button:last-child:not(.player-controls__tune) {
++            position: absolute;
++            top: 8px;
++            right: 8px;
++            width: 36px;
++            height: 36px;
++            border-radius: 50%;
++        }
++
++        // Stream-info (i) sits left of fullscreen.
++        .player-controls__corner {
++            top: 8px !important;
++            right: 52px !important;
++        }
++
++        .player-controls__corner .player-controls__button {
++            width: 36px;
++            height: 36px;
++            border-radius: 50%;
++        }
++
++        // Live: no clock and no empty seek bar; just the LIVE pill, top-left.
++        app-player-timeline {
++            display: contents !important;
++        }
++
++        app-player-timeline:has(.player-controls__live-badge) {
++            .player-controls__time,
++            .player-controls__timeline-bar,
++            .player-controls__timeline-spacer {
++                display: none !important;
++            }
++        }
++
++        .player-controls__live-badge {
++            position: absolute;
++            top: 12px;
++            left: 12px;
++            padding: 5px 10px 5px 9px;
++            border-radius: 999px;
++            background: var(--d7t-glass);
++            -webkit-backdrop-filter: blur(20px);
++            backdrop-filter: blur(20px);
++            font-size: 11px;
++            font-weight: 700;
++            letter-spacing: 0.06em;
++        }
++
++        .player-controls__live-dot {
++            background: #ff453a;
++        }
++
++        // Movies / series: seek bar + times just above the bottom buttons.
++        app-player-timeline:not(:has(.player-controls__live-badge)) {
++            position: absolute;
++            display: flex !important;
++            left: 16px;
++            right: 16px;
++            bottom: 50px;
++        }
++    }
++
++    // Full screen: back + title top-left, Audio + tune top-right, LIVE / volume / fullscreen at the bottom.
++    html.d7t-ios.d7t-has-fullscreen .d7t-fullscreen app-player-controls {
++        .player-controls__live-badge {
++            top: auto;
++            bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) + 10px));
++            left: max(16px, calc(env(safe-area-inset-left, 0px) + 12px));
++        }
++
++        .player-controls__left {
++            bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) + 4px));
++            left: calc(max(16px, env(safe-area-inset-left, 0px) + 12px) + 70px);
++        }
++
++        .player-controls__tune {
++            inset: max(10px, calc(env(safe-area-inset-top, 0px) + 6px)) max(14px, calc(env(safe-area-inset-right, 0px) + 10px)) auto auto !important;
++        }
++
++        .player-controls__audio-pill {
++            top: max(10px, calc(env(safe-area-inset-top, 0px) + 6px));
++            bottom: auto;
++            right: calc(max(14px, env(safe-area-inset-right, 0px) + 10px) + 46px);
++        }
++
++        .player-controls__actions > button:last-child:not(.player-controls__tune) {
++            top: auto;
++            bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) + 4px));
++            right: max(14px, calc(env(safe-area-inset-right, 0px) + 10px));
++        }
++
++        .player-controls__corner {
++            top: auto !important;
++            bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) + 4px)) !important;
++            right: calc(max(14px, env(safe-area-inset-right, 0px) + 10px) + 46px) !important;
++        }
++
++        app-player-timeline:not(:has(.player-controls__live-badge)) {
++            bottom: max(54px, calc(env(safe-area-inset-bottom, 0px) + 48px));
++            left: max(20px, calc(env(safe-area-inset-left, 0px) + 16px));
++            right: max(20px, calc(env(safe-area-inset-right, 0px) + 16px));
++        }
++    }
++
++    // The strip under the picture: channel name, no collapse chevron.
++    html.d7t-ios .epg .g-head .cc {
++        display: none;
++    }
++
++    html.d7t-ios .epg .g-head .gt {
++        font-size: 17px;
++        font-weight: 700;
++        letter-spacing: -0.01em;
++    }
++}
++
++// ── Title details, exact to the Browse design (#4 series, #7 movie) ───────────────────────────────
++// Big title, ONE grey meta line (no coloured chips), white Play pill + round buttons, synopsis below.
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios .shell__hero {
++        .details {
++            display: flex;
++            flex-direction: column;
++            gap: 0;
++        }
++
++        .details__kind {
++            display: none !important;
++        }
++
++        .details__title {
++            order: 1;
++            margin: 0 0 6px !important;
++            font-size: 34px !important;
++            font-weight: 800 !important;
++            letter-spacing: -0.025em !important;
++            line-height: 1.08 !important;
++            color: #fff !important;
++        }
++
++        // Chips -> plain text: "Drama · Season 24 · ★ 8.1"
++        .details__tags {
++            order: 2;
++            display: flex !important;
++            flex-wrap: wrap;
++            align-items: center;
++            gap: 0 !important;
++            margin: 0 0 16px !important;
++            font-size: 15px;
++        }
++
++        .details__tags app-meta-chip,
++        .details__tags app-meta-chip * {
++            background: none !important;
++            border: 0 !important;
++            box-shadow: none !important;
++            padding: 0 !important;
++            min-height: 0 !important;
++            height: auto !important;
++            font-size: 15px !important;
++            font-weight: 500 !important;
++            color: rgba(235, 235, 245, 0.7) !important;
++            border-radius: 0 !important;
++        }
++
++        .details__tags app-meta-chip--rating,
++        .details__tags .meta-chip--rating {
++            color: rgba(235, 235, 245, 0.7) !important;
++        }
++
++        .details__tags > * + *::before,
++        .details__tags app-age-rating-chip + *::before {
++            content: '·';
++            margin: 0 7px;
++            color: rgba(235, 235, 245, 0.45);
++        }
++
++        // "Age: no data" is noise on the phone.
++        .details__tags app-age-rating-chip:has([aria-label='Age: no data']) {
++            display: none !important;
++        }
++
++        .action-buttons {
++            order: 3;
++            display: flex !important;
++            flex-wrap: nowrap !important;
++            align-items: center;
++            gap: 10px !important;
++            margin: 0 0 18px !important;
++        }
++
++        // Play: white pill, one line (the episode name moves out).
++        .action-buttons .play-btn {
++            height: 48px !important;
++            min-height: 48px !important;
++            padding: 0 26px 0 20px !important;
++            border-radius: 999px !important;
++            background: #fff !important;
++            color: #000 !important;
++            box-shadow: none !important;
++            border: 0 !important;
++            font-size: 17px !important;
++            font-weight: 700 !important;
++        }
++
++        .action-buttons .play-btn mat-icon {
++            color: #000 !important;
++        }
++
++        .action-buttons .play-btn__meta {
++            display: none !important;
++        }
++
++        // Trailer / favourite / more: glass pills and circles.
++        .action-buttons button:not(.play-btn) {
++            min-height: 48px !important;
++            height: 48px !important;
++            border-radius: 999px !important;
++            background: rgba(255, 255, 255, 0.14) !important;
++            -webkit-backdrop-filter: blur(20px);
++            backdrop-filter: blur(20px);
++            border: 0 !important;
++            box-shadow: none !important;
++            color: #fff !important;
++            font-size: 16px !important;
++            font-weight: 600 !important;
++        }
++
++        .action-buttons .icon-btn,
++        .action-buttons .more-trigger {
++            width: 48px !important;
++            padding: 0 !important;
++        }
++
++        .details__progress {
++            order: 3;
++        }
++
++        .details__description {
++            order: 4;
++            font-size: 15px !important;
++            line-height: 1.4 !important;
++            color: rgba(235, 235, 245, 0.78) !important;
++            margin: 0 !important;
++        }
++
++        .details__description-toggle {
++            order: 5;
++            align-self: flex-start;
++            font-size: 14px !important;
++            font-weight: 600 !important;
++            color: #0a84ff !important;
++            text-transform: none !important;
++        }
++
++        .details__meta {
++            order: 6;
++        }
++    }
++}
++
++// ── Episodes (design #4): thumbnail + "title / minutes" rows, filled season pill on the right ──────
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios {
++        .episodes-header {
++            display: flex !important;
++            align-items: center;
++            justify-content: space-between;
++            gap: 12px;
++        }
++
++        .episodes-header__tabs .mat-mdc-select,
++        .episodes-header__tabs button,
++        .episodes-header__tabs [class*='select'] {
++            border: 0 !important;
++            outline: 0 !important;
++            box-shadow: none !important;
++            border-radius: 999px !important;
++            background: #1c1c1e !important;
++        }
++
++        app-episode-item {
++            display: flex !important;
++            align-items: center;
++            gap: 14px;
++            padding: 8px 16px !important;
++            border: 0 !important;
++        }
++
++        app-episode-item .episode-item__thumb {
++            flex: 0 0 120px;
++            width: 120px !important;
++            height: 68px !important;
++            border-radius: 8px !important;
++            margin: 0 !important;
++        }
++
++        app-episode-item .episode-item__text {
++            flex: 1 1 auto;
++            min-width: 0;
++        }
++
++        app-episode-item .episode-item__title-row {
++            display: flex;
++            flex-direction: column;
++            align-items: flex-start;
++            gap: 2px;
++        }
++
++        app-episode-item .episode-item__title {
++            margin: 0;
++            font-size: 16px !important;
++            font-weight: 700 !important;
++            color: #fff !important;
++        }
++
++        app-episode-item .episode-item__meta {
++            font-size: 13px !important;
++            color: rgba(235, 235, 245, 0.6) !important;
++        }
++
++        app-episode-item .episode-item__description {
++            display: none !important;
++        }
++
++        app-episode-item .episode-item__actions {
++            flex: none;
++            gap: 0;
++            color: rgba(235, 235, 245, 0.55);
++        }
++    }
++
++    // Hero eyebrow reads "TRENDING · MOVIE" (reason first, then the kind).
++    html.d7t-ios [data-test-id='dashboard-hero'] .hero__eyebrow {
++        display: flex;
++        align-items: center;
++        gap: 6px;
++    }
++
++    html.d7t-ios [data-test-id='dashboard-hero'] .hero__eyebrow > span:last-child {
++        order: 1;
++    }
++
++    html.d7t-ios [data-test-id='dashboard-hero'] .hero__eyebrow-sep {
++        order: 2;
++    }
++
++    html.d7t-ios [data-test-id='dashboard-hero'] .hero__type {
++        order: 3;
 +    }
 +}
 diff --git a/apps/web/src/app/app.component.ts b/apps/web/src/app/app.component.ts
@@ -8246,6 +8712,32 @@ index 9108ca4..5899000 100644
      /** Switches section page in place, like the sidebar links do */
      openSection(sectionId: string): void {
          void this.router.navigate(['/workspace/settings', sectionId], {
+diff --git a/apps/web/src/assets/i18n/ar.json b/apps/web/src/assets/i18n/ar.json
+index d065cde..89f3137 100644
+--- a/apps/web/src/assets/i18n/ar.json
++++ b/apps/web/src/assets/i18n/ar.json
+@@ -2113,6 +2113,8 @@
+             "HERO_ROLE_SLIDE": "شريحة",
+             "HERO_FAVORITE_CHANNEL": "قناة مفضلة",
+             "HERO_FAVORITE": "مفضل",
++            "HERO_TRENDING": "الأكثر رواجًا",
++            "HERO_FIND": "ابحث في مكتبتي",
+             "HERO_RECENTLY_ADDED": "أضيف مؤخرًا",
+             "HERO_CONTINUE": "متابعة",
+             "HERO_WATCH_LIVE": "شاهد مباشرة",
+diff --git a/apps/web/src/assets/i18n/en.json b/apps/web/src/assets/i18n/en.json
+index afb68a7..9eace24 100644
+--- a/apps/web/src/assets/i18n/en.json
++++ b/apps/web/src/assets/i18n/en.json
+@@ -2113,6 +2113,8 @@
+             "HERO_ROLE_SLIDE": "slide",
+             "HERO_FAVORITE_CHANNEL": "Favorite channel",
+             "HERO_FAVORITE": "Favorite",
++            "HERO_TRENDING": "Trending",
++            "HERO_FIND": "Find in library",
+             "HERO_RECENTLY_ADDED": "Recently added",
+             "HERO_CONTINUE": "Continue",
+             "HERO_WATCH_LIVE": "Watch live",
 diff --git a/apps/web/src/index.html b/apps/web/src/index.html
 index 4314d5c..06063d8 100644
 --- a/apps/web/src/index.html
@@ -11793,6 +12285,173 @@ index 33e3bd5..489c7fe 100644
      readonly activeAudio = signal<ExternalAudioOverride | null>(null);
      readonly favoritesRevision = signal(0);
      /** The subscription the sound comes from; null = the picture's own. */
+diff --git a/libs/services/src/lib/tmdb/tmdb-enrichment.service.ts b/libs/services/src/lib/tmdb/tmdb-enrichment.service.ts
+index fd4a757..5b2595d 100644
+--- a/libs/services/src/lib/tmdb/tmdb-enrichment.service.ts
++++ b/libs/services/src/lib/tmdb/tmdb-enrichment.service.ts
+@@ -13,6 +13,7 @@ import { DiscoverTitle } from './tmdb-discover';
+ import {
+     TmdbDiscoverFilters,
+     TmdbEpisode,
++    TmdbHeroEntry,
+     TmdbPersonDetails,
+     TmdbSeasonDetails,
+     TmdbTrendingEntry,
+@@ -109,6 +110,11 @@ export class TmdbEnrichmentService extends TmdbMetadataClient {
+         return this.trending.getTrendingWeek(limit);
+     }
+ 
++    /** Weekly trending titles with artwork/rating/genres/plot, for the dashboard hero */
++    async getTrendingHero(limit?: number): Promise<TmdbHeroEntry[]> {
++        return this.trending.getHeroWeek(limit);
++    }
++
+     async getPersonDetails(
+         personId: number
+     ): Promise<TmdbPersonDetails | null> {
+diff --git a/libs/services/src/lib/tmdb/tmdb-trending.service.ts b/libs/services/src/lib/tmdb/tmdb-trending.service.ts
+index 4d3bdc9..924bd8f 100644
+--- a/libs/services/src/lib/tmdb/tmdb-trending.service.ts
++++ b/libs/services/src/lib/tmdb/tmdb-trending.service.ts
+@@ -3,11 +3,30 @@ import { TmdbApiService } from './tmdb-api.service';
+ import { TmdbCacheService } from './tmdb-cache.service';
+ import {
+     TMDB_TRENDING_CACHE_TTL_MS,
++    tmdbBackdropUrl,
+     tmdbPosterUrl,
+ } from './tmdb-config';
++
++// TMDB genre ids (stable, English names): the trending payload carries ids only.
++const MOVIE_GENRES: Record<number, string> = {
++    28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
++    99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
++    27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance',
++    878: 'Sci-Fi', 10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western',
++};
++const TV_GENRES: Record<number, string> = {
++    10759: 'Action', 16: 'Animation', 35: 'Comedy', 80: 'Crime', 99: 'Documentary',
++    18: 'Drama', 10751: 'Family', 10762: 'Kids', 9648: 'Mystery', 10763: 'News',
++    10764: 'Reality', 10765: 'Sci-Fi', 10766: 'Soap', 10767: 'Talk', 10768: 'War',
++    37: 'Western',
++};
+ import { extractYear } from '@iptvnator/shared/interfaces';
+ import { TmdbRuntimeService } from './tmdb-runtime.service';
+-import { TmdbSearchResult, TmdbTrendingEntry } from './tmdb.types';
++import {
++    TmdbHeroEntry,
++    TmdbSearchResult,
++    TmdbTrendingEntry,
++} from './tmdb.types';
+ 
+ /**
+  * Weekly TMDB trending for the dashboard rail. Movie and TV lists are
+@@ -35,6 +54,94 @@ export class TmdbTrendingService {
+             .slice(0, limit);
+     }
+ 
++    /**
++     * This week's trending titles with backdrop, rating, genres and plot for the hero.
++     * Movies and series are interleaved (best of each first) so the hero shows both.
++     */
++    async getHeroWeek(limit = 5): Promise<TmdbHeroEntry[]> {
++        if (!this.runtime.isEnabled()) {
++            return [];
++        }
++        const [movies, tv] = await Promise.all([
++            this.loadResults('movie'),
++            this.loadResults('tv'),
++        ]);
++        const toHero = (
++            results: TmdbSearchResult[],
++            mediaType: 'movie' | 'tv'
++        ): TmdbHeroEntry[] =>
++            results
++                .filter((r) => r.id > 0 && (r.backdrop_path ?? r.poster_path))
++                .map((r) => {
++                    const names = mediaType === 'movie' ? MOVIE_GENRES : TV_GENRES;
++                    const genres: string[] = [];
++                    for (const id of r.genre_ids ?? []) {
++                        const name = names[id];
++                        if (name && !genres.includes(name)) genres.push(name);
++                        if (genres.length >= 2) break;
++                    }
++                    return {
++                        tmdbId: r.id,
++                        mediaType,
++                        title: r.title ?? r.name ?? '',
++                        year: extractYear(r.release_date ?? r.first_air_date),
++                        backdropUrl: tmdbBackdropUrl(r.backdrop_path),
++                        posterUrl: tmdbPosterUrl(r.poster_path),
++                        rating:
++                            (r.vote_count ?? 0) > 0 && r.vote_average
++                                ? r.vote_average.toFixed(1)
++                                : null,
++                        genres,
++                        overview: r.overview?.trim() || null,
++                    };
++                })
++                .filter((entry) => entry.title !== '');
++        const m = toHero(movies, 'movie');
++        const s = toHero(tv, 'tv');
++        const out: TmdbHeroEntry[] = [];
++        for (let i = 0; out.length < limit && (i < m.length || i < s.length); i++) {
++            if (m[i]) out.push(m[i]);
++            if (out.length < limit && s[i]) out.push(s[i]);
++        }
++        return out;
++    }
++
++    private async loadResults(
++        mediaType: 'movie' | 'tv'
++    ): Promise<TmdbSearchResult[]> {
++        try {
++            const language = this.runtime.language();
++            const lookupKey = 'trending:week';
++            const cached = await this.cache.get(mediaType, lookupKey, language);
++            if (
++                this.cache.isFresh(cached, TMDB_TRENDING_CACHE_TTL_MS) &&
++                cached?.payload
++            ) {
++                try {
++                    return JSON.parse(cached.payload) as TmdbSearchResult[];
++                } catch {
++                    // fall through to a fresh fetch
++                }
++            }
++            const results = await this.api.getTrending(
++                mediaType,
++                language,
++                this.runtime.apiKey()
++            );
++            await this.cache.set({
++                mediaType,
++                lookupKey,
++                language,
++                tmdbId: null,
++                payload: JSON.stringify(results),
++            });
++            return results;
++        } catch (error) {
++            console.warn(`TMDB trending hero (${mediaType}) failed:`, error);
++            return [];
++        }
++    }
++
+     private async getTrendingFor(
+         mediaType: 'movie' | 'tv'
+     ): Promise<TmdbTrendingEntry[]> {
+diff --git a/libs/services/src/lib/tmdb/tmdb.types.ts b/libs/services/src/lib/tmdb/tmdb.types.ts
+index 3135761..a2758b6 100644
+--- a/libs/services/src/lib/tmdb/tmdb.types.ts
++++ b/libs/services/src/lib/tmdb/tmdb.types.ts
+@@ -1,6 +1,7 @@
+ export type {
+     TmdbSearchResult,
+     TmdbTrendingEntry,
++    TmdbHeroEntry,
+     TmdbSearchResponse,
+     TmdbCastMember,
+     TmdbCrewMember,
 diff --git a/libs/shared/interfaces/src/index.ts b/libs/shared/interfaces/src/index.ts
 index 344f1bf..ca7a95e 100644
 --- a/libs/shared/interfaces/src/index.ts
@@ -11848,6 +12507,36 @@ index d3b37d1..eb5c63c 100644
 +export function plainDisplayText(value: string): string {
 +    if (!value) return value;
 +    return value.replace(STYLED_LETTERS, (run) => run.normalize('NFKC'));
++}
+diff --git a/libs/shared/tmdb/src/lib/tmdb.types.ts b/libs/shared/tmdb/src/lib/tmdb.types.ts
+index 5285079..259ddb1 100644
+--- a/libs/shared/tmdb/src/lib/tmdb.types.ts
++++ b/libs/shared/tmdb/src/lib/tmdb.types.ts
+@@ -21,6 +21,8 @@ export interface TmdbSearchResult {
+     vote_count?: number;
+     vote_average?: number;
+     poster_path?: string | null;
++    backdrop_path?: string | null;
++    genre_ids?: number[];
+ }
+ 
+ /** One dashboard-ready trending title (movie or series) */
+@@ -256,3 +258,16 @@ export interface TmdbEnrichmentQuery {
+     /** Release year used to disambiguate fuzzy matches */
+     year?: number | null;
+ }
++
++/** One trending title shaped for the dashboard hero: artwork, rating, genres and plot. */
++export interface TmdbHeroEntry {
++    tmdbId: number;
++    mediaType: 'movie' | 'tv';
++    title: string;
++    year: number | null;
++    backdropUrl: string | null;
++    posterUrl: string | null;
++    rating: string | null;
++    genres: string[];
++    overview: string | null;
 +}
 diff --git a/libs/ui/components/src/lib/channel-list-container/channel-list-item/channel-list-item.component.ts b/libs/ui/components/src/lib/channel-list-container/channel-list-item/channel-list-item.component.ts
 index 16c0d1e..fa760e1 100644
@@ -12622,6 +13311,229 @@ index 1ab7542..6932214 100644
      protected toggleSearch(): void {
          const next = !this.searching();
          this.searching.set(next);
+diff --git a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero-slides.presenter.ts b/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero-slides.presenter.ts
+index 24943c3..ec9fe3a 100644
+--- a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero-slides.presenter.ts
++++ b/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero-slides.presenter.ts
+@@ -10,6 +10,7 @@ import {
+     untracked,
+ } from '@angular/core';
+ import { TranslateService } from '@ngx-translate/core';
++import type { TmdbHeroEntry } from '@iptvnator/services';
+ import { injectTranslationTick } from '@iptvnator/services';
+ import { splitSeasonSuffix } from '@iptvnator/portal/shared/util';
+ import {
+@@ -88,6 +89,17 @@ export class DashboardHeroSlidesPresenter {
+ 
+     private readonly liveAnswerWaitOver = signal(false);
+ 
++    /**
++     * iPhone shell: the hero always follows TMDB's weekly trending (backdrop, genres, rating),
++     * not the user's history, which has no artwork on the phone. Without a TMDB key, or while
++     * the lookup fails, the usual history-based slides are used.
++     */
++    private readonly isIosShell =
++        typeof document !== 'undefined' &&
++        document.documentElement.classList.contains('d7t-ios');
++    private readonly trendingEntries = signal<readonly TmdbHeroEntry[]>([]);
++    private readonly trendingSettled = signal(false);
++
+     /**
+      * Nothing to feature yet and a source that can feature a title is still
+      * on its first load. Every such source counts, not only the history:
+@@ -100,7 +112,10 @@ export class DashboardHeroSlidesPresenter {
+     readonly loading = linkedSignal<boolean, boolean>({
+         source: () =>
+             this.slides().length === 0 &&
+-            (this.data.globalRecentLoading() ||
++            ((this.isIosShell &&
++                this.heroTmdb.isEnabled() &&
++                !this.trendingSettled()) ||
++                this.data.globalRecentLoading() ||
+                 !this.data.continueWatchingSettled() ||
+                 this.data.globalFavoritesLoading() ||
+                 this.data.xtreamRecentlyAddedLoading() ||
+@@ -151,6 +166,16 @@ export class DashboardHeroSlidesPresenter {
+ 
+     readonly slides = computed<DashboardHeroSlide[]>(() => {
+         this.languageTick();
++        if (this.isIosShell && this.heroTmdb.isEnabled()) {
++            const trending = this.trendingEntries();
++            if (trending.length > 0) {
++                return trending.map((entry) => this.toTrendingSlide(entry));
++            }
++            // Wait for TMDB (a few seconds at most) instead of flashing a live slide first.
++            if (!this.trendingSettled()) {
++                return [];
++            }
++        }
+         const liveDetails = this.liveSlide()?.details ?? null;
+         return this.sources().map((source) =>
+             this.toSlide(source, liveDetails)
+@@ -164,6 +189,26 @@ export class DashboardHeroSlidesPresenter {
+         );
+         inject(DestroyRef).onDestroy(() => clearTimeout(liveAnswerWait));
+ 
++        if (this.isIosShell) {
++            const giveUp = setTimeout(() => this.trendingSettled.set(true), 5000);
++            inject(DestroyRef).onDestroy(() => clearTimeout(giveUp));
++            effect(() => {
++                // Tracks the TMDB opt-in/key and the language (re-read on change).
++                this.languageTick();
++                if (!this.heroTmdb.isEnabled()) {
++                    this.trendingSettled.set(true);
++                    return;
++                }
++                untracked(() => {
++                    void this.heroTmdb
++                        .getTrendingHero(5)
++                        .then((entries) => this.trendingEntries.set(entries))
++                        .catch(() => this.trendingEntries.set([]))
++                        .finally(() => this.trendingSettled.set(true));
++                });
++            });
++        }
++
+         effect(() => {
+             if (!this.heroTmdb.isEnabled()) {
+                 return;
+@@ -198,6 +243,43 @@ export class DashboardHeroSlidesPresenter {
+         });
+     }
+ 
++    private toTrendingSlide(entry: TmdbHeroEntry): DashboardHeroSlide {
++        const artwork = resolveDashboardHeroArtwork(
++            { backdropUrl: entry.backdropUrl, posterUrl: entry.posterUrl },
++            this.failedImages()
++        );
++        const isMovie = entry.mediaType === 'movie';
++        return {
++            ...artwork,
++            id: `trending:${entry.mediaType}:${entry.tmdbId}`,
++            kind: 'trending',
++            contentType: isMovie ? 'movie' : 'series',
++            title: entry.title,
++            typeLabelKey: TYPE_LABEL_KEYS[isMovie ? 'movie' : 'series'],
++            reasonLabelKey: 'WORKSPACE.DASHBOARD.HERO_TRENDING',
++            episodeBadge: null,
++            rating: entry.rating,
++            genres: entry.genres,
++            year: entry.year,
++            source: '',
++            programmeTitle: null,
++            category: null,
++            timeRange: null,
++            description: entry.overview,
++            progress: null,
++            accentHue: dashboardHeroHue(entry.title),
++            // The title is looked up in the user's own sources (the same search as the Search tab).
++            primaryAction: {
++                labelKey: 'WORKSPACE.DASHBOARD.HERO_FIND',
++                icon: 'search',
++                link: ['/workspace', 'search'],
++                queryParams: { q: entry.title },
++                testId: 'dashboard-hero-primary-action',
++            },
++            secondaryAction: null,
++        };
++    }
++
+     private toSlide(
+         source: DashboardHeroSource,
+         liveDetails: DashboardLiveEpgDetails | null
+diff --git a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero-slides.utils.ts b/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero-slides.utils.ts
+index ec681f8..21cf860 100644
+--- a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero-slides.utils.ts
++++ b/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero-slides.utils.ts
+@@ -24,7 +24,7 @@ const HERO_LIVE_RECENT_CANDIDATES = 2;
+  *   history with only guide-less live channels still gets a hero
+  */
+ export type DashboardHeroSlideKind =
+-    'continue' | 'live' | 'favorite' | 'added' | 'recent';
++    'continue' | 'live' | 'favorite' | 'added' | 'recent' | 'trending';
+ 
+ export type DashboardHeroLiveCandidate =
+     | { readonly origin: 'favorite'; readonly item: PortalFavoriteItem }
+diff --git a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero-tmdb.service.ts b/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero-tmdb.service.ts
+index 44d146f..c703a3b 100644
+--- a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero-tmdb.service.ts
++++ b/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero-tmdb.service.ts
+@@ -1,6 +1,7 @@
+ import { Injectable, inject } from '@angular/core';
+ import {
+     TmdbEnrichmentService,
++    type TmdbHeroEntry,
+     extractYear,
+     tmdbBackdropUrl,
+ } from '@iptvnator/services';
+@@ -47,6 +48,11 @@ export class DashboardHeroTmdbService {
+         Promise<DashboardHeroTmdbExtras | null>
+     >();
+ 
++    /** This week's trending titles with artwork, rating, genres and plot (iPhone hero). */
++    getTrendingHero(limit = 5): Promise<TmdbHeroEntry[]> {
++        return this.enrichment.getTrendingHero(limit);
++    }
++
+     /** Reactive when read inside a computed (settings signal underneath) */
+     isEnabled(): boolean {
+         return this.enrichment.isEnabled();
+diff --git a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.component.html b/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.component.html
+index 221c433..12eb9f5 100644
+--- a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.component.html
++++ b/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.component.html
+@@ -107,11 +107,6 @@
+                             slide.episodeBadge
+                         }}</app-meta-chip>
+                     }
+-                    @if (slide.rating) {
+-                        <app-meta-chip class="hero__pill" variant="rating"
+-                            >★ {{ slide.rating }}</app-meta-chip
+-                        >
+-                    }
+                     @for (genre of slide.genres; track genre) {
+                         <app-meta-chip class="hero__pill">{{
+                             genre
+@@ -132,6 +127,11 @@
+                             slide.year
+                         }}</app-meta-chip>
+                     }
++                    @if (slide.rating) {
++                        <app-meta-chip class="hero__pill" variant="rating"
++                            >★ {{ slide.rating }}</app-meta-chip
++                        >
++                    }
+                     @if (slide.source) {
+                         <app-meta-chip class="hero__pill hero__pill--source">{{
+                             slide.source
+@@ -181,6 +181,7 @@
+                         class="hero__button hero__button--primary"
+                         [attr.data-test-id]="current ? primary.testId : null"
+                         [routerLink]="primary.link"
++                        [queryParams]="primary.queryParams"
+                         [state]="primary.state ?? {}"
+                     >
+                         <mat-icon aria-hidden="true">{{
+@@ -203,6 +204,7 @@
+                                 current ? secondary.testId : null
+                             "
+                             [routerLink]="secondary.link"
++                            [queryParams]="secondary.queryParams"
+                             [state]="secondary.state ?? {}"
+                         >
+                             <mat-icon aria-hidden="true">{{
+diff --git a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.utils.ts b/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.utils.ts
+index 4171992..d654125 100644
+--- a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.utils.ts
++++ b/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.utils.ts
+@@ -8,6 +8,7 @@ export interface DashboardHeroAction {
+     readonly icon: string;
+     readonly link: string[];
+     readonly state?: Record<string, unknown>;
++    readonly queryParams?: Record<string, string>;
+     /** Appended as "· 22m left" on a resume action. */
+     readonly remainingLabel?: DashboardRemainingLabel | null;
+     readonly testId: string;
 diff --git a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html
 index 0d6bdad..bb86b35 100644
 --- a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html
