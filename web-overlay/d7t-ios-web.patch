@@ -1264,10 +1264,10 @@ index 0000000..9d562c2
 +}
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..d72baf7
+index 0000000..d782692
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,1353 @@
+@@ -0,0 +1,1451 @@
 +@mixin phone-controls {
 +            grid-template-columns: auto minmax(0, 1fr) !important;
 +            grid-template-areas:
@@ -2620,6 +2620,104 @@ index 0000000..d72baf7
 +        color: rgba(235, 235, 245, 0.35) !important;
 +    }
 +  }
++}
++
++// ── Home hero, exact to the Browse design (#1): eyebrow, big title, one plain meta line, ────────────
++// white Play pill + round icon buttons, dots. Phone only.
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios [data-test-id='dashboard-hero'] {
++        .hero__eyebrow {
++            font-size: 11px !important;
++            font-weight: 700 !important;
++            letter-spacing: 0.1em !important;
++            text-transform: uppercase;
++            color: rgba(255, 255, 255, 0.72) !important;
++        }
++
++        .hero__title {
++            font-size: 38px !important;
++            font-weight: 800 !important;
++            letter-spacing: -0.025em !important;
++            color: #fff !important;
++        }
++
++        // Meta chips become one grey text line: Thriller · 2026 · ★ 7.8
++        .hero__meta {
++            display: flex;
++            flex-wrap: wrap;
++            align-items: center;
++            gap: 0 !important;
++            margin: 0;
++            font-size: 15px;
++        }
++
++        .hero__meta .hero__pill {
++            background: none !important;
++            border: 0 !important;
++            box-shadow: none !important;
++            padding: 0 !important;
++            min-height: 0 !important;
++            height: auto !important;
++            font-size: 15px !important;
++            font-weight: 500 !important;
++            color: rgba(235, 235, 245, 0.7) !important;
++        }
++
++        .hero__meta .hero__pill + .hero__pill::before {
++            content: '·';
++            margin: 0 7px;
++            color: rgba(235, 235, 245, 0.45);
++        }
++
++        .hero__meta .hero__pill--source {
++            display: none !important;
++        }
++
++        .hero__actions {
++            align-items: center;
++            gap: 12px !important;
++            margin-top: 14px !important;
++        }
++
++        .hero__button--primary {
++            height: 48px !important;
++            padding: 0 28px 0 22px !important;
++            background: #fff !important;
++            color: #000 !important;
++            font-size: 17px !important;
++            font-weight: 700 !important;
++        }
++
++        .hero__button--primary mat-icon {
++            color: #000 !important;
++        }
++
++        // Second action: a round icon-only button.
++        .hero__button--secondary {
++            width: 48px;
++            height: 48px !important;
++            min-width: 48px;
++            padding: 0 !important;
++            justify-content: center;
++            background: rgba(255, 255, 255, 0.16) !important;
++            color: #fff !important;
++            -webkit-backdrop-filter: blur(20px);
++            backdrop-filter: blur(20px);
++        }
++
++        .hero__button--secondary span {
++            display: none !important;
++        }
++
++        .hero__button--secondary mat-icon {
++            margin: 0 !important;
++        }
++    }
++
++    // Rail heading: "See all" without the chevron, like the design.
++    html.d7t-ios [data-test-id='dashboard-page'] .rail__see-all mat-icon {
++        display: none !important;
++    }
 +}
 diff --git a/apps/web/src/app/app.component.ts b/apps/web/src/app/app.component.ts
 index 3f52add..2b611e6 100644
@@ -8663,86 +8761,54 @@ index 0b3bb2a..897b3a3 100644
              this.playlists.getPlaylistById(id)
 diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.html b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.html
 new file mode 100644
-index 0000000..e95cd7c
+index 0000000..8bf824e
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.html
-@@ -0,0 +1,146 @@
+@@ -0,0 +1,148 @@
 +<div class="ios-browse">
 +    <div class="ios-browse__top">
 +        <h1 class="ios-browse__title">{{ title }}</h1>
 +        <button
 +            type="button"
-+            class="ios-browse__glass"
-+            data-test-id="ios-browse-categories"
-+            aria-label="Categories"
-+            (click)="openCategories()"
++            class="ios-browse__source-pill"
++            data-test-id="ios-browse-source"
++            aria-label="Sources"
++            (click)="openSources()"
 +        >
-+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-+                <path d="M5 7h14M5 12h14M5 17h9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
++            <span class="ios-browse__source-name">{{ sourceName() || 'All sources' }}</span>
++            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
++                <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
 +            </svg>
-+            Categories
 +        </button>
 +    </div>
-+
-+    @if (sourceName()) {
-+        <p class="ios-browse__source" data-test-id="ios-browse-source">
-+            <span class="ios-browse__source-dot"></span>{{ sourceName() }}
-+        </p>
-+    }
-+
-+    @if (genres().length > 0) {
-+        <div class="ios-browse__genres" data-test-id="ios-browse-genres">
-+            @for (genre of genres(); track genre.id) {
-+                @if (link(type, genre.id); as to) {
-+                    <a class="ios-browse__genre" [routerLink]="to">{{ genre.name }}</a>
-+                }
-+            }
-+        </div>
-+    }
 +
 +    @if (isLoading()) {
 +        @for (_ of [1, 2, 3]; track $index) {
 +            <div class="ios-browse__skeleton" aria-hidden="true"></div>
 +        }
 +    } @else {
-+        @if (featured(); as hero) {
++        @if (type === 'series' && featured(); as hero) {
 +            <button
 +                type="button"
-+                class="ios-browse__hero"
++                class="ios-browse__feature"
 +                data-test-id="ios-browse-featured"
 +                (click)="open(hero)"
 +            >
 +                @if (poster(hero); as src) {
-+                    <img class="ios-browse__hero-bg" [src]="src" alt="" />
-+                    <img class="ios-browse__hero-art" [src]="src" alt="" />
++                    <img class="ios-browse__feature-bg" [src]="src" alt="" />
 +                }
-+                <span class="ios-browse__hero-shade"></span>
-+                <span class="ios-browse__hero-text">
-+                    <span class="ios-browse__hero-kicker">{{ type === 'series' ? 'Featured series' : 'Featured movie' }}</span>
-+                    <span class="ios-browse__hero-title">{{ label(hero) }}</span>
-+                    <span class="ios-browse__hero-cta">Details</span>
++                <span class="ios-browse__feature-shade"></span>
++                <span class="ios-browse__feature-text">
++                    <span class="ios-browse__feature-kicker">{{ isNew(hero) ? 'New episode' : 'Featured series' }}</span>
++                    <span class="ios-browse__feature-title">{{ label(hero) }}</span>
++                    <span class="ios-browse__feature-actions">
++                        <span class="ios-browse__feature-cta">
++                            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 4.5v15l12-7.5z" fill="currentColor" /></svg>
++                            Details
++                        </span>
++                    </span>
 +                </span>
 +            </button>
-+        }
-+
-+        @if (topTen().length >= 5) {
-+            <section class="ios-browse__rail" data-test-id="ios-browse-top">
-+                <header class="ios-browse__head">
-+                    <h2>{{ topIsTrending() ? (topTen().length >= 10 ? 'Top 10 This Week' : 'Trending This Week') : 'Newest 10' }}</h2>
-+                </header>
-+                <div class="ios-browse__track ios-browse__track--ranked">
-+                    @for (item of topTen(); track item.xtream_id ?? $index) {
-+                        <button type="button" class="ios-browse__ranked" (click)="open(item)">
-+                            <span class="ios-browse__rank">{{ $index + 1 }}</span>
-+                            <span class="ios-browse__poster">
-+                                @if (poster(item); as src) {
-+                                    <img [src]="src" alt="" loading="lazy" />
-+                                }
-+                            </span>
-+                        </button>
-+                    }
-+                </div>
-+            </section>
 +        }
 +
 +        @if (recent().length > 0) {
@@ -8750,23 +8816,74 @@ index 0000000..e95cd7c
 +                <header class="ios-browse__head">
 +                    <h2>Recently Added</h2>
 +                    @if (link('recently-added'); as all) {
-+                        <a [routerLink]="all">Show All</a>
++                        <a [routerLink]="all">See All</a>
 +                    }
 +                </header>
 +                <div class="ios-browse__track">
 +                    @for (item of recent(); track item.xtream_id ?? $index) {
-+                        <button
-+                            type="button"
-+                            class="ios-browse__card"
-+                            (click)="open(item)"
-+                        >
++                        <button type="button" class="ios-browse__card" (click)="open(item)">
 +                            <span class="ios-browse__poster">
 +                                @if (poster(item); as src) {
 +                                    <img [src]="src" alt="" loading="lazy" />
 +                                }
++                                @if (isNew(item)) {
++                                    <span class="ios-browse__badge">NEW</span>
++                                }
++                                <span class="ios-browse__name">{{ label(item) }}</span>
 +                            </span>
-+                            <span class="ios-browse__name">{{ label(item) }}</span>
 +                        </button>
++                    }
++                </div>
++            </section>
++        }
++
++        @if (topTen().length >= 5 && (type === 'vod' || topIsTrending())) {
++            <section class="ios-browse__rail" data-test-id="ios-browse-top">
++                <header class="ios-browse__head">
++                    <h2>{{ topIsTrending() ? (type === 'vod' && topTen().length >= 10 ? 'Top 10 This Week' : 'Trending This Week') : 'Newest 10' }}</h2>
++                </header>
++                @if (type === 'vod') {
++                    <div class="ios-browse__track ios-browse__track--ranked">
++                        @for (item of topTen(); track item.xtream_id ?? $index) {
++                            <button type="button" class="ios-browse__ranked" (click)="open(item)">
++                                <span class="ios-browse__rank">{{ $index + 1 }}</span>
++                                <span class="ios-browse__poster">
++                                    @if (poster(item); as src) {
++                                        <img [src]="src" alt="" loading="lazy" />
++                                    }
++                                    <span class="ios-browse__name">{{ label(item) }}</span>
++                                </span>
++                            </button>
++                        }
++                    </div>
++                } @else {
++                    <div class="ios-browse__track">
++                        @for (item of topTen(); track item.xtream_id ?? $index) {
++                            <button type="button" class="ios-browse__card" (click)="open(item)">
++                                <span class="ios-browse__poster">
++                                    @if (poster(item); as src) {
++                                        <img [src]="src" alt="" loading="lazy" />
++                                    }
++                                    <span class="ios-browse__name">{{ label(item) }}</span>
++                                </span>
++                            </button>
++                        }
++                    </div>
++                }
++            </section>
++        }
++
++        @if (genres().length > 0) {
++            <section class="ios-browse__rail" data-test-id="ios-browse-genres">
++                <header class="ios-browse__head">
++                    <h2>Browse by Genre</h2>
++                    <button type="button" class="ios-browse__link" (click)="openCategories()">All</button>
++                </header>
++                <div class="ios-browse__genres">
++                    @for (genre of genres(); track genre.id) {
++                        @if (link(type, genre.id); as to) {
++                            <a class="ios-browse__genre" [routerLink]="to">{{ genre.name }}</a>
++                        }
 +                    }
 +                </div>
 +            </section>
@@ -8777,36 +8894,19 @@ index 0000000..e95cd7c
 +                <header class="ios-browse__head">
 +                    <h2>{{ category.name }}</h2>
 +                    @if (link(type, category.id); as all) {
-+                        <a [routerLink]="all">Show All</a>
++                        <a [routerLink]="all">See All</a>
 +                    }
 +                </header>
 +                <div class="ios-browse__track">
 +                    @for (item of category.items; track item.xtream_id ?? $index) {
-+                        <button
-+                            type="button"
-+                            class="ios-browse__card"
-+                            (click)="open(item)"
-+                        >
++                        <button type="button" class="ios-browse__card" (click)="open(item)">
 +                            <span class="ios-browse__poster">
 +                                @if (poster(item); as src) {
 +                                    <img [src]="src" alt="" loading="lazy" />
 +                                }
++                                <span class="ios-browse__name">{{ label(item) }}</span>
 +                            </span>
-+                            <span class="ios-browse__name">{{ label(item) }}</span>
 +                        </button>
-+                    }
-+                </div>
-+            </section>
-+        }
-+
-+        @if (tiles().length > 0) {
-+            <section class="ios-browse__tiles">
-+                <h2>All Categories</h2>
-+                <div class="ios-browse__grid">
-+                    @for (tile of tiles(); track tile.id) {
-+                        @if (link(type, tile.id); as to) {
-+                            <a class="ios-browse__tile" [routerLink]="to">{{ tile.name }}</a>
-+                        }
 +                    }
 +                </div>
 +            </section>
@@ -8815,10 +8915,10 @@ index 0000000..e95cd7c
 +</div>
 diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss
 new file mode 100644
-index 0000000..08b70da
+index 0000000..a6bde20
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss
-@@ -0,0 +1,371 @@
+@@ -0,0 +1,527 @@
 +:host {
 +    display: block;
 +    height: 100%;
@@ -8852,10 +8952,10 @@ index 0000000..08b70da
 +
 +    h2 {
 +        margin: 0;
-+        font-size: 20px;
++        font-size: 22px;
 +        font-weight: 700;
-+        letter-spacing: -0.01em;
-+        color: var(--app-muted-color, #a3a3a3);
++        letter-spacing: -0.015em;
++        color: #fff;
 +        min-width: 0;
 +        overflow: hidden;
 +        text-overflow: ellipsis;
@@ -8864,16 +8964,28 @@ index 0000000..08b70da
 +
 +    a {
 +        flex-shrink: 0;
-+        font-size: 17px;
-+        font-weight: 500;
++        font-size: 15px;
++        font-weight: 600;
 +        color: #0a84ff;
 +        text-decoration: none;
 +    }
 +}
 +
++.ios-browse__link {
++    appearance: none;
++    border: 0;
++    background: none;
++    padding: 0;
++    font: inherit;
++    font-size: 15px;
++    font-weight: 600;
++    color: #0a84ff;
++    cursor: pointer;
++}
++
 +.ios-browse__track {
 +    display: flex;
-+    gap: 16px;
++    gap: 10px;
 +    padding: 0 20px;
 +    // Without this the snap point pulls the first poster to the screen edge, past the page inset.
 +    scroll-padding-inline: 20px;
@@ -8892,8 +9004,8 @@ index 0000000..08b70da
 +    flex-direction: column;
 +    justify-content: flex-start;
 +    align-self: flex-start;
-+    flex: 0 0 132px;
-+    width: 132px;
++    flex: 0 0 118px;
++    width: 118px;
 +    padding: 0;
 +    border: 0;
 +    background: none;
@@ -8907,10 +9019,20 @@ index 0000000..08b70da
 +.ios-browse__poster {
 +    display: block;
 +    width: 100%;
++    position: relative;
 +    aspect-ratio: 2 / 3;
-+    border-radius: 10px;
++    border-radius: 12px;
 +    overflow: hidden;
 +    background: rgba(255, 255, 255, 0.08);
++
++    // Bottom shade so the title sits on the artwork, as in the design.
++    &::after {
++        content: '';
++        position: absolute;
++        inset: 45% 0 0;
++        background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.78));
++        pointer-events: none;
++    }
 +
 +    img {
 +        width: 100%;
@@ -8921,11 +9043,15 @@ index 0000000..08b70da
 +}
 +
 +.ios-browse__name {
++    position: absolute;
++    inset-inline: 8px;
++    bottom: 8px;
++    z-index: 1;
 +    display: -webkit-box;
-+    margin-top: 8px;
 +    font-size: 13px;
-+    font-weight: 500;
-+    line-height: 1.25;
++    font-weight: 700;
++    color: #fff;
++    line-height: 1.2;
 +    -webkit-line-clamp: 2;
 +    -webkit-box-orient: vertical;
 +    overflow: hidden;
@@ -9058,7 +9184,7 @@ index 0000000..08b70da
 +    flex: none;
 +    padding: 8px 16px;
 +    border-radius: 999px;
-+    background: rgba(118, 118, 128, 0.24);
++    background: #1c1c1e;
 +    color: #fff;
 +    font-size: 15px;
 +    font-weight: 600;
@@ -9158,7 +9284,7 @@ index 0000000..08b70da
 +
 +// Numbered rail.
 +.ios-browse__track--ranked {
-+    gap: 6px;
++    gap: 14px;
 +}
 +
 +.ios-browse__ranked {
@@ -9174,15 +9300,17 @@ index 0000000..08b70da
 +    scroll-snap-align: start;
 +
 +    .ios-browse__poster {
-+        width: 112px;
++        position: relative;
++        z-index: 1;
++        width: 108px;
 +        flex: none;
 +    }
 +}
 +
 +.ios-browse__rank {
-+    margin-inline-end: -14px;
-+    z-index: 1;
-+    font-size: 92px;
++    margin-inline-end: -20px;
++    z-index: 0;
++    font-size: 96px;
 +    font-weight: 800;
 +    line-height: 0.8;
 +    letter-spacing: -0.06em;
@@ -9190,12 +9318,140 @@ index 0000000..08b70da
 +    -webkit-text-stroke: 2px rgba(255, 255, 255, 0.85);
 +    paint-order: stroke fill;
 +}
++
++.ios-browse__badge {
++    position: absolute;
++    top: 8px;
++    inset-inline-start: 8px;
++    z-index: 1;
++    padding: 3px 7px;
++    border-radius: 6px;
++    background: rgba(10, 20, 60, 0.85);
++    color: #fff;
++    font-size: 10px;
++    font-weight: 800;
++    letter-spacing: 0.04em;
++}
++
++// "All sources" pill, top right.
++.ios-browse__source-pill {
++    appearance: none;
++    border: 0;
++    flex: 0 0 auto;
++    max-width: 170px;
++    display: inline-flex;
++    align-items: center;
++    gap: 14px;
++    padding: 9px 14px;
++    border-radius: 999px;
++    background: #1c1c1e;
++    color: #fff;
++    font: inherit;
++    font-size: 14px;
++    font-weight: 600;
++    cursor: pointer;
++    -webkit-tap-highlight-color: transparent;
++
++    svg {
++        flex: none;
++    }
++}
++
++.ios-browse__source-name {
++    min-width: 0;
++    overflow: hidden;
++    text-overflow: ellipsis;
++    white-space: nowrap;
++}
++
++// Series: one featured card with the title and a white pill, over the artwork wash.
++.ios-browse__feature {
++    position: relative;
++    display: block;
++    appearance: none;
++    border: 0;
++    margin: 0 20px;
++    padding: 0;
++    height: 188px;
++    border-radius: 22px;
++    overflow: hidden;
++    color: #fff;
++    text-align: start;
++    font: inherit;
++    background: #3a1230;
++    cursor: pointer;
++    -webkit-tap-highlight-color: transparent;
++}
++
++.ios-browse__feature-bg {
++    position: absolute;
++    inset: -30px;
++    width: calc(100% + 60px);
++    height: calc(100% + 60px);
++    object-fit: cover;
++    filter: blur(30px) saturate(1.4);
++    opacity: 0.8;
++}
++
++.ios-browse__feature-shade {
++    position: absolute;
++    inset: 0;
++    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.45));
++}
++
++.ios-browse__feature-text {
++    position: absolute;
++    inset: 0;
++    padding: 18px 20px;
++    display: flex;
++    flex-direction: column;
++    justify-content: flex-end;
++    gap: 14px;
++}
++
++.ios-browse__feature-kicker {
++    font-size: 11px;
++    font-weight: 700;
++    letter-spacing: 0.1em;
++    text-transform: uppercase;
++    color: rgba(255, 255, 255, 0.78);
++}
++
++.ios-browse__feature-title {
++    font-size: 28px;
++    font-weight: 800;
++    line-height: 1.1;
++    letter-spacing: -0.02em;
++    display: -webkit-box;
++    -webkit-line-clamp: 2;
++    -webkit-box-orient: vertical;
++    overflow: hidden;
++}
++
++.ios-browse__feature-actions {
++    display: flex;
++    align-items: center;
++    gap: 10px;
++    margin-top: 6px;
++}
++
++.ios-browse__feature-cta {
++    display: inline-flex;
++    align-items: center;
++    gap: 7px;
++    padding: 8px 18px;
++    border-radius: 999px;
++    background: #fff;
++    color: #000;
++    font-size: 15px;
++    font-weight: 700;
++}
 diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts
 new file mode 100644
-index 0000000..5a81d2f
+index 0000000..5440f71
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts
-@@ -0,0 +1,328 @@
+@@ -0,0 +1,345 @@
 +import {
 +    ChangeDetectionStrategy,
 +    Component,
@@ -9478,6 +9734,23 @@ index 0000000..5a81d2f
 +        } catch (error) {
 +            console.warn('TMDB trending (browse) failed:', error);
 +        }
++    }
++
++    /** Same rule as the "NEW" badge in the design: added to the library within the last 14 days. */
++    isNew(item: BrowseItem): boolean {
++        const now = Date.now();
++        const raw = this.type === 'series' ? item.last_modified : item.added;
++        const at =
++            toXtreamRecentlyAddedTimestamp(raw, now) ||
++            toXtreamRecentlyAddedTimestamp(
++                this.type === 'series' ? item.added : item.last_modified,
++                now
++            );
++        return at > 0 && now - at <= 14 * 24 * 3600 * 1000;
++    }
++
++    openSources(): void {
++        void this.router.navigate(['/workspace', 'sources']);
 +    }
 +
 +    openCategories(): void {
