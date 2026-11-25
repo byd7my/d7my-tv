@@ -1264,10 +1264,10 @@ index 0000000..9d562c2
 +}
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..675ea49
+index 0000000..d72baf7
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,1248 @@
+@@ -0,0 +1,1353 @@
 +@mixin phone-controls {
 +            grid-template-columns: auto minmax(0, 1fr) !important;
 +            grid-template-areas:
@@ -1859,10 +1859,10 @@ index 0000000..675ea49
 +                &::after {
 +                    content: '';
 +                    position: absolute;
-+                    left: 88px;
++                    left: 80px;
 +                    right: 0;
 +                    bottom: 0;
-+                    height: 1px;
++                    height: 0.5px;
 +                    background: rgba(84, 84, 88, 0.65);
 +                }
 +
@@ -1872,9 +1872,9 @@ index 0000000..675ea49
 +            }
 +
 +            .channel-logo-shell {
-+                width: 60px;
-+                height: 60px;
-+                border-radius: 8px;
++                width: 52px;
++                height: 52px;
++                border-radius: 12px;
 +                background: rgba(255, 255, 255, 0.06);
 +                box-shadow: none;
 +            }
@@ -1963,7 +1963,7 @@ index 0000000..675ea49
 +                }
 +
 +                &[aria-pressed='true'] {
-+                    color: #ff375f;
++                    color: #0a84ff;
 +
 +                    mat-icon {
 +                        -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 20.5s-8-4.9-8-11A4.6 4.6 0 0 1 12 6.8 4.6 4.6 0 0 1 20 9.5c0 6.1-8 11-8 11Z' fill='black'/%3E%3C/svg%3E");
@@ -2514,6 +2514,111 @@ index 0000000..675ea49
 +    --cover-grid-min-width: 150px;
 +    --cover-rail-width: 150px;
 +    --cover-gap: 12px;
++  }
++}
++
++// ── Browse theme on the other lists (Sources, Favorites, Recently viewed, empty pages) ──
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++  html.d7t-ios {
++    // Large page titles, like Movies / Series / Settings.
++    .collection-header {
++        flex-wrap: wrap;
++        gap: 10px !important;
++        padding: 6px 16px 10px !important;
++        border-bottom: 0 !important;
++    }
++
++    .collection-title {
++        font-size: 34px !important;
++        font-weight: 700 !important;
++        letter-spacing: -0.02em;
++    }
++
++    .sources-title {
++        font-size: 34px !important;
++        font-weight: 700 !important;
++        letter-spacing: -0.02em;
++    }
++
++    // Segmented control (This playlist / All playlists, All / Movies / Series ...)
++    .scope-toggle.mat-button-toggle-group,
++    .collection-header-toggles .mat-button-toggle-group {
++        border: 0 !important;
++        border-radius: 9px !important;
++        background: rgba(118, 118, 128, 0.24) !important;
++        padding: 2px;
++        overflow: hidden;
++
++        .mat-button-toggle {
++            background: transparent !important;
++            border: 0 !important;
++            border-radius: 7px;
++            color: #fff;
++        }
++
++        .mat-button-toggle-checked {
++            background: #fff !important;
++            color: #000 !important;
++        }
++
++        .mat-button-toggle-button {
++            height: 32px;
++        }
++
++        .mat-button-toggle-label-content {
++            line-height: 32px !important;
++            font-size: 14px;
++            font-weight: 600;
++        }
++    }
++
++    // Sources: one rounded grouped list.
++    .sources-list {
++        background: var(--l-surface, #1c1c1e);
++        border-radius: 14px;
++        overflow: hidden;
++        margin: 0;
++    }
++
++    // The sort control: a quiet pill, not a bright one.
++    .sources-header__actions .mat-mdc-button {
++        height: 36px !important;
++        padding: 0 14px !important;
++        border-radius: 999px !important;
++        background: rgba(118, 118, 128, 0.24) !important;
++        color: #fff !important;
++        font-size: 15px !important;
++        font-weight: 600 !important;
++        box-shadow: none !important;
++    }
++
++    .source-row {
++        background: transparent !important;
++        border-radius: 0 !important;
++        border: 0 !important;
++        min-height: 60px;
++    }
++
++    app-source-row + app-source-row .source-row {
++        border-top: 0.5px solid rgba(255, 255, 255, 0.12) !important;
++    }
++
++    // Empty pages: calm, centred, one clear action.
++    .empty-state .title,
++    .empty-state h3 {
++        font-size: 22px !important;
++        font-weight: 700 !important;
++        color: #fff !important;
++    }
++
++    .empty-state .description {
++        color: rgba(235, 235, 245, 0.6) !important;
++        font-size: 15px !important;
++    }
++
++    .empty-state .empty-icon {
++        color: rgba(235, 235, 245, 0.35) !important;
++    }
 +  }
 +}
 diff --git a/apps/web/src/app/app.component.ts b/apps/web/src/app/app.component.ts
