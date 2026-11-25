@@ -1264,10 +1264,10 @@ index 0000000..9d562c2
 +}
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..6820aa6
+index 0000000..675ea49
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,1035 @@
+@@ -0,0 +1,1248 @@
 +@mixin phone-controls {
 +            grid-template-columns: auto minmax(0, 1fr) !important;
 +            grid-template-areas:
@@ -2303,6 +2303,219 @@ index 0000000..6820aa6
 +        }
 +    }
 +}
++
++// ── Settings on the phone (designs #6, #23–#32): a list of sections, then iPhone-style grouped rows ──
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++  html.d7t-ios {
++    // Top bar on Settings: back button and the page name, nothing else (the list is the navigation).
++    .workspace-header.is-settings-route {
++        position: relative;
++    }
++
++    .workspace-header.is-settings-route .context-drawer-toggle,
++    .workspace-header.is-settings-route .search-field {
++        display: none !important;
++    }
++
++    .workspace-header.is-settings-route::after {
++        content: var(--d7t-settings-title, '');
++        position: absolute;
++        left: 64px;
++        right: 64px;
++        top: 50%;
++        transform: translateY(-50%);
++        text-align: center;
++        font-size: 17px;
++        font-weight: 700;
++        pointer-events: none;
++        white-space: nowrap;
++        overflow: hidden;
++        text-overflow: ellipsis;
++    }
++
++    .settings-layout {
++        max-width: none !important;
++        padding: 4px 16px calc(24px + var(--settings-safe-bottom, 0px)) !important;
++        gap: 12px !important;
++    }
++
++    // The page name is in the top bar; the long subtitle is not needed.
++    .settings-group__header {
++        display: none !important;
++    }
++
++    .settings-section__header h3 {
++        margin: 18px 16px 6px;
++        color: rgba(235, 235, 245, 0.55);
++        font-size: 13px !important;
++        font-weight: 600 !important;
++        letter-spacing: 0.02em;
++        text-transform: uppercase;
++    }
++
++    .settings-section__desc {
++        margin: 6px 16px 0 !important;
++        font-size: 13px !important;
++    }
++
++    // Inset grouped list: one rounded surface, rows split by hairlines.
++    .settings-card {
++        padding: 0 !important;
++        overflow: hidden;
++    }
++
++    .setting-item {
++        grid-template-columns: minmax(0, 1fr) auto !important;
++        gap: 12px !important;
++        min-height: 48px !important;
++        padding: 8px 16px !important;
++    }
++
++    .setting-item + .setting-item,
++    .setting-item__sub + .setting-item {
++        border-top: 0.5px solid rgba(255, 255, 255, 0.12) !important;
++    }
++
++    .setting-item__meta h4 {
++        font-size: 17px !important;
++        font-weight: 400 !important;
++    }
++
++    .setting-item__meta p {
++        margin-top: 2px !important;
++        font-size: 13px !important;
++        color: rgba(235, 235, 245, 0.55) !important;
++    }
++
++    // The value sits on the right as plain text, not in a filled box.
++    .settings-select.mat-mdc-form-field {
++        width: auto !important;
++        max-width: 38vw;
++
++        .mdc-text-field--outlined {
++            background: transparent !important;
++            padding: 0 !important;
++            min-height: 0 !important;
++        }
++
++        .mat-mdc-select-value {
++            color: rgba(235, 235, 245, 0.6) !important;
++            font-size: 17px !important;
++            text-align: end;
++        }
++
++        .mat-mdc-select-arrow-wrapper {
++            display: none;
++        }
++    }
++
++    .setting-item--full-control {
++        grid-template-columns: 1fr !important;
++    }
++
++    // iPhone switch: green when on, a white round handle, no check mark.
++    .mat-mdc-slide-toggle {
++        --mat-slide-toggle-track-height: 31px;
++                --mat-slide-toggle-selected-track-color: #30d158;
++        --mat-slide-toggle-selected-hover-track-color: #30d158;
++        --mat-slide-toggle-selected-focus-track-color: #30d158;
++        --mat-slide-toggle-selected-pressed-track-color: #30d158;
++        --mat-slide-toggle-unselected-track-color: rgba(120, 120, 128, 0.36);
++        --mat-slide-toggle-unselected-hover-track-color: rgba(120, 120, 128, 0.36);
++        --mat-slide-toggle-unselected-focus-track-color: rgba(120, 120, 128, 0.36);
++        --mat-slide-toggle-unselected-pressed-track-color: rgba(120, 120, 128, 0.36);
++        --mat-slide-toggle-selected-track-outline-width: 0px;
++        --mat-slide-toggle-unselected-track-outline-width: 0px;
++        --mat-slide-toggle-selected-handle-color: #fff;
++        --mat-slide-toggle-selected-hover-handle-color: #fff;
++        --mat-slide-toggle-selected-focus-handle-color: #fff;
++        --mat-slide-toggle-selected-pressed-handle-color: #fff;
++        --mat-slide-toggle-unselected-handle-color: #fff;
++        --mat-slide-toggle-unselected-hover-handle-color: #fff;
++        --mat-slide-toggle-unselected-focus-handle-color: #fff;
++        --mat-slide-toggle-unselected-pressed-handle-color: #fff;
++        --mat-slide-toggle-selected-handle-size: 27px;
++        --mat-slide-toggle-unselected-handle-size: 27px;
++        --mat-slide-toggle-pressed-handle-size: 27px;
++        --mat-slide-toggle-selected-icon-color: transparent;
++        --mat-slide-toggle-unselected-icon-color: transparent;
++        --mat-slide-toggle-selected-icon-size: 0px;
++        --mat-slide-toggle-unselected-icon-size: 0px;
++
++        .mdc-switch__icons {
++            display: none !important;
++        }
++
++        .mdc-switch__shadow {
++            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
++        }
++    }
++
++    // About: only the app name and version. The desktop updater message and the desktop screenshots do not apply here.
++    #about .settings-section ~ .settings-section,
++    #about .settings-hero__note {
++        display: none !important;
++    }
++
++    // Floating save bar: above the tab bar, rounded.
++    .unsaved-bar {
++        left: 12px !important;
++        right: 12px !important;
++        bottom: calc(92px + env(safe-area-inset-bottom)) !important;
++        border-radius: 16px !important;
++    }
++}
++}
++
++// ── Movie / series details on the phone (designs #4, #7) ──
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++  html.d7t-ios {
++    // Cast & crew is right below, so the Starring / Director rows are not repeated up here.
++    .credits__row {
++        display: none !important;
++    }
++
++    .shell__hero .hero__description,
++    .shell__hero [class*='description'] {
++        display: -webkit-box;
++        -webkit-line-clamp: 3;
++        -webkit-box-orient: vertical;
++        overflow: hidden;
++    }
++
++    // Episodes header: "Episodes" and the season pill; no count, no grid/list switch.
++    .episodes-header [class*='count'],
++    .episodes-header .view-toggle {
++        display: none !important;
++    }
++
++    .episode-item__number {
++        display: none !important;
++    }
++  }
++}
++
++// ── Poster grids on the phone (design #8, #10): three posters across by default (Poster size in Appearance still applies) ──
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++  html.d7t-ios,
++  html.d7t-ios[data-cover-size='medium'] {
++    --cover-grid-min-width: 100px;
++    --cover-rail-width: 118px;
++    --cover-gap: 10px;
++  }
++
++  html.d7t-ios[data-cover-size='small'] {
++    --cover-grid-min-width: 76px;
++    --cover-rail-width: 100px;
++    --cover-gap: 8px;
++  }
++
++  html.d7t-ios[data-cover-size='large'] {
++    --cover-grid-min-width: 150px;
++    --cover-rail-width: 150px;
++    --cover-gap: 12px;
++  }
++}
 diff --git a/apps/web/src/app/app.component.ts b/apps/web/src/app/app.component.ts
 index 3f52add..2b611e6 100644
 --- a/apps/web/src/app/app.component.ts
@@ -2452,6 +2665,26 @@ index 1b79f58..79854e2 100644
          ),
          provideStore({
              router: routerReducer,
+diff --git a/apps/web/src/app/app.routes.ts b/apps/web/src/app/app.routes.ts
+index 577b4e7..56b42fe 100644
+--- a/apps/web/src/app/app.routes.ts
++++ b/apps/web/src/app/app.routes.ts
+@@ -192,7 +192,14 @@ export const routes: Routes = [
+                     {
+                         path: '',
+                         pathMatch: 'full',
+-                        redirectTo: 'general',
++                        // The iPhone app opens Settings on its list of sections.
++                        redirectTo: () =>
++                            document.documentElement.classList.contains('d7t-ios') &&
++                            window.matchMedia(
++                                '(max-width: 640px), (max-height: 480px) and (orientation: landscape)'
++                            ).matches
++                                ? 'index'
++                                : 'general',
+                     },
+                     {
+                         // One routed component for every section: the same
 diff --git a/apps/web/src/app/ios/epg-parser.d.ts b/apps/web/src/app/ios/epg-parser.d.ts
 new file mode 100644
 index 0000000..6307817
@@ -3974,6 +4207,271 @@ index 0000000..431a44d
 +        },
 +        true
 +    );
++}
+diff --git a/apps/web/src/app/ios/ios-update-card.component.ts b/apps/web/src/app/ios/ios-update-card.component.ts
+new file mode 100644
+index 0000000..26a9064
+--- /dev/null
++++ b/apps/web/src/app/ios/ios-update-card.component.ts
+@@ -0,0 +1,123 @@
++import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
++import { DatePipe } from '@angular/common';
++import { IosUpdateService } from './ios-update.service';
++
++/**
++ * Settings card for the iPhone app: which web build is running and a "Check for updates" button that
++ * looks right now (the app also checks by itself whenever it starts).
++ */
++@Component({
++    selector: 'app-ios-update-card',
++    imports: [DatePipe],
++    changeDetection: ChangeDetectionStrategy.OnPush,
++    template: `
++        @if (update.available) {
++            <div class="ios-update" data-test-id="ios-update-card">
++                <div class="ios-update__row">
++                    <span class="ios-update__label">Version</span>
++                    <span class="ios-update__value">{{ update.running() || '—' }}</span>
++                </div>
++                <button
++                    type="button"
++                    class="ios-update__row ios-update__action"
++                    data-test-id="ios-update-check"
++                    [disabled]="update.busy()"
++                    (click)="update.check()"
++                >
++                    <span class="ios-update__label ios-update__label--accent">
++                        {{ update.busy() ? 'Checking…' : 'Check for updates' }}
++                    </span>
++                    @if (update.busy()) {
++                        <span class="ios-update__spinner" aria-hidden="true"></span>
++                    }
++                </button>
++                @if (update.kind() === 'ready') {
++                    <button
++                        type="button"
++                        class="ios-update__row ios-update__action"
++                        data-test-id="ios-update-apply"
++                        (click)="update.apply()"
++                    >
++                        <span class="ios-update__label ios-update__label--accent">Restart now to update</span>
++                    </button>
++                }
++            </div>
++            @if (update.message()) {
++                <p
++                    class="ios-update__note"
++                    [class.ios-update__note--error]="update.kind() === 'error' || update.kind() === 'unsupported'"
++                    data-test-id="ios-update-message"
++                >
++                    {{ update.message() }}
++                </p>
++            }
++            @if (update.lastChecked(); as when) {
++                <p class="ios-update__note">Last checked {{ when | date: 'shortTime' }}</p>
++            }
++        }
++    `,
++    styles: `
++        :host {
++            display: block;
++        }
++        .ios-update {
++            background: var(--l-surface, #1c1c1e);
++            border-radius: 14px;
++            overflow: hidden;
++        }
++        .ios-update__row {
++            display: flex;
++            align-items: center;
++            justify-content: space-between;
++            gap: 12px;
++            width: 100%;
++            min-height: 48px;
++            padding: 0 16px;
++            border: 0;
++            background: none;
++            color: inherit;
++            font: inherit;
++            font-size: 17px;
++            text-align: start;
++        }
++        .ios-update__row + .ios-update__row {
++            border-top: 0.5px solid rgba(255, 255, 255, 0.12);
++        }
++        .ios-update__value {
++            color: rgba(235, 235, 245, 0.6);
++            font-variant-numeric: tabular-nums;
++        }
++        .ios-update__label--accent {
++            color: #0a84ff;
++            font-weight: 600;
++        }
++        .ios-update__action:disabled {
++            opacity: 0.6;
++        }
++        .ios-update__spinner {
++            width: 18px;
++            height: 18px;
++            border-radius: 50%;
++            border: 2px solid rgba(255, 255, 255, 0.25);
++            border-top-color: #0a84ff;
++            animation: ios-update-spin 0.8s linear infinite;
++        }
++        @keyframes ios-update-spin {
++            to {
++                transform: rotate(360deg);
++            }
++        }
++        .ios-update__note {
++            margin: 8px 16px 0;
++            color: rgba(235, 235, 245, 0.6);
++            font-size: 13px;
++            line-height: 1.4;
++        }
++        .ios-update__note--error {
++            color: #ff9f0a;
++        }
++    `,
++})
++export class IosUpdateCardComponent {
++    readonly update = inject(IosUpdateService);
++}
+diff --git a/apps/web/src/app/ios/ios-update.service.ts b/apps/web/src/app/ios/ios-update.service.ts
+new file mode 100644
+index 0000000..a3c9d4b
+--- /dev/null
++++ b/apps/web/src/app/ios/ios-update.service.ts
+@@ -0,0 +1,130 @@
++import { Injectable, computed, signal } from '@angular/core';
++import { getD7tNative } from './ios-bridge';
++
++export type IosUpdateKind =
++    | 'unavailable' // not running inside the iPhone app
++    | 'idle'
++    | 'checking'
++    | 'current'
++    | 'ready'
++    | 'busy'
++    | 'unsupported' // this installed app build cannot check on demand yet
++    | 'error';
++
++interface OtaInfo {
++    bundled?: string;
++    downloaded?: string;
++    channel?: string;
++    canCheck?: boolean;
++}
++
++interface OtaCheckResult extends OtaInfo {
++    status?: 'ok' | 'busy' | 'error';
++    message?: string;
++}
++
++const CHECK_TIMEOUT_MS = 90_000;
++
++/**
++ * Manual "Check for updates" for the iPhone app's over-the-air web builds. The app already checks on
++ * every start; this lets the person ask right now (Settings) instead of waiting and reopening.
++ */
++@Injectable({ providedIn: 'root' })
++export class IosUpdateService {
++    private readonly native = getD7tNative();
++
++    readonly available = this.native !== undefined;
++    readonly kind = signal<IosUpdateKind>(this.available ? 'idle' : 'unavailable');
++    readonly message = signal('');
++    /** The web build on screen (first 7 characters of the commit it was built from). */
++    readonly running = signal('');
++    readonly channel = signal('');
++    readonly lastChecked = signal<Date | null>(null);
++
++    readonly busy = computed(() => this.kind() === 'checking');
++
++    constructor() {
++        void this.refreshRunning();
++    }
++
++    private async refreshRunning(): Promise<OtaInfo | null> {
++        if (!this.native) return null;
++        let info: OtaInfo | null = null;
++        try {
++            info = await this.native.call<OtaInfo>('ota.info');
++        } catch {
++            info = null;
++        }
++        let running = info?.bundled ?? '';
++        try {
++            const response = await fetch('d7t://localhost/version.json', {
++                cache: 'no-store',
++            });
++            if (response.ok) {
++                running =
++                    ((await response.json()) as { version?: string }).version ??
++                    running;
++            }
++        } catch {
++            // older builds have no version.json
++        }
++        this.running.set(running.slice(0, 7));
++        this.channel.set(info?.channel ?? '');
++        this.pending = running;
++        return info;
++    }
++
++    private pending = '';
++
++    async check(): Promise<void> {
++        if (!this.native || this.busy()) return;
++        this.kind.set('checking');
++        this.message.set('');
++        try {
++            const info = await this.refreshRunning();
++            if (!info?.canCheck) {
++                this.kind.set('unsupported');
++                this.message.set(
++                    'This copy of the app cannot check on its own yet. Install the newest D7T app once, then this button works. For now, close the app completely and open it again to update.'
++                );
++                return;
++            }
++            const result = await Promise.race([
++                this.native.call<OtaCheckResult>('ota.check'),
++                new Promise<never>((_, reject) =>
++                    setTimeout(
++                        () => reject(new Error('The update server did not answer in time.')),
++                        CHECK_TIMEOUT_MS
++                    )
++                ),
++            ]);
++            this.lastChecked.set(new Date());
++            if (result.status === 'busy') {
++                this.kind.set('busy');
++                this.message.set('An update check is already running. Try again in a moment.');
++            } else if (result.status === 'error') {
++                this.kind.set('error');
++                this.message.set(result.message || 'Could not reach the update server.');
++            } else if (result.downloaded && result.downloaded !== this.pending) {
++                this.kind.set('ready');
++                this.message.set(`Version ${result.downloaded.slice(0, 7)} is downloaded.`);
++            } else {
++                this.kind.set('current');
++                this.message.set('You have the newest version.');
++            }
++        } catch (error) {
++            this.kind.set('error');
++            this.message.set(error instanceof Error ? error.message : 'Update check failed.');
++        }
++    }
++
++    /** Switch to the downloaded copy now: the page reloads from it. */
++    async apply(): Promise<void> {
++        try {
++            await this.native?.call('ota.apply');
++        } catch {
++            this.kind.set('error');
++            this.message.set('Could not restart onto the new version.');
++        }
++    }
 +}
 diff --git a/apps/web/src/app/ios/split/embedded-mpv-preview-session.ts b/apps/web/src/app/ios/split/embedded-mpv-preview-session.ts
 new file mode 100644
@@ -7067,6 +7565,155 @@ index 0000000..0c8ed87
 +    /** Counts every end of a freeze: readers drop what they smoothed. */
 +    epoch: number;
 +}
+diff --git a/apps/web/src/app/settings/ios-settings-index.component.ts b/apps/web/src/app/settings/ios-settings-index.component.ts
+new file mode 100644
+index 0000000..afb4e1d
+--- /dev/null
++++ b/apps/web/src/app/settings/ios-settings-index.component.ts
+@@ -0,0 +1,143 @@
++import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
++import { MatIcon } from '@angular/material/icon';
++import { TranslatePipe } from '@ngx-translate/core';
++import { SETTINGS_NAV_GROUPS } from '@iptvnator/workspace/shell/util/settings-search';
++import { IosUpdateCardComponent } from '../ios/ios-update-card.component';
++import type { SettingsSection } from './settings.models';
++
++/** Colour chip behind each section's icon, like the iPhone Settings app. */
++const CHIP: Record<string, string> = {
++    general: '#8e8e93',
++    appearance: '#0a84ff',
++    playback: '#30d158',
++    epg: '#ff9f0a',
++    dashboard: '#5e5ce6',
++    tmdb: '#ff375f',
++    parental: '#bf5af2',
++    'remote-control': '#64d2ff',
++    server: '#8e8e93',
++    backup: '#30b0c7',
++    about: '#8e8e93',
++};
++
++/**
++ * Phone Settings home (design #23): a large title, the app update card, then the sections in
++ * grouped rows with a chevron. Each row opens that section's page.
++ */
++@Component({
++    selector: 'app-ios-settings-index',
++    imports: [MatIcon, TranslatePipe, IosUpdateCardComponent],
++    changeDetection: ChangeDetectionStrategy.OnPush,
++    template: `
++        <div class="ios-index" data-test-id="ios-settings-index">
++            <h1 class="ios-index__title">Settings</h1>
++
++            <h2 class="ios-index__group">App updates</h2>
++            <app-ios-update-card />
++
++            @for (group of groups(); track group.id) {
++                @if (group.id) {
++                    <h2 class="ios-index__group">{{ group.labelKey | translate }}</h2>
++                }
++                <div class="ios-index__list">
++                    @for (section of group.sections; track section.id) {
++                        <button
++                            type="button"
++                            class="ios-index__row"
++                            [attr.data-test-id]="'ios-settings-open-' + section.id"
++                            (click)="open.emit(section.id)"
++                        >
++                            <span class="ios-index__chip" [style.background]="chip(section.id)">
++                                <mat-icon aria-hidden="true">{{ section.icon }}</mat-icon>
++                            </span>
++                            <span class="ios-index__name">{{ section.label | translate }}</span>
++                            <mat-icon class="ios-index__chevron" aria-hidden="true">chevron_right</mat-icon>
++                        </button>
++                    }
++                </div>
++            }
++        </div>
++    `,
++    styles: `
++        :host {
++            display: block;
++        }
++        .ios-index__title {
++            margin: 4px 0 14px;
++            font-size: 34px;
++            font-weight: 700;
++            letter-spacing: -0.02em;
++        }
++        .ios-index__group {
++            margin: 22px 16px 8px;
++            color: rgba(235, 235, 245, 0.55);
++            font-size: 13px;
++            font-weight: 600;
++            letter-spacing: 0.02em;
++            text-transform: uppercase;
++        }
++        .ios-index__list {
++            background: var(--l-surface, #1c1c1e);
++            border-radius: 14px;
++            overflow: hidden;
++        }
++        .ios-index__row {
++            display: flex;
++            align-items: center;
++            gap: 12px;
++            width: 100%;
++            min-height: 52px;
++            padding: 0 12px 0 16px;
++            border: 0;
++            background: none;
++            color: inherit;
++            font: inherit;
++            font-size: 17px;
++            text-align: start;
++        }
++        .ios-index__row + .ios-index__row {
++            border-top: 0.5px solid rgba(255, 255, 255, 0.12);
++        }
++        .ios-index__chip {
++            display: grid;
++            place-items: center;
++            width: 30px;
++            height: 30px;
++            border-radius: 8px;
++            color: #fff;
++            flex: none;
++        }
++        .ios-index__chip mat-icon {
++            width: 20px;
++            height: 20px;
++            font-size: 20px;
++        }
++        .ios-index__name {
++            flex: 1;
++            min-width: 0;
++        }
++        .ios-index__chevron {
++            color: rgba(235, 235, 245, 0.3);
++        }
++    `,
++})
++export class IosSettingsIndexComponent {
++    readonly sections = input.required<SettingsSection[]>();
++    readonly open = output<string>();
++
++    readonly groups = computed(() => {
++        const sections = this.sections();
++        const out: { id: string; labelKey: string; sections: SettingsSection[] }[] = [];
++        for (const group of SETTINGS_NAV_GROUPS) {
++            const list = sections.filter((s) => s.group === group.id);
++            if (list.length) out.push({ id: group.id, labelKey: group.labelKey, sections: list });
++        }
++        const rest = sections.filter((s) => !s.group);
++        if (rest.length) out.push({ id: '', labelKey: '', sections: rest });
++        return out;
++    });
++
++    chip(id: string): string {
++        return CHIP[id] ?? '#8e8e93';
++    }
++}
 diff --git a/apps/web/src/app/settings/settings-general-section.component.html b/apps/web/src/app/settings/settings-general-section.component.html
 index 738df92..0ba4ea6 100644
 --- a/apps/web/src/app/settings/settings-general-section.component.html
@@ -7275,6 +7922,127 @@ index 0000000..b298213
 +        window.location.assign('/');
 +    }
 +}
+diff --git a/apps/web/src/app/settings/settings.component.html b/apps/web/src/app/settings/settings.component.html
+index 7c854f6..02785ec 100644
+--- a/apps/web/src/app/settings/settings.component.html
++++ b/apps/web/src/app/settings/settings.component.html
+@@ -62,6 +62,12 @@
+                 />
+             } @else {
+                 @switch (activeSection()) {
++                    @case ('index') {
++                        <app-ios-settings-index
++                            [sections]="sectionNav"
++                            (open)="openFromIndex($event)"
++                        />
++                    }
+                     @case ('appearance') {
+                         <app-settings-appearance-section
+                             [form]="settingsForm"
+@@ -175,6 +181,9 @@
+                         />
+                     }
+                     @case ('about') {
++                        @if (isIosApp) {
++                            <app-ios-update-card />
++                        }
+                         <app-settings-about-section
+                             [isDesktop]="isDesktop"
+                             [form]="settingsForm"
+diff --git a/apps/web/src/app/settings/settings.component.ts b/apps/web/src/app/settings/settings.component.ts
+index 9108ca4..5899000 100644
+--- a/apps/web/src/app/settings/settings.component.ts
++++ b/apps/web/src/app/settings/settings.component.ts
+@@ -39,6 +39,8 @@ import {
+ } from '@iptvnator/shared/interfaces';
+ import { firstValueFrom, map } from 'rxjs';
+ import { BUILD_COMMIT } from '../../environments/build-commit';
++import { IosUpdateCardComponent } from '../ios/ios-update-card.component';
++import { IosSettingsIndexComponent } from './ios-settings-index.component';
+ import { SettingsAboutSectionComponent } from './settings-about-section.component';
+ import { SettingsAppUpdateFacade } from './settings-app-update.facade';
+ import { SettingsBackupSectionComponent } from './settings-backup-section.component';
+@@ -98,6 +100,9 @@ import { SettingsSnackbarService } from './settings-snackbar.service';
+  * changes the param — the component instance (and with it the form and its
+  * dirty state) survives until the user leaves settings entirely.
+  */
++/** Phone-only first page of Settings: the list of sections. */
++const IOS_INDEX_SECTION = 'index';
++
+ @Component({
+     templateUrl: './settings.component.html',
+     styleUrls: ['./settings.component.scss'],
+@@ -106,6 +111,8 @@ import { SettingsSnackbarService } from './settings-snackbar.service';
+     },
+     encapsulation: ViewEncapsulation.None,
+     imports: [
++        IosSettingsIndexComponent,
++        IosUpdateCardComponent,
+         MatButtonModule,
+         MatIconModule,
+         ReactiveFormsModule,
+@@ -257,6 +264,14 @@ export class SettingsComponent
+         supportsServerStorage: this.supportsServerStorage,
+     });
+ 
++    /** The iPhone app: Settings opens on a list of sections instead of the General page. */
++    readonly isIosApp =
++        typeof document !== 'undefined' &&
++        document.documentElement.classList.contains('d7t-ios') &&
++        window.matchMedia(
++            '(max-width: 640px), (max-height: 480px) and (orientation: landscape)'
++        ).matches;
++
+     get sectionNav(): SettingsSection[] {
+         return this.sectionNavItems.filter((section) => section.visible);
+     }
+@@ -273,6 +288,7 @@ export class SettingsComponent
+      */
+     readonly activeSection = computed(() => {
+         const section = this.sectionParam();
++        if (section === IOS_INDEX_SECTION && this.isIosApp) return section;
+         return section && this.isNavigableSection(section)
+             ? section
+             : SETTINGS_DEFAULT_SECTION;
+@@ -284,6 +300,7 @@ export class SettingsComponent
+         // lying about what is on screen.
+         effect(() => {
+             const section = this.sectionParam();
++            if (section === IOS_INDEX_SECTION && this.isIosApp) return;
+             if (section && !this.isNavigableSection(section)) {
+                 void this.router.navigate(
+                     ['/workspace/settings', SETTINGS_DEFAULT_SECTION],
+@@ -292,6 +309,18 @@ export class SettingsComponent
+             }
+         });
+ 
++        // Phone: the page name is drawn in the top bar (CSS reads this), like an iPhone navigation title.
++        effect(() => {
++            if (!this.isIosApp) return;
++            const section = this.activeSection();
++            const entry = this.sectionNavItems.find((item) => item.id === section);
++            const title = entry ? this.translate.instant(entry.label) : 'Settings';
++            document.documentElement.style.setProperty(
++                '--d7t-settings-title',
++                JSON.stringify(section === IOS_INDEX_SECTION ? '' : title)
++            );
++        });
++
+         // Section pages share one scroll container (`main.workspace-content`);
+         // without this, opening a long section, scrolling, and switching to a
+         // short one strands the viewport past the new page's content. Instant
+@@ -397,6 +426,11 @@ export class SettingsComponent
+         this.settingsCtx.reset();
+     }
+ 
++    /** Phone: a row of the Settings list opens its page (a normal step forward, so Back returns to the list). */
++    openFromIndex(sectionId: string): void {
++        void this.router.navigate(['/workspace/settings', sectionId]);
++    }
++
+     /** Switches section page in place, like the sidebar links do */
+     openSection(sectionId: string): void {
+         void this.router.navigate(['/workspace/settings', sectionId], {
 diff --git a/apps/web/src/index.html b/apps/web/src/index.html
 index 4314d5c..06063d8 100644
 --- a/apps/web/src/index.html

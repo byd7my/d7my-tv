@@ -123,6 +123,11 @@ final class D7TWebView: ExpoView, WKURLSchemeHandler {
       }
     case "ota.info":
       resolve(id, ok: true, value: D7TOta.shared.describe())
+    case "ota.check":
+      // Settings "Check for updates": check and download now, answer with the outcome.
+      D7TOta.shared.checkNow { [weak self] result in
+        self?.resolve(id, ok: true, value: result)
+      }
     case "httpGet":
       let url = args["url"] as? String ?? ""
       let headers = args["headers"] as? [String: String] ?? [:]

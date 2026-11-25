@@ -152,6 +152,8 @@ final class D7TOta: @unchecked Sendable {
       "bundled": info?.version ?? "",
       "downloaded": state?.version ?? "",
       "channel": info?.channel ?? "",
+      // Tells the page this build can check on demand (`ota.check`); older builds cannot.
+      "canCheck": true,
     ]
   }
 
@@ -176,6 +178,37 @@ final class D7TOta: @unchecked Sendable {
       lock.lock()
       busy = false
       lock.unlock()
+    }
+  }
+
+
+  /// Settings "Check for updates": looks now (ignores the 10-minute pause) and says what happened.
+  /// `status` is "ok" (look at `downloaded` against the running version), "busy" (a check is already
+  /// running) or "error" (the message says why).
+  func checkNow(completion: @escaping ([String: Any]) -> Void) {
+    lock.lock()
+    if busy {
+      lock.unlock()
+      completion(["status": "busy"])
+      return
+    }
+    busy = true
+    lastCheck = Date()
+    lock.unlock()
+    DispatchQueue.global(qos: .userInitiated).async { [self] in
+      let result: [String: Any]
+      do {
+        try run()
+        var info = describe()
+        info["status"] = "ok"
+        result = info
+      } catch {
+        result = ["status": "error", "message": "\(error)"]
+      }
+      lock.lock()
+      busy = false
+      lock.unlock()
+      completion(result)
     }
   }
 
