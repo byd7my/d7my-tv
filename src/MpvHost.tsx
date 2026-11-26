@@ -33,6 +33,7 @@ type Props = { emit: (event: MpvEvent) => void };
 export const MpvHost = forwardRef<MpvHostHandle, Props>(function MpvHost({ emit }, handle) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const refs = useRef(new Map<string, ExpoMpvViewRef>());
+  const shotCopyTried = useRef(new Set<string>());
   const shotReady = useRef(new Set<string>());
   const waiters = useRef(new Map<string, Array<(r: ExpoMpvViewRef) => void>>());
 
@@ -170,12 +171,40 @@ export const MpvHost = forwardRef<MpvHostHandle, Props>(function MpvHost({ emit 
               }
             }
             const file = `${D7TNative.tempDir()}d7t-frame-${a.sid}.png`;
-            await view.setPropertyString('d7t-command', ['screenshot-to-file', file, 'video'].join('\u0001'));
             const width = Math.max(64, Math.min(1920, Number(a.maxWidth) || 640));
-            const r = a.region
-              ? await D7TNative.frameCrop(file, a.region.x, a.region.y, a.region.width, a.region.height, width)
-              : await D7TNative.frameRGBA(file, width);
-            return r;
+            // mpv has several ways to take a picture; a few of them fail on some builds / decoders, so
+            // try them in turn and keep the first that produces a readable file. A command that never
+            // answers (a hidden player with nothing to draw) must not block the next try either.
+            const within = <T,>(work: Promise<T>, ms: number): Promise<T> =>
+              Promise.race([
+                work,
+                new Promise<T>((_, reject) => setTimeout(() => reject(new Error('no answer from the player')), ms)),
+              ]);
+            let why = '';
+            for (const flag of ['video', 'window', 'subtitles']) {
+              try {
+                await within(view.setPropertyString('d7t-command', ['screenshot-to-file', file, flag].join('\u0001')), 4000);
+                return a.region
+                  ? await D7TNative.frameCrop(file, a.region.x, a.region.y, a.region.width, a.region.height, width)
+                  : await D7TNative.frameRGBA(file, width);
+              } catch (error) {
+                why = `${flag}: ${String((error as { message?: string })?.message ?? error)}`;
+              }
+            }
+            // Say what the player reported, so a failure explains itself instead of staying blank.
+            let detail = '';
+            try {
+              const info = (await within(view.getMediaInfo(), 2000)) as Record<string, unknown>;
+              detail = ` [${String(info.d7tLastError ?? '')} | hwdec=${String(info.hwdecCurrent ?? '')} | ${String(info.width ?? 0)}x${String(info.height ?? 0)}]`;
+              if (!shotCopyTried.current.has(a.sid) && !String(info.hwdecCurrent ?? '').includes('copy')) {
+                // Zero-copy hardware frames cannot be read back by some mpv builds: decode with copy once.
+                shotCopyTried.current.add(a.sid);
+                await view.setPropertyString('hwdec', 'videotoolbox-copy').catch(() => undefined);
+              }
+            } catch {
+              /* the reason above is all there is */
+            }
+            throw new Error(why + detail);
           }
           case 'mpv.info':
             return (await withView(a.sid)).getPlaybackInfo();

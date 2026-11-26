@@ -1264,10 +1264,10 @@ index 0000000..9d562c2
 +}
 diff --git a/apps/web/src/_ios-mock.scss b/apps/web/src/_ios-mock.scss
 new file mode 100644
-index 0000000..db37f89
+index 0000000..28fdb1c
 --- /dev/null
 +++ b/apps/web/src/_ios-mock.scss
-@@ -0,0 +1,1192 @@
+@@ -0,0 +1,1295 @@
 +// The phone app, exactly as the design (D7T mock, 393 pt wide): every value below is read from the
 +// mock's own markup. Loaded last, so it wins over the earlier shell/Lume rules.
 +@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
@@ -2458,6 +2458,109 @@ index 0000000..db37f89
 +        font-size: 15px;
 +        font-weight: 500;
 +        color: rgba(255, 255, 255, 0.45);
++    }
++}
++
++// ── Audio from another channel (#39): one calm sync card, offset first, one blue button ──────────
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios .split-audio__after {
++        margin: 6px 14px 14px;
++        padding: 14px 16px 10px !important;
++        border-radius: 22px;
++        background: rgba(255, 255, 255, 0.06);
++        box-sizing: border-box;
++        overflow: hidden;
++    }
++
++    html.d7t-ios.d7t-ios .split-audio__divider {
++        display: none !important;
++    }
++
++    html.d7t-ios.d7t-ios .split-audio__after app-split-sync-section {
++        display: block;
++        min-width: 0;
++    }
++
++    html.d7t-ios.d7t-ios .sync-section {
++        display: flex !important;
++        flex-direction: column;
++        gap: 12px !important;
++        min-width: 0;
++        width: 100%;
++        box-sizing: border-box;
++    }
++
++    html.d7t-ios.d7t-ios .sync-section > * {
++        min-width: 0;
++        max-width: 100%;
++        box-sizing: border-box;
++    }
++
++    html.d7t-ios.d7t-ios .sync-section__modes { order: 1; }
++    html.d7t-ios.d7t-ios .sync-section__target { order: 2; }
++    html.d7t-ios.d7t-ios .sync-section__manual { order: 3; }
++    html.d7t-ios.d7t-ios .sync-section__start { order: 4; }
++    html.d7t-ios.d7t-ios .sync-section__tools { order: 5; }
++
++    // Explanations and the "freeze" switch live in Settings; the card keeps only what the mock shows.
++    html.d7t-ios.d7t-ios .sync-section__hint,
++    html.d7t-ios.d7t-ios .sync-section__check,
++    html.d7t-ios.d7t-ios .sync-section__label,
++    html.d7t-ios.d7t-ios .sync-section__tool[data-test-id='split-sync-quick'],
++    html.d7t-ios.d7t-ios .split-audio__hints {
++        display: none !important;
++    }
++
++    html.d7t-ios.d7t-ios .sync-section__start {
++        width: 100% !important;
++        height: 50px !important;
++        margin: 0 !important;
++    }
++
++    html.d7t-ios.d7t-ios .sync-section__tools,
++    html.d7t-ios.d7t-ios .sync-section__tools--pair {
++        display: flex !important;
++        justify-content: center;
++        gap: 0 !important;
++        padding: 0 !important;
++        background: transparent !important;
++    }
++
++    html.d7t-ios.d7t-ios .sync-section__tool {
++        height: 36px !important;
++        padding: 0 !important;
++        border: 0 !important;
++        background: transparent !important;
++        color: rgba(255, 255, 255, 0.78) !important;
++        font-size: 14px !important;
++        font-weight: 600 !important;
++
++        mat-icon {
++            display: none !important;
++        }
++    }
++
++    // Footer: two quiet text actions side by side.
++    html.d7t-ios.d7t-ios .split-audio__footer {
++        display: flex !important;
++        justify-content: space-between;
++        align-items: center;
++        gap: 12px;
++        padding: 0 !important;
++        margin-top: 2px;
++    }
++
++    html.d7t-ios.d7t-ios .split-audio__save,
++    html.d7t-ios.d7t-ios .split-audio__original {
++        flex: 1 1 0;
++        min-width: 0;
++        height: 36px !important;
++        padding: 0 !important;
++        background: transparent !important;
++        color: rgba(255, 255, 255, 0.78) !important;
++        font-size: 14px !important;
++        font-weight: 600 !important;
++        white-space: normal;
 +    }
 +}
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
@@ -6648,7 +6751,7 @@ index 0000000..2dd8486
 +}
 diff --git a/apps/web/src/app/ios/ios-mpv-host.ts b/apps/web/src/app/ios/ios-mpv-host.ts
 new file mode 100644
-index 0000000..a347fa3
+index 0000000..e1d09bc
 --- /dev/null
 +++ b/apps/web/src/app/ios/ios-mpv-host.ts
 @@ -0,0 +1,802 @@
@@ -7385,7 +7488,7 @@ index 0000000..a347fa3
 +            // No picture yet: the clock window says so, once and in one place, instead of staying blank.
 +            const raw = String((error as { message?: string })?.message ?? error).replace(/\s+/g, ' ').trim();
 +            slot.fails = (slot.fails ?? 0) + 1;
-+            setShotNotes(role, raw.slice(0, 140));
++            setShotNotes(role, raw.slice(0, 260));
 +            void this.tryAnotherWay(sid, slot.fails);
 +        } finally {
 +            slot.busy = false;
