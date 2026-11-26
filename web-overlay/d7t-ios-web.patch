@@ -1262,12 +1262,1210 @@ index 0000000..9d562c2
 +        }
 +    }
 +}
+diff --git a/apps/web/src/_ios-mock.scss b/apps/web/src/_ios-mock.scss
+new file mode 100644
+index 0000000..db37f89
+--- /dev/null
++++ b/apps/web/src/_ios-mock.scss
+@@ -0,0 +1,1192 @@
++// The phone app, exactly as the design (D7T mock, 393 pt wide): every value below is read from the
++// mock's own markup. Loaded last, so it wins over the earlier shell/Lume rules.
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    // ── Page frame: content starts 62 pt from the top (status bar + 3), like the mock ──
++    html.d7t-ios.d7t-ios:not(.d7t-home):not(.d7t-has-fullscreen) body {
++        padding-top: calc(env(safe-area-inset-top, 0px) + 3px);
++    }
++
++    // ── Home (#1) ──
++    html.d7t-ios.d7t-ios {
++        --dashboard-gutter: 18px;
++    }
++
++    html.d7t-ios.d7t-ios .hero[data-test-id='dashboard-hero'] {
++        height: 560px !important;
++        min-height: 560px !important;
++        max-height: none !important;
++        margin-bottom: 40px;
++    }
++
++    html.d7t-ios.d7t-ios .hero[data-test-id='dashboard-hero'] .hero__stage,
++    html.d7t-ios.d7t-ios .hero[data-test-id='dashboard-hero'] .hero__backdrop {
++        height: 560px !important;
++    }
++
++    html.d7t-ios.d7t-ios .hero[data-test-id='dashboard-hero'] .hero__content {
++        position: absolute !important;
++        top: 330px !important;
++        left: 18px !important;
++        right: 18px !important;
++        bottom: auto !important;
++        height: auto !important;
++        padding: 0 !important;
++        gap: 0 !important;
++        display: block !important;
++    }
++
++    html.d7t-ios.d7t-ios .hero__eyebrow {
++        margin: 0 !important;
++        font-size: 12px !important;
++        font-weight: 700 !important;
++        letter-spacing: 0.1em !important;
++        line-height: 1.25 !important;
++        color: rgba(255, 255, 255, 0.8) !important;
++    }
++
++    html.d7t-ios.d7t-ios .hero__title {
++        margin: 8px 0 0 !important;
++        font-size: 40px !important;
++        font-weight: 800 !important;
++        letter-spacing: -0.03em !important;
++        line-height: 1 !important;
++    }
++
++    html.d7t-ios.d7t-ios .hero__meta {
++        margin: 10px 0 0 !important;
++        font-size: 14px !important;
++        font-weight: 500 !important;
++        color: rgba(255, 255, 255, 0.75) !important;
++    }
++
++    html.d7t-ios.d7t-ios .hero__meta .hero__pill {
++        font-size: 14px !important;
++        font-weight: 500 !important;
++    }
++
++    html.d7t-ios.d7t-ios .hero__actions {
++        margin: 18px 0 0 !important;
++        gap: 10px !important;
++    }
++
++    html.d7t-ios.d7t-ios .hero__button--primary {
++        min-width: 150px;
++        height: 50px !important;
++        padding: 0 22px !important;
++        border-radius: 25px !important;
++        background: #fff !important;
++        color: #111 !important;
++        font-size: 17px !important;
++        font-weight: 800 !important;
++        gap: 8px;
++    }
++
++    html.d7t-ios.d7t-ios .hero__controls {
++        position: absolute !important;
++        top: 506px !important;
++        bottom: auto !important;
++        left: 0;
++        right: 0;
++        height: 6px !important;
++        display: flex;
++        justify-content: center;
++    }
++
++    html.d7t-ios.d7t-ios .hero__dots {
++        display: flex;
++        align-items: center;
++        gap: 6px !important;
++        height: 6px;
++        padding: 0 !important;
++    }
++
++    html.d7t-ios.d7t-ios .hero__dot {
++        position: relative;
++        width: 6px !important;
++        min-width: 0 !important;
++        height: 6px !important;
++        padding: 0 !important;
++        border-radius: 3px !important;
++        background: rgba(255, 255, 255, 0.35) !important;
++        overflow: visible;
++    }
++
++    html.d7t-ios.d7t-ios .hero__dot::before {
++        display: none !important;
++    }
++
++    html.d7t-ios.d7t-ios .hero__dot::after {
++        content: '';
++        position: absolute;
++        inset: -20px -8px;
++    }
++
++    html.d7t-ios.d7t-ios .hero__dot--active {
++        width: 18px !important;
++        background: #fff !important;
++    }
++
++    html.d7t-ios.d7t-ios .hero__dot-fill {
++        display: none !important;
++    }
++}
++
++// ── More sheet (#14): values copied from the design ─────────────────────────────────────
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    .app-rail .d7m-scrim {
++        position: fixed;
++        inset: 0;
++        z-index: 2147483000;
++        background: rgba(0, 0, 0, 0.5);
++        animation: d7m-fade 0.22s ease both;
++    }
++
++    .app-rail .d7m-sheet {
++        position: fixed;
++        z-index: 2147483001;
++        left: 8px;
++        right: 8px;
++        bottom: calc(8px + env(safe-area-inset-bottom, 0px) * 0);
++        height: min(690px, calc(100dvh - env(safe-area-inset-top, 0px) - 12px));
++        border-radius: 34px;
++        background: rgba(32, 32, 38, 0.96);
++        box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.14), 0 -10px 50px rgba(0, 0, 0, 0.5);
++        -webkit-backdrop-filter: blur(30px);
++        backdrop-filter: blur(30px);
++        overflow-x: hidden;
++        overflow-y: auto;
++        color: #fff;
++        font-family: Inter, -apple-system, 'SF Pro Text', sans-serif;
++        animation: d7m-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
++    }
++
++    .app-rail .d7m-scrim.is-closing { animation: d7m-fade-out 0.24s ease both; }
++    .app-rail .d7m-sheet.is-closing { animation: d7m-down 0.24s ease both; }
++
++    .d7m-grabber { width: 40px; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.3); margin: 8px auto 0; }
++    .d7m-head { display: flex; align-items: center; padding: 12px 20px 8px; }
++    .d7m-title { flex: 1; font: 800 20px/1.2 Inter, sans-serif; }
++    .d7m-close {
++        position: relative;
++        width: 32px; height: 32px; padding: 0; border: 0; border-radius: 16px;
++        background: rgba(255, 255, 255, 0.1); color: #fff; flex: none; cursor: pointer;
++    }
++    .d7m-close::before {
++        content: ''; position: absolute; inset: 8px; background: currentColor;
++        -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 6l12 12M18 6L6 18'/></svg>") center / contain no-repeat; mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 6l12 12M18 6L6 18'/></svg>") center / contain no-repeat;
++    }
++    .d7m-close::after { content: ''; position: absolute; inset: -6px; }
++
++    .d7m-chips { display: flex; gap: 8px; padding: 0 20px 8px; overflow-x: auto; scrollbar-width: none; }
++    .d7m-chips::-webkit-scrollbar { display: none; }
++    .d7m-chip {
++        flex: none; padding: 8px 15px; border: 0; border-radius: 19px;
++        font: 700 14px/1.3 Inter, sans-serif; background: rgba(255, 255, 255, 0.1); color: #fff; cursor: pointer;
++    }
++    .d7m-chip.is-on { background: #fff; color: #111; }
++
++    .d7m-heading { padding: 18px 20px 8px; font: 700 13px/1.3 Inter, sans-serif; color: rgba(255, 255, 255, 0.5); letter-spacing: 0.04em; }
++    .d7m-gap { height: 14px; }
++    .d7m-group { margin: 0 14px; border-radius: 16px; background: #17171c; overflow: hidden; }
++    html.d7t-ios .app-rail .d7m-group > .d7m-row {
++        display: flex !important;
++        position: static !important;
++        align-items: center !important;
++        justify-content: flex-start !important;
++        gap: 12px;
++        width: calc(100% - 32px) !important;
++        height: auto !important;
++        min-height: 44px;
++        padding: 11px 16px;
++        border: 0;
++        border-radius: 0 !important;
++        background: none;
++        color: #fff !important;
++        text-decoration: none;
++        text-align: start;
++        font: inherit;
++        cursor: pointer;
++        box-sizing: content-box;
++        transition: none;
++    }
++    .app-rail .d7m-group > a.d7m-row:hover { background: none; color: #fff; }
++    html.d7t-ios .app-rail .d7m-group > .d7m-row + .d7m-row { border-top: 0.5px solid rgba(255, 255, 255, 0.08) !important; }
++    .d7m-row:active { background: rgba(255, 255, 255, 0.06); }
++    .d7m-tile { position: relative; display: block; width: 30px; height: 30px; border-radius: 8px; flex: none; }
++    .d7m-tile::before { content: ''; position: absolute; inset: 6px; background: #fff; -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; }
++    .d7m-label { flex: 1; min-width: 0; font: 600 16px/1.3 Inter, sans-serif; }
++    .d7m-value { font: 500 15px/1.3 Inter, sans-serif; color: rgba(255, 255, 255, 0.5); }
++    .d7m-chev { position: relative; width: 16px; height: 16px; flex: none; background: rgba(255, 255, 255, 0.3); -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 6l6 6-6 6'/></svg>") center / contain no-repeat; mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 6l6 6-6 6'/></svg>") center / contain no-repeat; }
++    [dir='rtl'] .d7m-chev { transform: scaleX(-1); }
++    .d7m-tile[data-kind='favorites'] { background: #ff375f; }
++    .d7m-tile[data-kind='favorites']::before { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z'/></svg>"); }
++    .d7m-tile[data-kind='recent'] { background: #0a84ff; }
++    .d7m-tile[data-kind='recent']::before { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M12 7v5l3 2'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M12 7v5l3 2'/></svg>"); }
++    .d7m-tile[data-kind='downloads'] { background: #30d158; }
++    .d7m-tile[data-kind='downloads']::before { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3v12M7 11l5 5 5-5M4 20h16'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3v12M7 11l5 5 5-5M4 20h16'/></svg>"); }
++    .d7m-tile[data-kind='sources'] { background: #8e8e93; }
++    .d7m-tile[data-kind='sources']::before { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='7' rx='2'/><rect x='3' y='13' width='18' height='7' rx='2'/><path d='M7 7.5h.01M7 16.5h.01'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='7' rx='2'/><rect x='3' y='13' width='18' height='7' rx='2'/><path d='M7 7.5h.01M7 16.5h.01'/></svg>"); }
++    .d7m-tile[data-kind='add'] { background: #0a84ff; }
++    .d7m-tile[data-kind='add']::before { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 5v14M5 12h14'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 5v14M5 12h14'/></svg>"); }
++    .d7m-tile[data-kind='lock'] { background: #ff9f0a; }
++    .d7m-tile[data-kind='lock']::before { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='5' y='11' width='14' height='10' rx='2'/><path d='M8 11V8a4 4 0 0 1 8 0v3'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='5' y='11' width='14' height='10' rx='2'/><path d='M8 11V8a4 4 0 0 1 8 0v3'/></svg>"); }
++    .d7m-tile[data-kind='settings'] { background: #8e8e93; }
++    .d7m-tile[data-kind='settings']::before { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='3'/><path d='M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='3'/><path d='M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z'/></svg>"); }
++    .d7m-tile[data-kind='new'] { background: #bf5af2; }
++    .d7m-tile[data-kind='new']::before { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z'/></svg>"); }
++    .d7m-tile[data-kind='other'] { background: #8e8e93; }
++    .d7m-tile[data-kind='other']::before { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/></svg>"); }
++
++}
++
++@keyframes d7m-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
++@keyframes d7m-down { to { transform: translateY(40px); opacity: 0; } }
++@keyframes d7m-fade { from { opacity: 0; } to { opacity: 1; } }
++@keyframes d7m-fade-out { to { opacity: 0; } }
++
++// ── Title details (#4 series, #7 movie): values copied from the design ───────────────────────────
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    // The back button floats over the artwork, which starts at the very top of the screen.
++    html.d7t-ios.d7t-ios:has(app-portal-detail-shell) body {
++        padding-top: 0 !important;
++    }
++
++    html.d7t-ios.d7t-ios:has(app-portal-detail-shell) app-workspace-shell-header {
++        position: absolute;
++        z-index: 6;
++        top: calc(env(safe-area-inset-top, 0px) - 3px);
++        left: 12px;
++        right: 12px;
++        height: 44px;
++    }
++
++    html.d7t-ios.d7t-ios:has(app-portal-detail-shell) app-workspace-shell-header .workspace-header {
++        height: 44px;
++        padding: 0;
++        background: none !important;
++        border: 0 !important;
++        box-shadow: none !important;
++    }
++
++    html.d7t-ios.d7t-ios:has(app-portal-detail-shell) .workspace-header .header-back {
++        width: 44px;
++        height: 44px;
++        border-radius: 22px;
++        background: transparent !important;
++        box-shadow: none !important;
++        position: relative;
++        z-index: 1;
++    }
++
++    // The visible 40 pt circle inside the 44 pt tap area.
++    html.d7t-ios.d7t-ios:has(app-portal-detail-shell) .workspace-header .header-back::before {
++        content: '';
++        position: absolute;
++        inset: 2px;
++        border-radius: 20px;
++        background: rgba(0, 0, 0, 0.4);
++        z-index: -1;
++    }
++
++    html.d7t-ios.d7t-ios .shell__hero section.hero--compact {
++        padding-bottom: 0 !important;
++        height: auto !important;
++        min-height: 0 !important;
++        overflow: visible;
++    }
++
++    html.d7t-ios.d7t-ios .shell__hero .hero__backdrop {
++        inset: 0 0 auto 0 !important;
++        height: max(420px, calc(100% - 140px)) !important;
++        background: linear-gradient(160deg, hsl(330 62% 36%), hsl(280 55% 12%) 70%, #0b0b0e);
++    }
++
++    html.d7t-ios.d7t-ios .shell__hero .hero__vignette {
++        inset: 0 0 auto 0 !important;
++        height: max(420px, calc(100% - 140px)) !important;
++        background: linear-gradient(180deg, rgba(0, 0, 0, 0.4), transparent 30%, #0b0b0e 98%) !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__hero .hero__content {
++        position: relative !important;
++        height: auto !important;
++        padding: 244px 18px 0 !important;
++        display: block !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__hero .details {
++        width: 100%;
++        max-width: none;
++        padding: 0;
++    }
++
++    html.d7t-ios.d7t-ios .shell__hero .details__title {
++        margin: 0 !important;
++        font-size: 36px !important;
++        font-weight: 800 !important;
++        letter-spacing: -0.03em !important;
++        line-height: 1 !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__hero .details__tags {
++        margin: 10px 0 0 !important;
++        font-size: 14px;
++        line-height: 17px;
++    }
++
++    html.d7t-ios.d7t-ios .shell__hero .details__tags app-meta-chip,
++    html.d7t-ios.d7t-ios .shell__hero .details__tags app-meta-chip * {
++        font-size: 14px !important;
++        color: rgba(255, 255, 255, 0.75) !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__hero .action-buttons {
++        margin: 16px 0 0 !important;
++        gap: 10px !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__hero .action-buttons .play-btn {
++        height: 50px !important;
++        min-height: 50px !important;
++        min-width: 150px;
++        padding: 0 22px !important;
++        border-radius: 25px !important;
++        font-size: 17px !important;
++        font-weight: 800 !important;
++        gap: 8px;
++    }
++
++    html.d7t-ios.d7t-ios .shell__hero .action-buttons button:not(.play-btn) {
++        height: 50px !important;
++        min-height: 50px !important;
++        border-radius: 25px !important;
++        background: rgba(255, 255, 255, 0.12) !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__hero .action-buttons .icon-btn,
++    html.d7t-ios.d7t-ios .shell__hero .action-buttons .more-trigger {
++        width: 50px !important;
++    }
++
++    // The heart sits top-right, opposite the back button (design: 40 pt translucent circle).
++    html.d7t-ios.d7t-ios .shell__hero .action-buttons > app-detail-icon-button:first-of-type {
++        position: absolute;
++        z-index: 6;
++        top: calc(env(safe-area-inset-top, 0px) + 1px);
++        right: 9px;
++        width: 44px;
++        height: 44px;
++        display: grid;
++        place-items: center;
++    }
++
++    html.d7t-ios.d7t-ios .shell__hero .action-buttons > app-detail-icon-button:first-of-type button {
++        width: 40px !important;
++        height: 40px !important;
++        min-height: 40px !important;
++        border-radius: 20px !important;
++        background: rgba(0, 0, 0, 0.4) !important;
++        -webkit-backdrop-filter: none !important;
++        backdrop-filter: none !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__hero .details__description {
++        margin: 73px 0 0 !important;
++        font-size: 14.5px !important;
++        line-height: 1.45 !important;
++        color: rgba(255, 255, 255, 0.72) !important;
++    }
++
++    // Episodes
++    html.d7t-ios.d7t-ios .shell__episodes app-season-container {
++        padding: 0 !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__episodes .episodes-header {
++        padding: 18px 18px 6px !important;
++        margin: 0 !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__episodes .section-header__title {
++        font-size: 22px !important;
++        font-weight: 800 !important;
++        letter-spacing: 0 !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__episodes .episodes-header__tabs * {
++        font-size: 14px !important;
++        font-weight: 700 !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__episodes .season-tabs__track,
++    html.d7t-ios.d7t-ios .shell__episodes .episodes-header__tabs button {
++        min-height: 36px;
++        border-radius: 18px !important;
++        background: rgba(255, 255, 255, 0.1) !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__episodes app-episode-item {
++        gap: 12px !important;
++        padding: 10px 18px !important;
++        min-height: 0 !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__episodes app-episode-item .episode-item__thumb {
++        flex: 0 0 128px !important;
++        width: 128px !important;
++        height: 72px !important;
++        border-radius: 10px !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__episodes app-episode-item .episode-item__title {
++        font-size: 15px !important;
++        font-weight: 700 !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__episodes app-episode-item .episode-item__meta {
++        font-size: 12.5px !important;
++        font-weight: 500 !important;
++        color: rgba(255, 255, 255, 0.55) !important;
++        margin-top: 3px;
++    }
++}
++
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    // Back: the design's chevron, not the arrow.
++    html.d7t-ios.d7t-ios:has(app-portal-detail-shell) .workspace-header .header-back mat-icon {
++        font-size: 0 !important;
++        width: 22px;
++        height: 22px;
++        background: #fff;
++        -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M15 5l-7 7 7 7'/></svg>") center / contain no-repeat;
++        mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M15 5l-7 7 7 7'/></svg>") center / contain no-repeat;
++    }
++
++    html.d7t-ios.d7t-ios .shell__episodes .episodes-header__tabs,
++    html.d7t-ios.d7t-ios .shell__episodes .season-tabs {
++        height: 36px;
++    }
++}
++
++// Movie page (#7): title one step lower, 38 pt, and the cast row in the design's sizes.
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios app-portal-detail-shell:not(:has(app-season-container)) .shell__hero .hero__content {
++        padding-top: 262px !important;
++    }
++
++    html.d7t-ios.d7t-ios app-portal-detail-shell:not(:has(app-season-container)) .shell__hero .details__title {
++        font-size: 38px !important;
++    }
++
++    html.d7t-ios.d7t-ios app-portal-detail-shell:not(:has(app-season-container)) .shell__hero .details__description {
++        margin-top: 78px !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__extras .section-header__title {
++        font-size: 22px !important;
++        font-weight: 800 !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__extras .section-header__count {
++        display: none !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__extras app-detail-section-header {
++        padding: 20px 18px 10px !important;
++        margin: 0 !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__extras .rail__scroller {
++        gap: 12px !important;
++        padding: 0 18px !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__extras .person {
++        width: 84px !important;
++        text-align: center;
++    }
++
++    html.d7t-ios.d7t-ios .shell__extras .person__avatar {
++        width: 72px !important;
++        height: 72px !important;
++        margin: 0 auto !important;
++        font-size: 24px !important;
++        font-weight: 800 !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__extras .person__name {
++        margin: 7px 0 0 !important;
++        font-size: 12.5px !important;
++        font-weight: 600 !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__extras .person__role {
++        font-size: 11.5px !important;
++        font-weight: 500 !important;
++        color: rgba(255, 255, 255, 0.5) !important;
++    }
++}
++
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios .shell__episodes .season-tabs,
++    html.d7t-ios.d7t-ios .shell__episodes .season-tabs * {
++        border: 0 !important;
++        outline: 0 !important;
++        box-shadow: none !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__extras .rail__scroller,
++    html.d7t-ios.d7t-ios .shell__extras section.rail {
++        margin-left: 0 !important;
++    }
++}
++
++// ── Settings home (#6): no back button, the page is edge to edge like the design ─────────────────
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios:has(app-ios-settings-index) app-workspace-shell-header {
++        display: none !important;
++    }
++
++    html.d7t-ios.d7t-ios:has(app-ios-settings-index) .settings-container,
++    html.d7t-ios.d7t-ios:has(app-ios-settings-index) .settings-layout,
++    html.d7t-ios.d7t-ios:has(app-ios-settings-index) .settings-content {
++        padding: 0 !important;
++        margin: 0 !important;
++        max-width: none !important;
++    }
++
++    html.d7t-ios.d7t-ios .shell__episodes .seasons-section,
++    html.d7t-ios.d7t-ios .shell__episodes .content-container,
++    html.d7t-ios.d7t-ios .shell__episodes .episodes-list {
++        padding-left: 0 !important;
++        padding-right: 0 !important;
++        margin-left: 0 !important;
++        margin-right: 0 !important;
++        gap: 0 !important;
++    }
++}
++
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios .shell__episodes app-season-container,
++    html.d7t-ios.d7t-ios .shell__extras > div {
++        display: block;
++        width: 100% !important;
++        margin: 0 !important;
++        padding: 0 !important;
++    }
++}
++
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios .shell__episodes,
++    html.d7t-ios.d7t-ios .shell__extras {
++        padding-left: 0 !important;
++        padding-right: 0 !important;
++    }
++}
++
++// Search page (#5): the page has its own field, so the shell's search bar is not shown there.
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios:has(.ios-search) app-workspace-shell-header {
++        display: none !important;
++    }
++}
++
++// ── Live TV list (#37): rows without the disclosure chevron, bolder names ────────────────────────
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios app-ios-live-panel app-channel-list-item .action-buttons::after {
++        display: none !important;
++    }
++
++    html.d7t-ios.d7t-ios app-ios-live-panel app-channel-list-item .channel-list-item,
++    html.d7t-ios.d7t-ios app-ios-live-panel app-channel-list-item .channel-list-item:not(.compact) {
++        height: 74px;
++        min-height: 74px;
++        padding: 0 18px;
++    }
++
++    html.d7t-ios.d7t-ios app-ios-live-panel app-channel-list-item .channel-name {
++        font-weight: 700;
++    }
++
++    html.d7t-ios.d7t-ios app-ios-live-panel .ios-live-title {
++        font-size: 17px;
++        font-weight: 700;
++    }
++}
++
++// ── Favorites / Recently viewed (#11, #12): title, segmented control and rows ─────────────────────
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios app-unified-collection-page .collection-header {
++        padding: 6px 18px 10px !important;
++        gap: 12px !important;
++    }
++
++    html.d7t-ios.d7t-ios app-unified-collection-page .collection-title {
++        font-size: 34px !important;
++        font-weight: 800 !important;
++        letter-spacing: -0.02em;
++        line-height: 41px;
++    }
++
++    // The mock has no playlist-scope switch: the list always spans every source.
++    html.d7t-ios.d7t-ios app-global-collection-route .collection-header-toggles .scope-toggle {
++        display: none !important;
++    }
++
++    html.d7t-ios.d7t-ios app-unified-collection-page .collection-header-toggles .mat-button-toggle-group {
++        background: rgba(255, 255, 255, 0.08) !important;
++        border-radius: 12px !important;
++        padding: 3px;
++    }
++
++    html.d7t-ios.d7t-ios app-unified-collection-page .collection-header-toggles .mat-button-toggle {
++        border-radius: 10px;
++    }
++
++    html.d7t-ios.d7t-ios app-unified-collection-page .collection-header-toggles .mat-button-toggle-button {
++        height: 34px;
++    }
++
++    html.d7t-ios.d7t-ios app-unified-collection-page .collection-header-toggles .mat-button-toggle-label-content {
++        line-height: 34px !important;
++        padding: 0;
++    }
++
++    html.d7t-ios.d7t-ios app-unified-collection-page .collection-header-toggles .mat-button-toggle-checked {
++        background: #fff !important;
++        color: #111 !important;
++    }
++
++    html.d7t-ios.d7t-ios app-unified-collection-page .collection-header-toggles .mat-button-toggle:not(.mat-button-toggle-checked) {
++        color: rgba(255, 255, 255, 0.8) !important;
++    }
++
++    // Rows: 50pt logo tile, 16/600 name, 13pt grey line, 18pt side gutters.
++    html.d7t-ios.d7t-ios app-unified-collection-page app-channel-list-item .channel-list-item,
++    html.d7t-ios.d7t-ios app-unified-collection-page app-channel-list-item .channel-list-item:not(.compact) {
++        height: 70px;
++        min-height: 70px;
++        padding: 0 18px;
++        gap: 14px;
++    }
++
++    html.d7t-ios.d7t-ios app-unified-collection-page app-channel-list-item .channel-logo-shell {
++        width: 50px;
++        height: 50px;
++        border-radius: 12px;
++    }
++
++    html.d7t-ios.d7t-ios app-unified-collection-page app-channel-list-item .channel-name {
++        font-size: 16px;
++        font-weight: 600;
++    }
++
++    html.d7t-ios.d7t-ios app-unified-collection-page app-channel-list-item .epg-placeholder::before,
++    html.d7t-ios.d7t-ios app-unified-collection-page app-channel-list-item .epg-time {
++        font-size: 13px;
++        color: rgba(255, 255, 255, 0.58);
++    }
++
++    // The collection lists draw a plain heart in the accent colour, like the mock.
++    html.d7t-ios.d7t-ios app-unified-collection-page app-channel-list-item .favorite-button {
++        color: #0a84ff;
++
++        mat-icon {
++            -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 20.5s-8-4.9-8-11A4.6 4.6 0 0 1 12 6.8 4.6 4.6 0 0 1 20 9.5c0 6.1-8 11-8 11Z' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E") !important;
++            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 20.5s-8-4.9-8-11A4.6 4.6 0 0 1 12 6.8 4.6 4.6 0 0 1 20 9.5c0 6.1-8 11-8 11Z' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E") !important;
++        }
++    }
++
++    html.d7t-ios.d7t-ios app-unified-collection-page app-channel-list-item .channel-list-item::after {
++        display: none !important;
++    }
++}
++
++// Recently viewed: "Clear" as blue text (mock #12); Favorites keep no header actions on the phone.
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios app-unified-collection-page .collection-header-actions[data-mode='recent'] .collection-clear-button {
++        width: auto;
++        height: 44px;
++        padding: 0 4px;
++        background: transparent !important;
++
++        mat-icon {
++            display: none;
++        }
++
++        &::after {
++            content: 'Clear';
++            font-size: 15px;
++            font-weight: 600;
++            color: #0a84ff;
++        }
++    }
++
++    html.d7t-ios.d7t-ios app-unified-collection-page .collection-header-actions[data-mode='favorites'] .collection-clear-button {
++        display: none;
++    }
++}
++
++// ── Sources (#15): large title, blue "+" button, one grouped card of subscriptions ────────────────
++.sources-add-ios {
++    display: none;
++}
++
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios .workspace-shell:has(.sources-page) app-workspace-shell-header {
++        display: none !important;
++    }
++
++    html.d7t-ios.d7t-ios .sources-page {
++        .sources-header {
++            padding: 6px 18px 10px !important;
++        }
++
++        .sources-title {
++            font-weight: 800 !important;
++            line-height: 41px;
++        }
++
++        .sources-count,
++        .sources-action {
++            display: none !important;
++        }
++
++        .sources-add-ios {
++            display: grid;
++            place-items: center;
++            width: 40px;
++            height: 40px;
++            padding: 0;
++            border: 0;
++            border-radius: 50%;
++            background: rgba(10, 132, 255, 0.2);
++            color: #0a84ff;
++
++            svg {
++                width: 22px;
++                height: 22px;
++                fill: none;
++                stroke: currentColor;
++                stroke-width: 2.4;
++                stroke-linecap: round;
++            }
++        }
++
++        .sources-list {
++            margin: 6px 14px 0 !important;
++            border-radius: 16px;
++            background: #17171c !important;
++        }
++
++        .source-row {
++            min-height: 0;
++            padding: 12px 16px !important;
++            gap: 14px;
++            position: relative;
++        }
++
++        app-source-row + app-source-row .source-row {
++            border-top: 0 !important;
++        }
++
++        app-source-row + app-source-row .source-row::before {
++            content: '';
++            position: absolute;
++            top: 0;
++            left: 78px;
++            right: 0;
++            height: 0.5px;
++            background: rgba(255, 255, 255, 0.08);
++        }
++
++        .source-row__name {
++            font-size: 16.5px;
++            font-weight: 700;
++        }
++
++        .source-row__meta {
++            font-size: 12.5px;
++            font-weight: 500;
++            color: rgba(255, 255, 255, 0.55);
++        }
++
++        .source-row__actions {
++            &::after {
++                content: '';
++                width: 9px;
++                height: 9px;
++                margin: 0 4px 0 6px;
++                border-top: 2.5px solid rgba(235, 235, 245, 0.3);
++                border-right: 2.5px solid rgba(235, 235, 245, 0.3);
++                transform: rotate(45deg);
++                border-radius: 1px;
++            }
++        }
++    }
++}
++
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios .sources-page .sources-list {
++        width: auto !important;
++        max-width: calc(100% - 28px);
++        box-sizing: border-box;
++    }
++
++    html.d7t-ios.d7t-ios .sources-page .sources-content {
++        padding: 0 !important;
++        overflow-x: hidden;
++    }
++
++    html.d7t-ios.d7t-ios .sources-page .source-row,
++    html.d7t-ios.d7t-ios .sources-page app-source-row {
++        width: 100%;
++        box-sizing: border-box;
++    }
++}
++
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios .sources-page app-recent-playlists {
++        display: block;
++        width: 100%;
++        margin: 0 !important;
++        padding: 0 !important;
++        box-sizing: border-box;
++    }
++
++    html.d7t-ios.d7t-ios .sources-page .sources-list {
++        max-width: none;
++    }
++}
++
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios:has(.ios-added) app-workspace-shell-header {
++        display: none !important;
++    }
++}
++
++// ── Add source (#17–#19): bottom sheet with the source kinds, then the form page ─────────────────
++.ios-add-list,
++.ios-add-back {
++    display: none;
++}
++
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios .cdk-global-overlay-wrapper:has(.apd--ios) {
++        align-items: flex-end !important;
++    }
++
++    html.d7t-ios.d7t-ios .cdk-overlay-pane:has(.apd--ios) {
++        width: 100% !important;
++        max-width: 100% !important;
++    }
++
++    html.d7t-ios.d7t-ios .mat-mdc-dialog-container:has(.apd--ios) {
++        --mdc-dialog-container-color: rgba(32, 32, 38, 0.98);
++        --mdc-dialog-container-shape: 34px;
++        width: calc(100% - 16px);
++        margin: 0 8px 8px;
++        max-height: 92dvh;
++    }
++
++    html.d7t-ios.d7t-ios .mat-mdc-dialog-container:has(.apd--ios) .mdc-dialog__surface {
++        border-radius: 34px !important;
++        background: rgba(32, 32, 38, 0.98) !important;
++        box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.14);
++    }
++
++    html.d7t-ios.d7t-ios .apd--ios {
++        // Choose step: only the heading and the list of source kinds.
++        &[data-step='choose'] {
++            .apd-method-grid,
++            .apd-method-help,
++            .apd-form-area,
++            [appDialogFooter],
++            [appDialogFooterStart] {
++                display: none !important;
++            }
++        }
++
++        // Form step: the kind is already chosen, so the picker goes away.
++        &[data-step='form'] {
++            .apd-method-grid,
++            .apd-method-help {
++                display: none !important;
++            }
++
++            [appDialogFooterStart] {
++                display: block !important;
++                order: -1;
++            }
++
++            [appDialogFooter] > .mat-mdc-button:not(.mat-mdc-unelevated-button),
++            [appDialogFooter] .app-dialog__secondary,
++            [appDialogFooterStart] > .mat-mdc-button {
++                display: none !important;
++            }
++        }
++
++        .apd-connection-notice {
++            margin: 12px 0;
++            padding: 12px 14px;
++            border-radius: 12px;
++            background: rgba(10, 132, 255, 0.14);
++            color: rgba(235, 235, 245, 0.8);
++            font-size: 13px;
++            line-height: 1.4;
++        }
++
++        .mat-mdc-form-field {
++            --mdc-filled-text-field-container-color: #17171c;
++            --mdc-filled-text-field-active-indicator-height: 0;
++            --mdc-filled-text-field-focus-active-indicator-height: 0;
++            --mdc-filled-text-field-input-text-color: #fff;
++            --mdc-filled-text-field-label-text-color: rgba(235, 235, 245, 0.55);
++        }
++
++        .mat-mdc-text-field-wrapper {
++            border-radius: 12px !important;
++            background: #17171c !important;
++        }
++
++        .mdc-line-ripple {
++            display: none !important;
++        }
++
++        [appDialogFooter] .mat-mdc-unelevated-button {
++            width: 100%;
++            height: 50px;
++            border-radius: 999px;
++            background: #fff !important;
++            color: #000 !important;
++            font-size: 17px;
++            font-weight: 800;
++        }
++
++        [appDialogFooter] .mat-mdc-unelevated-button[disabled] {
++            opacity: 0.45;
++        }
++    }
++
++    // Choose-step rows: coloured glyph tile, name, grey description, chevron.
++    html.d7t-ios.d7t-ios .ios-add-list {
++        display: block;
++        margin: 4px 0 8px;
++        border-radius: 18px;
++        background: #17171c;
++        overflow: hidden;
++    }
++
++    html.d7t-ios.d7t-ios .ios-add-row {
++        display: flex;
++        align-items: center;
++        gap: 14px;
++        width: 100%;
++        padding: 12px 14px;
++        border: 0;
++        background: transparent;
++        color: #fff;
++        text-align: left;
++        position: relative;
++    }
++
++    html.d7t-ios.d7t-ios .ios-add-row + .ios-add-row::before {
++        content: '';
++        position: absolute;
++        top: 0;
++        left: 66px;
++        right: 0;
++        height: 0.5px;
++        background: rgba(255, 255, 255, 0.08);
++    }
++
++    html.d7t-ios.d7t-ios .ios-add-row__tile {
++        flex: none;
++        width: 38px;
++        height: 38px;
++        display: grid;
++        place-items: center;
++        border-radius: 10px;
++        background: #8e8e93;
++        color: #fff;
++
++        mat-icon {
++            font-size: 22px;
++            width: 22px;
++            height: 22px;
++        }
++    }
++
++    html.d7t-ios.d7t-ios .ios-add-row[data-kind='xtream'] .ios-add-row__tile { background: #0a84ff; }
++    html.d7t-ios.d7t-ios .ios-add-row[data-kind='url'] .ios-add-row__tile { background: #30d158; }
++    html.d7t-ios.d7t-ios .ios-add-row[data-kind='file'] .ios-add-row__tile { background: #ff9f0a; }
++    html.d7t-ios.d7t-ios .ios-add-row[data-kind='stalker'] .ios-add-row__tile { background: #bf5af2; }
++
++    html.d7t-ios.d7t-ios .ios-add-row__text {
++        flex: 1;
++        min-width: 0;
++        display: flex;
++        flex-direction: column;
++    }
++
++    html.d7t-ios.d7t-ios .ios-add-row__title {
++        font-size: 16px;
++        font-weight: 700;
++    }
++
++    html.d7t-ios.d7t-ios .ios-add-row__sub {
++        font-size: 12.5px;
++        color: rgba(255, 255, 255, 0.55);
++    }
++
++    html.d7t-ios.d7t-ios .ios-add-row__chev {
++        flex: none;
++        width: 9px;
++        height: 9px;
++        border-top: 2.5px solid rgba(235, 235, 245, 0.3);
++        border-right: 2.5px solid rgba(235, 235, 245, 0.3);
++        transform: rotate(45deg);
++        border-radius: 1px;
++    }
++
++    html.d7t-ios.d7t-ios .ios-add-back {
++        display: block;
++        position: absolute;
++        top: 14px;
++        left: 14px;
++        z-index: 3;
++        width: 40px;
++        height: 40px;
++        border: 0;
++        border-radius: 50%;
++        background: rgba(255, 255, 255, 0.1)
++            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 5l-7 7 7 7'/%3E%3C/svg%3E")
++            center / 22px no-repeat;
++    }
++}
++
++// ── Settings sub-pages (#24–#30): compact grouped rows, no explanatory paragraphs ─────────────────
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios .settings-group__header p,
++    html.d7t-ios.d7t-ios .settings-group__header h2,
++    html.d7t-ios.d7t-ios .settings-section__desc {
++        display: none !important;
++    }
++
++    html.d7t-ios.d7t-ios .settings-group .setting-item__meta p {
++        display: none !important;
++    }
++
++    html.d7t-ios.d7t-ios .settings-group .setting-item {
++        min-height: 56px;
++        padding-top: 0;
++        padding-bottom: 0;
++        align-items: center;
++    }
++
++    html.d7t-ios.d7t-ios .settings-group .setting-item__meta h4 {
++        font-size: 16px;
++        font-weight: 600;
++        line-height: 1.25;
++    }
++
++    html.d7t-ios.d7t-ios .settings-group .settings-section__header h3 {
++        font-size: 12px;
++        font-weight: 600;
++        letter-spacing: 0.06em;
++        text-transform: uppercase;
++        color: rgba(235, 235, 245, 0.55);
++    }
++
++    html.d7t-ios.d7t-ios .settings-group .settings-card {
++        background: #17171c !important;
++        border: 0 !important;
++        border-radius: 16px !important;
++        box-shadow: none !important;
++        overflow: hidden;
++    }
++}
++
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    // Sheet heading: left, 20/800, like the More sheet; the form step keeps the centred title.
++    html.d7t-ios.d7t-ios .apd--ios[data-step='choose'] .app-dialog__heading,
++    html.d7t-ios.d7t-ios .apd--ios[data-step='choose'] .app-dialog__title {
++        text-align: left;
++        font-size: 20px;
++        font-weight: 800;
++    }
++
++    html.d7t-ios.d7t-ios .apd--ios[data-step='form'] .app-dialog__heading,
++    html.d7t-ios.d7t-ios .apd--ios[data-step='form'] .app-dialog__title {
++        text-align: center;
++        font-size: 19px;
++        font-weight: 800;
++    }
++}
++
++// ── Categories sheet (#41): search on top, 50pt rows with 17/500 names, grey counts ──────────────
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios app-ios-category-sheet .ios-sheet {
++        background: #0b0b0e !important;
++        border-radius: 0 !important;
++        top: 0 !important;
++    }
++
++    html.d7t-ios.d7t-ios app-ios-category-sheet .ios-search {
++        position: static !important;
++        order: 2;
++        flex: none;
++        height: 40px !important;
++        margin: 0 16px 8px;
++        padding: 0 12px !important;
++        gap: 8px !important;
++        border-radius: 12px !important;
++        background: rgba(255, 255, 255, 0.1) !important;
++        box-shadow: none !important;
++        -webkit-backdrop-filter: none !important;
++        backdrop-filter: none !important;
++        color: rgba(255, 255, 255, 0.55) !important;
++        font-size: 16px;
++    }
++
++    html.d7t-ios.d7t-ios app-ios-category-sheet .ios-sheet__scroll {
++        order: 3;
++    }
++
++    html.d7t-ios.d7t-ios app-ios-category-sheet .ios-sheet__header {
++        padding-top: calc(env(safe-area-inset-top, 0px) + 12px) !important;
++    }
++
++    html.d7t-ios.d7t-ios app-ios-category-sheet .ios-sheet__grabber {
++        display: none !important;
++    }
++
++    html.d7t-ios.d7t-ios app-ios-category-sheet .ios-row,
++    html.d7t-ios.d7t-ios app-ios-category-sheet .ios-row__main {
++        min-height: 50px !important;
++    }
++
++    html.d7t-ios.d7t-ios app-ios-category-sheet .ios-row {
++        padding-inline-start: 18px !important;
++    }
++
++    html.d7t-ios.d7t-ios app-ios-category-sheet .ios-row::after {
++        left: 18px !important;
++        background: rgba(255, 255, 255, 0.08) !important;
++    }
++
++    html.d7t-ios.d7t-ios app-ios-category-sheet .ios-row__name {
++        font-size: 17px;
++        font-weight: 500;
++    }
++
++    html.d7t-ios.d7t-ios app-ios-category-sheet .ios-row.is-selected .ios-row__name {
++        font-weight: 700;
++    }
++
++    html.d7t-ios.d7t-ios app-ios-category-sheet .ios-row__count {
++        font-size: 15px;
++        font-weight: 500;
++        color: rgba(255, 255, 255, 0.45);
++    }
++}
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..742342b
+index 0000000..7feaf7c
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,3185 @@
+@@ -0,0 +1,3460 @@
 +@mixin phone-controls {
 +            grid-template-columns: auto minmax(0, 1fr) !important;
 +            grid-template-areas:
@@ -3188,7 +4386,7 @@ index 0000000..742342b
 +
 +// ── Home: the hero runs up behind the status bar; brand row top-leading; hero follows the finger ──
 +@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
-+    html.d7t-ios.d7t-more-btn.d7t-home:not(.d7t-has-fullscreen) body {
++    html.d7t-ios.d7t-home:not(.d7t-has-fullscreen) body {
 +        padding-top: 0;
 +    }
 +
@@ -3883,8 +5081,8 @@ index 0000000..742342b
 +        background: #000;
 +    }
 +
-+    // No picture yet (or why not): never a blank black box.
-+    .sync__shot:has(.sync__canvas:not([data-painted]))::after {
++    // No picture yet: one centred line (the player's own message wins, then the host's note).
++    .sync__shot:not(:has(.sync__shot-problem, .d7t-shot-note)):has(.sync__canvas:not([data-painted]))::after {
 +        content: 'Waiting for the picture…';
 +        position: absolute;
 +        inset: 0;
@@ -3897,10 +5095,23 @@ index 0000000..742342b
 +        pointer-events: none;
 +    }
 +
-+    .sync__shot[data-error]:has(.sync__canvas:not([data-painted]))::after {
-+        content: 'Waiting for the picture…\A' attr(data-error);
-+        white-space: pre-wrap;
++    .d7t-shot-note,
++    .sync__shot-problem {
++        position: absolute;
++        inset: 0;
++        display: grid;
++        place-items: center;
++        padding: 8px 14px;
++        text-align: center;
++        color: var(--d7t-label2);
 +        font-size: 12px;
++        line-height: 1.35;
++        overflow: hidden;
++        pointer-events: none;
++    }
++
++    .sync__shot:has(.sync__shot-problem) .d7t-shot-note {
++        display: none;
 +    }
 +
 +    .sync__selection {
@@ -4450,6 +5661,268 @@ index 0000000..742342b
 +            width: 28px !important;
 +            height: 28px !important;
 +            overflow: visible !important;
++        }
++    }
++}
++
++// ── Apple metrics for the whole phone app ─────────────────────────────────────
++// Body 17 · secondary 15 · footnote/section header 13 · caption 12 (HIG text styles);
++// list row 44, big button 50, segmented control 32 tall, tap target ≥ 44.
++// Sheets rest at "medium" (about half the screen) unless they hold a long list.
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios body {
++        // Audio sheet: a medium sheet, the video stays visible above it.
++        .split-audio,
++        app-audio-sync-window > .sync {
++            max-height: min(58dvh, 520px) !important;
++        }
++
++        .sync-section__hint {
++            display: none !important;
++        }
++
++        .sync-section {
++            gap: 8px !important;
++            padding-bottom: 8px !important;
++        }
++
++        .sync-section__modes {
++            margin: 0 16px !important;
++        }
++
++        .sync-section__mode {
++            height: 32px !important;
++            font-size: 13px !important;
++            font-weight: 600 !important;
++        }
++
++        .sync-section__start,
++        .sync__primary {
++            height: 50px !important;
++            margin: 4px 16px 0 !important;
++            font-size: 17px !important;
++        }
++
++        // Choose clock regions · Quick sync: side by side, not a stacked list.
++        .sync-section__tools {
++            display: flex !important;
++            flex-direction: row !important;
++            gap: 8px !important;
++            margin: 0 16px !important;
++            padding: 0 !important;
++            background: transparent !important;
++            border-radius: 0 !important;
++        }
++
++        .sync-section__tool {
++            flex: 1 1 0 !important;
++            min-width: 0;
++            height: 44px !important;
++            padding: 0 10px !important;
++            justify-content: center !important;
++            gap: 6px;
++            border-radius: 12px !important;
++            background: var(--d7t-fill-soft) !important;
++            font-size: 15px !important;
++            white-space: nowrap;
++            overflow: hidden;
++            text-overflow: ellipsis;
++        }
++
++        .sync-section__tool + .sync-section__tool::before {
++            display: none !important;
++        }
++
++        .sync-section__check {
++            margin: 0 16px !important;
++            font-size: 15px !important;
++            line-height: 1.25;
++        }
++
++        .sync-section__target {
++            display: flex !important;
++            align-items: center;
++            justify-content: space-between;
++            gap: 12px;
++            margin: 0 16px !important;
++        }
++
++        .sync-section__label {
++            flex: 1 1 auto;
++            font-size: 13px !important;
++            line-height: 1.25;
++        }
++
++        .sync-section__target-row {
++            flex: 0 0 auto;
++            gap: 8px !important;
++        }
++
++        .sync-section__target-value {
++            min-width: 56px;
++            text-align: center !important;
++            font-size: 20px !important;
++            font-weight: 600 !important;
++        }
++
++        .sync-section__target-row .sync-section__nudge {
++            width: 44px !important;
++            height: 44px !important;
++        }
++
++        // Lists inside sheets.
++        .split-audio__pick,
++        .ios-row,
++        .ios-row > button {
++            min-height: 44px !important;
++            font-size: 17px !important;
++        }
++
++        .split-audio__side-name {
++            font-size: 15px !important;
++        }
++
++        .split-audio__scope {
++            height: 32px !important;
++            font-size: 13px !important;
++        }
++    }
++}
++
++// ── More (Settings-style): grouped list, colored icon tiles, neutral labels ──
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios .rail-more-scrim {
++        background: rgba(0, 0, 0, 0.4) !important;
++    }
++
++    html.d7t-ios.d7t-ios .rail-more-sheet {
++        left: 0 !important;
++        right: 0 !important;
++        bottom: 0 !important;
++        top: calc(env(safe-area-inset-top, 0px) + 56px) !important;
++        max-height: none !important;
++        padding: 6px 0 calc(env(safe-area-inset-bottom, 0px) + 24px) !important;
++        border-radius: 38px 38px 0 0 !important;
++        background: #1c1c1e !important;
++        box-shadow: none !important;
++        overflow-y: auto;
++        backdrop-filter: none !important;
++        -webkit-backdrop-filter: none !important;
++
++        .rail-more-grabber {
++            width: 36px;
++            height: 5px;
++            margin: 0 auto 10px;
++            border-radius: 3px;
++            background: rgba(235, 235, 245, 0.3);
++        }
++
++        .rail-more-title {
++            padding: 4px 16px 14px;
++            text-align: center;
++            font-size: 17px;
++            font-weight: 600;
++            color: #fff;
++        }
++
++        .rail-more-group {
++            margin: 0 16px 28px !important;
++            padding: 0;
++            border-radius: 12px !important;
++            background: #2c2c2e !important;
++            overflow: hidden;
++        }
++
++        .rail-more-heading {
++            margin: 0 0 -20px;
++            padding: 0 32px;
++            transform: translateY(-26px);
++            font-size: 13px;
++            font-weight: 400;
++            letter-spacing: 0.02em;
++            text-transform: uppercase;
++            color: rgba(235, 235, 245, 0.6);
++        }
++
++        .rail-more-group:has(.rail-more-heading) {
++            margin-top: 34px !important;
++        }
++
++        .rail-more-item {
++            position: relative;
++            display: flex !important;
++            align-items: center;
++            gap: 12px !important;
++            width: 100% !important;
++            height: auto !important;
++            min-height: 48px !important;
++            padding: 0 16px 0 16px !important;
++            border: 0;
++            border-radius: 0 !important;
++            background: transparent !important;
++            color: #fff !important;
++            font: 400 17px/1.2 var(--l-font, -apple-system, system-ui);
++            text-align: start;
++            text-decoration: none;
++
++            &:active {
++                background: rgba(255, 255, 255, 0.08) !important;
++            }
++
++            // The glyph sits on a 30 pt rounded tile, like Settings.
++            > mat-icon:first-child {
++                flex: none;
++                display: grid;
++                place-items: center;
++                width: 30px;
++                height: 30px;
++                border-radius: 7px;
++                font-size: 18px;
++                line-height: 18px;
++                color: #fff !important;
++                background: #8e8e93;
++            }
++
++            > span {
++                flex: 1 1 auto;
++                min-width: 0;
++                color: #fff;
++            }
++
++            .rail-more-chevron {
++                flex: none;
++                width: 18px;
++                height: 18px;
++                font-size: 18px;
++                color: rgba(235, 235, 245, 0.3) !important;
++                background: transparent !important;
++            }
++
++            & + .rail-more-item::before {
++                content: '';
++                position: absolute;
++                top: 0;
++                left: 58px;
++                right: 0;
++                height: 0.5px;
++                background: rgba(84, 84, 88, 0.65);
++            }
++        }
++
++        a.rail-more-item[href*='global-favorites'] > mat-icon:first-child { background: #ff375f; }
++        a.rail-more-item[href*='global-recent'] > mat-icon:first-child { background: #0a84ff; }
++        a.rail-more-item[href*='recently-added'] > mat-icon:first-child { background: #ff9f0a; }
++        a.rail-more-item[href*='sources'] > mat-icon:first-child { background: #5e5ce6; }
++        a.rail-more-item[href*='downloads'] > mat-icon:first-child { background: #30d158; }
++        a.rail-more-item[href*='settings'] > mat-icon:first-child { background: #8e8e93; }
++        [data-test-id='more-add-playlist'] > mat-icon:first-child { background: #30d158; }
++        [data-test-id='more-command-palette'] > mat-icon:first-child { background: #bf5af2; }
++        [data-test-id='more-parental-lock'] > mat-icon:first-child { background: #ff453a; }
++
++        // Source switcher: the current source as one row of the group.
++        .rail-more-switcher {
++            display: block;
++            padding: 0;
 +        }
 +    }
 +}
@@ -5175,10 +6648,10 @@ index 0000000..2dd8486
 +}
 diff --git a/apps/web/src/app/ios/ios-mpv-host.ts b/apps/web/src/app/ios/ios-mpv-host.ts
 new file mode 100644
-index 0000000..7925bc0
+index 0000000..a347fa3
 --- /dev/null
 +++ b/apps/web/src/app/ios/ios-mpv-host.ts
-@@ -0,0 +1,754 @@
+@@ -0,0 +1,802 @@
 +import type {
 +    ElectronBridgeApi,
 +    EmbeddedMpvBounds,
@@ -5231,6 +6704,8 @@ index 0000000..7925bc0
 +    last: (EmbeddedMpvFrameCapture & { at: number; region: EmbeddedMpvFrameRegion | null }) | null;
 +    seq: number;
 +    askedAt?: number;
++    /** Pictures in a row that could not be read; drives the fallbacks below. */
++    fails?: number;
 +}
 +
 +const FRAME_PUMP_MS = 350;
@@ -5853,6 +7328,26 @@ index 0000000..7925bc0
 +        slot.busy = false;
 +    }
 +
++    /**
++     * The player could not hand over a picture. mpv has a few ways to take one; try the next after a
++     * few misses in a row (software path, then JPEG, then WebP) and keep what works.
++     */
++    private async tryAnotherWay(sid: string, fails: number): Promise<void> {
++        const steps: Record<number, Array<[string, string]>> = {
++            3: [['screenshot-sw', 'yes']],
++            6: [['screenshot-format', 'jpg']],
++            9: [['screenshot-format', 'webp']],
++            12: [['screenshot-sw', 'no'], ['screenshot-format', 'png']],
++        };
++        for (const [name, value] of steps[fails] ?? []) {
++            try {
++                await this.native('mpv.prop', { sid, name, value });
++            } catch {
++                /* the next step tries again */
++            }
++        }
++    }
++
 +    private async pumpFrame(role: 'main' | 'preview'): Promise<void> {
 +        const slot = this.frames[role];
 +        const sid = slot.sid;
@@ -5883,19 +7378,45 @@ index 0000000..7925bc0
 +                at: Date.now(),
 +                region,
 +            };
++            slot.fails = 0;
 +            if (role === 'preview') paintPreview(slot.last);
++            else setShotNotes(role, null);
 +        } catch (error) {
-+            // No picture yet: the clock window says so (and why, in short) instead of staying blank.
-+            const why = String((error as { message?: string })?.message ?? error).slice(0, 80);
-+            document
-+                .querySelectorAll<HTMLCanvasElement>(role === 'main' ? 'canvas[data-test-id="audio-sync-main-shot"]' : 'canvas[data-embedded-mpv-preview]')
-+                .forEach((canvas) => {
-+                    if (canvas.parentElement && !canvas.dataset['painted']) canvas.parentElement.dataset['error'] = why;
-+                });
++            // No picture yet: the clock window says so, once and in one place, instead of staying blank.
++            const raw = String((error as { message?: string })?.message ?? error).replace(/\s+/g, ' ').trim();
++            slot.fails = (slot.fails ?? 0) + 1;
++            setShotNotes(role, raw.slice(0, 140));
++            void this.tryAnotherWay(sid, slot.fails);
 +        } finally {
 +            slot.busy = false;
 +        }
 +    }
++}
++
++/** One short line over a picture box that has no picture (and why), never stacked on another. */
++function setShotNote(canvas: HTMLCanvasElement, text: string | null): void {
++    const box = canvas.parentElement;
++    if (!box) return;
++    let note = box.querySelector<HTMLElement>(':scope > .d7t-shot-note');
++    if (!text) {
++        note?.remove();
++        return;
++    }
++    if (!note) {
++        note = document.createElement('div');
++        note.className = 'd7t-shot-note';
++        note.setAttribute('dir', 'auto');
++        box.appendChild(note);
++    }
++    if (note.textContent !== text) note.textContent = text;
++}
++
++function setShotNotes(role: 'main' | 'preview', text: string | null): void {
++    document
++        .querySelectorAll<HTMLCanvasElement>(role === 'main' ? 'canvas[data-test-id="audio-sync-main-shot"]' : 'canvas[data-embedded-mpv-preview]')
++        .forEach((canvas) => {
++            if (!canvas.dataset['painted'] || !text) setShotNote(canvas, text);
++        });
 +}
 +
 +/**
@@ -5912,7 +7433,7 @@ index 0000000..7925bc0
 +            canvas.height = frame.height;
 +        }
 +        canvas.dataset['painted'] = '1';
-+        if (canvas.parentElement) delete canvas.parentElement.dataset['error'];
++        setShotNote(canvas, null);
 +        context.putImageData(new ImageData(frame.data as Uint8ClampedArray<ArrayBuffer>, frame.width, frame.height), 0, 0);
 +    });
 +}
@@ -5935,10 +7456,10 @@ index 0000000..7925bc0
 +}
 diff --git a/apps/web/src/app/ios/ios-native-tabs.ts b/apps/web/src/app/ios/ios-native-tabs.ts
 new file mode 100644
-index 0000000..1910a67
+index 0000000..1924511
 --- /dev/null
 +++ b/apps/web/src/app/ios/ios-native-tabs.ts
-@@ -0,0 +1,133 @@
+@@ -0,0 +1,128 @@
 +import { getD7tNative } from './ios-bridge';
 +
 +/**
@@ -5989,7 +7510,7 @@ index 0000000..1910a67
 +        // Dialogs, the category sheet and the clock window are HTML on top of the page; the system
 +        // bar must not float over them.
 +        const overlayOpen = !!document.querySelector(
-+            '.mat-mdc-dialog-container, .mat-bottom-sheet-container, app-ios-category-sheet, app-audio-sync-window'
++            '.mat-mdc-dialog-container, .mat-bottom-sheet-container, app-ios-category-sheet, app-audio-sync-window, .d7m-sheet'
 +        );
 +        let active = 'none';
 +        if (!sheetOpen) {
@@ -6009,14 +7530,9 @@ index 0000000..1910a67
 +        const hasPlayer = !!document.querySelector(
 +            '.video-player, app-web-player-view, .embedded-mpv-player__viewport'
 +        );
-+        const searchHeader = /\/(search|settings)(\/|$)/.test(path);
-+        const more = !hasPlayer && !searchHeader && !sheetOpen && !overlayOpen;
-+        // The glass More button owns a strip under the status bar (see _ios-shell.scss), so it never
-+        // lies over page content such as "See all".
-+        html.classList.toggle(
-+            'd7t-more-btn',
-+            !hasPlayer && !searchHeader && !hidden
-+        );
++        // The design has no More button: More opens from the profile on Home (the page does that).
++        const more = false;
++        html.classList.remove('d7t-more-btn');
 +        // Home: the hero runs up behind the status bar (Apple TV style).
 +        html.classList.toggle(
 +            'd7t-home',
@@ -9517,12 +11033,14 @@ index 0000000..0c8ed87
 +}
 diff --git a/apps/web/src/app/settings/ios-settings-index.component.ts b/apps/web/src/app/settings/ios-settings-index.component.ts
 new file mode 100644
-index 0000000..afb4e1d
+index 0000000..9d4312b
 --- /dev/null
 +++ b/apps/web/src/app/settings/ios-settings-index.component.ts
-@@ -0,0 +1,143 @@
-+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-+import { MatIcon } from '@angular/material/icon';
+@@ -0,0 +1,278 @@
++import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
++import { Router } from '@angular/router';
++import { PlaylistContextFacade } from '@iptvnator/playlist/shared/util';
++import { TranslateService } from '@ngx-translate/core';
 +import { TranslatePipe } from '@ngx-translate/core';
 +import { SETTINGS_NAV_GROUPS } from '@iptvnator/workspace/shell/util/settings-search';
 +import { IosUpdateCardComponent } from '../ios/ios-update-card.component';
@@ -9549,14 +11067,62 @@ index 0000000..afb4e1d
 + */
 +@Component({
 +    selector: 'app-ios-settings-index',
-+    imports: [MatIcon, TranslatePipe, IosUpdateCardComponent],
++    imports: [TranslatePipe, IosUpdateCardComponent],
 +    changeDetection: ChangeDetectionStrategy.OnPush,
 +    template: `
 +        <div class="ios-index" data-test-id="ios-settings-index">
 +            <h1 class="ios-index__title">Settings</h1>
 +
-+            <h2 class="ios-index__group">App updates</h2>
-+            <app-ios-update-card />
++            @if (playlists().length) {
++                <h2 class="ios-index__group">SOURCES</h2>
++                <div class="ios-index__list" data-test-id="ios-settings-sources">
++                    @for (playlist of playlists(); track playlist._id) {
++                        <button type="button" class="ios-index__row" (click)="openSource(playlist._id)">
++                            <span class="ios-index__name">
++                                <span class="ios-index__label">{{ playlist.title }}</span>
++                                <span class="ios-index__sub">{{ sourceSubtitle(playlist) }}</span>
++                            </span>
++                            <span class="ios-index__chevron"></span>
++                        </button>
++                    }
++                    <button type="button" class="ios-index__row" (click)="openSources()">
++                        <span class="ios-index__name"><span class="ios-index__label">Add source</span></span>
++                        <span class="ios-index__chevron"></span>
++                    </button>
++                </div>
++            }
++
++            <h2 class="ios-index__group">PLAYBACK</h2>
++            <div class="ios-index__list" data-test-id="ios-settings-playback">
++                <button type="button" class="ios-index__row" (click)="open.emit('playback')">
++                    <span class="ios-index__name">
++                        <span class="ios-index__label">Audio from another channel</span>
++                        <span class="ios-index__sub">Default sync mode</span>
++                    </span>
++                    <span class="ios-index__chevron"></span>
++                </button>
++                <button type="button" class="ios-index__row" (click)="open.emit('playback')">
++                    <span class="ios-index__name">
++                        <span class="ios-index__label">Match-clock regions</span>
++                        <span class="ios-index__sub">Saved per pair</span>
++                    </span>
++                    <span class="ios-index__chevron"></span>
++                </button>
++                <button type="button" class="ios-index__row" (click)="open.emit('playback')">
++                    <span class="ios-index__name"><span class="ios-index__label">Player engine</span></span>
++                    <span class="ios-index__value">mpv</span>
++                    <span class="ios-index__chevron"></span>
++                </button>
++            </div>
++
++            <h2 class="ios-index__group">CONTENT</h2>
++            <div class="ios-index__list" data-test-id="ios-settings-content">
++                <button type="button" class="ios-index__row" (click)="open.emit('general')">
++                    <span class="ios-index__name"><span class="ios-index__label">Language</span></span>
++                    <span class="ios-index__value">{{ languageName() }}</span>
++                    <span class="ios-index__chevron"></span>
++                </button>
++            </div>
 +
 +            @for (group of groups(); track group.id) {
 +                @if (group.id) {
@@ -9570,38 +11136,47 @@ index 0000000..afb4e1d
 +                            [attr.data-test-id]="'ios-settings-open-' + section.id"
 +                            (click)="open.emit(section.id)"
 +                        >
-+                            <span class="ios-index__chip" [style.background]="chip(section.id)">
-+                                <mat-icon aria-hidden="true">{{ section.icon }}</mat-icon>
++                            <span class="ios-index__name">
++                                <span class="ios-index__label">{{ section.label | translate }}</span>
 +                            </span>
-+                            <span class="ios-index__name">{{ section.label | translate }}</span>
-+                            <mat-icon class="ios-index__chevron" aria-hidden="true">chevron_right</mat-icon>
++                            <span class="ios-index__chevron"></span>
 +                        </button>
 +                    }
 +                </div>
 +            }
++
++            <h2 class="ios-index__group">APP UPDATES</h2>
++            <app-ios-update-card />
 +        </div>
 +    `,
 +    styles: `
 +        :host {
 +            display: block;
 +        }
++        .ios-index {
++            padding-bottom: 24px;
++        }
 +        .ios-index__title {
-+            margin: 4px 0 14px;
++            margin: 0;
++            padding: 6px 18px 4px;
 +            font-size: 34px;
-+            font-weight: 700;
++            font-weight: 800;
 +            letter-spacing: -0.02em;
++            line-height: 1.2;
 +        }
 +        .ios-index__group {
-+            margin: 22px 16px 8px;
-+            color: rgba(235, 235, 245, 0.55);
++            margin: 0;
++            padding: 18px 18px 8px;
++            color: rgba(255, 255, 255, 0.5);
 +            font-size: 13px;
-+            font-weight: 600;
-+            letter-spacing: 0.02em;
++            font-weight: 700;
++            letter-spacing: 0.04em;
 +            text-transform: uppercase;
 +        }
 +        .ios-index__list {
-+            background: var(--l-surface, #1c1c1e);
-+            border-radius: 14px;
++            margin: 0 14px;
++            background: #17171c;
++            border-radius: 16px;
 +            overflow: hidden;
 +        }
 +        .ios-index__row {
@@ -9609,42 +11184,59 @@ index 0000000..afb4e1d
 +            align-items: center;
 +            gap: 12px;
 +            width: 100%;
-+            min-height: 52px;
-+            padding: 0 12px 0 16px;
++            min-height: 44px;
++            padding: 12px 16px;
 +            border: 0;
 +            background: none;
-+            color: inherit;
++            color: #fff;
 +            font: inherit;
-+            font-size: 17px;
 +            text-align: start;
++            box-sizing: border-box;
 +        }
 +        .ios-index__row + .ios-index__row {
-+            border-top: 0.5px solid rgba(255, 255, 255, 0.12);
-+        }
-+        .ios-index__chip {
-+            display: grid;
-+            place-items: center;
-+            width: 30px;
-+            height: 30px;
-+            border-radius: 8px;
-+            color: #fff;
-+            flex: none;
-+        }
-+        .ios-index__chip mat-icon {
-+            width: 20px;
-+            height: 20px;
-+            font-size: 20px;
++            border-top: 0.5px solid rgba(255, 255, 255, 0.08);
 +        }
 +        .ios-index__name {
 +            flex: 1;
 +            min-width: 0;
++            display: block;
++        }
++        .ios-index__label {
++            display: block;
++            font-size: 16px;
++            font-weight: 600;
++            line-height: 1.25;
++        }
++        .ios-index__sub {
++            display: block;
++            margin-top: 2px;
++            font-size: 12.5px;
++            font-weight: 500;
++            color: rgba(255, 255, 255, 0.55);
++            line-height: 1.3;
++        }
++        .ios-index__value {
++            font-size: 15px;
++            font-weight: 500;
++            color: rgba(255, 255, 255, 0.5);
 +        }
 +        .ios-index__chevron {
-+            color: rgba(235, 235, 245, 0.3);
++            flex: none;
++            width: 16px;
++            height: 16px;
++            background: rgba(255, 255, 255, 0.3);
++            -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 6l6 6-6 6'/></svg>") center / contain no-repeat;
++            mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 6l6 6-6 6'/></svg>") center / contain no-repeat;
++        }
++        :host-context([dir='rtl']) .ios-index__chevron {
++            transform: scaleX(-1);
 +        }
 +    `,
 +})
 +export class IosSettingsIndexComponent {
++    private readonly router = inject(Router);
++    private readonly translate = inject(TranslateService);
++    readonly playlists = inject(PlaylistContextFacade).playlists;
 +    readonly sections = input.required<SettingsSection[]>();
 +    readonly open = output<string>();
 +
@@ -9659,6 +11251,65 @@ index 0000000..afb4e1d
 +        if (rest.length) out.push({ id: '', labelKey: '', sections: rest });
 +        return out;
 +    });
++
++    /** "Xtream · 57,361 channels · synced 2 min ago" (only what the playlist actually records). */
++    sourceSubtitle(playlist: {
++        count?: number;
++        updateDate?: number;
++        serverUrl?: string;
++        username?: string;
++        portalUrl?: string;
++        macAddress?: string;
++    }): string {
++        const kind =
++            playlist.serverUrl && playlist.username
++                ? 'Xtream'
++                : playlist.portalUrl || playlist.macAddress
++                  ? 'Stalker'
++                  : 'M3U';
++        const parts: string[] = [kind];
++        if (playlist.count) parts.push(`${playlist.count.toLocaleString('en-US')} channels`);
++        if (playlist.updateDate) parts.push(`synced ${this.ago(playlist.updateDate)}`);
++        return parts.join(' · ');
++    }
++
++    private ago(at: number): string {
++        const ms = at < 1e12 ? at * 1000 : at;
++        const mins = Math.max(0, Math.round((Date.now() - ms) / 60000));
++        if (mins < 1) return 'just now';
++        if (mins < 60) return `${mins} min ago`;
++        const hours = Math.round(mins / 60);
++        if (hours < 24) return `${hours} h ago`;
++        const days = Math.round(hours / 24);
++        return days === 1 ? 'yesterday' : `${days} days ago`;
++    }
++
++    languageName(): string {
++        const lang = (this.translate.currentLang || this.translate.defaultLang || 'en').toLowerCase();
++        const names: Record<string, string> = {
++            en: 'English',
++            ar: 'العربية',
++            de: 'Deutsch',
++            es: 'Español',
++            fr: 'Français',
++            it: 'Italiano',
++            ru: 'Русский',
++            tr: 'Türkçe',
++            pt: 'Português',
++            zh: '中文',
++            ja: '日本語',
++            ko: '한국어',
++        };
++        return names[lang.split('-')[0]] ?? lang;
++    }
++
++    openSource(id: string): void {
++        void this.router.navigate(['/workspace', 'playlists', id]);
++    }
++
++    openSources(): void {
++        void this.router.navigate(['/workspace', 'sources']);
++    }
 +
 +    chip(id: string): string {
 +        return CHIP[id] ?? '#8e8e93';
@@ -10162,23 +11813,382 @@ index 4802425..bf3d4ce 100644
  const restoredHref = resolveRestoredRendererRoute(
      window.location.href,
 diff --git a/apps/web/src/styles.scss b/apps/web/src/styles.scss
-index bc885dd..e1b57a3 100644
+index bc885dd..1e62f6a 100644
 --- a/apps/web/src/styles.scss
 +++ b/apps/web/src/styles.scss
-@@ -5,6 +5,8 @@
+@@ -5,6 +5,9 @@
  @use './settings-theme';
  @use './glass-theme';
  @use './cover-size';
 +@use './ios-shell';
 +@use './ios-lume';
++@use './ios-mock';
  
  // ─── Tailwind CSS ─────────────────────────────────────────────────────────────
  // Preflight is disabled in tailwind.config.js to avoid conflicts with
-@@ -342,3 +344,4 @@ body.dark-theme {
+@@ -342,3 +345,4 @@ body.dark-theme {
  .channel-scroll-focus:focus-visible {
      @include focus-ring.focus-ring-declarations($offset: -2px);
  }
 +
+diff --git a/libs/playlist/import/feature/src/lib/add-playlist-dialog/add-playlist-dialog.component.html b/libs/playlist/import/feature/src/lib/add-playlist-dialog/add-playlist-dialog.component.html
+index ed6b7ac..7934c3f 100644
+--- a/libs/playlist/import/feature/src/lib/add-playlist-dialog/add-playlist-dialog.component.html
++++ b/libs/playlist/import/feature/src/lib/add-playlist-dialog/add-playlist-dialog.component.html
+@@ -1,5 +1,50 @@
+-<div class="apd">
+-    <app-dialog-shell [heading]="'HOME.URL_UPLOAD.ADD_PLAYLIST' | translate">
++<div
++    class="apd"
++    [class.apd--ios]="isIos"
++    [attr.data-step]="isIos ? iosStep() : null"
++>
++    <app-dialog-shell
++        [heading]="
++            isIos && iosStep() === 'form'
++                ? iosLabel(selectedMethod().value, selectedMethod().labelKey)
++                : isIos
++                  ? 'Add source'
++                  : ('HOME.URL_UPLOAD.ADD_PLAYLIST' | translate)
++        "
++    >
++        @if (isIos && iosStep() === 'choose') {
++            <div class="ios-add-list">
++                @for (opt of iosMethods(); track opt.value) {
++                    <button
++                        type="button"
++                        class="ios-add-row"
++                        [attr.data-kind]="opt.value"
++                        (click)="iosPick(opt.value)"
++                    >
++                        <span class="ios-add-row__tile" aria-hidden="true">
++                            <mat-icon>{{ opt.icon }}</mat-icon>
++                        </span>
++                        <span class="ios-add-row__text">
++                            <span class="ios-add-row__title">{{
++                                iosLabel(opt.value, opt.labelKey)
++                            }}</span>
++                            <span class="ios-add-row__sub">{{
++                                iosSub(opt.value, opt.subKey)
++                            }}</span>
++                        </span>
++                        <span class="ios-add-row__chev" aria-hidden="true"></span>
++                    </button>
++                }
++            </div>
++        }
++        @if (isIos && iosStep() === 'form') {
++            <button
++                type="button"
++                class="ios-add-back"
++                aria-label="Back"
++                (click)="iosBack()"
++            ></button>
++        }
+         <div
+             class="apd-method-grid"
+             appRadioGroup
+@@ -142,7 +187,7 @@
+                         "
+                         (click)="submitUrlPlaylist()"
+                     >
+-                        {{ 'HOME.URL_UPLOAD.ADD_PLAYLIST' | translate }}
++                        {{ isIos ? 'Add and load' : ('HOME.URL_UPLOAD.ADD_PLAYLIST' | translate) }}
+                     </button>
+                 }
+                 @case ('file') {
+@@ -152,7 +197,7 @@
+                         [disabled]="!fileUpload()?.selectedFile()"
+                         (click)="fileUpload()?.confirm()"
+                     >
+-                        {{ 'HOME.URL_UPLOAD.ADD_PLAYLIST' | translate }}
++                        {{ isIos ? 'Add and load' : ('HOME.URL_UPLOAD.ADD_PLAYLIST' | translate) }}
+                     </button>
+                 }
+                 @case ('text') {
+@@ -166,7 +211,7 @@
+                             )
+                         "
+                     >
+-                        {{ 'HOME.URL_UPLOAD.ADD_PLAYLIST' | translate }}
++                        {{ isIos ? 'Add and load' : ('HOME.URL_UPLOAD.ADD_PLAYLIST' | translate) }}
+                     </button>
+                 }
+                 @case ('xtream') {
+@@ -197,7 +242,7 @@
+                         "
+                         (click)="xtreamImport()?.addPlaylist()"
+                     >
+-                        {{ 'HOME.URL_UPLOAD.ADD_PLAYLIST' | translate }}
++                        {{ isIos ? 'Add and load' : ('HOME.URL_UPLOAD.ADD_PLAYLIST' | translate) }}
+                     </button>
+                 }
+                 @case ('stalker') {
+@@ -212,7 +257,7 @@
+                             [disabled]="!stalkerImport()?.form?.valid"
+                             (click)="stalkerImport()?.addPlaylist()"
+                         >
+-                            {{ 'HOME.URL_UPLOAD.ADD_PLAYLIST' | translate }}
++                            {{ isIos ? 'Add and load' : ('HOME.URL_UPLOAD.ADD_PLAYLIST' | translate) }}
+                         </button>
+                     }
+                 }
+diff --git a/libs/playlist/import/feature/src/lib/add-playlist-dialog/add-playlist-dialog.component.ts b/libs/playlist/import/feature/src/lib/add-playlist-dialog/add-playlist-dialog.component.ts
+index 14c424e..93e86a5 100644
+--- a/libs/playlist/import/feature/src/lib/add-playlist-dialog/add-playlist-dialog.component.ts
++++ b/libs/playlist/import/feature/src/lib/add-playlist-dialog/add-playlist-dialog.component.ts
+@@ -198,6 +198,53 @@ export class AddPlaylistDialogComponent {
+      * buttons key off this; keeping the name avoids churn in 5 case branches.
+      */
+     readonly playlistType = computed<PlaylistType>(() => this.method());
++
++    /** iPhone shell: pick the kind of source first, then fill in its form (design #17–#19). */
++    readonly isIos =
++        typeof document !== 'undefined' &&
++        document.documentElement.classList.contains('d7t-ios');
++    readonly iosStep = signal<'choose' | 'form'>(
++        this.data?.type ? 'form' : 'choose'
++    );
++    readonly iosOrder: PlaylistType[] = [
++        'xtream',
++        'url',
++        'file',
++        'stalker',
++        'text',
++        'auto',
++    ];
++    readonly iosMethods = computed(() =>
++        this.iosOrder
++            .map((v) => this.methodOptions.find((o) => o.value === v))
++            .filter((o): o is PlaylistMethodOption => !!o)
++    );
++
++    private readonly iosCopy: Partial<
++        Record<PlaylistType, { label: string; sub: string }>
++    > = {
++        xtream: { label: 'Xtream login', sub: 'Server, username and password' },
++        url: { label: 'M3U link', sub: 'A playlist URL' },
++        file: { label: 'M3U file', sub: 'From Files or iCloud' },
++        stalker: { label: 'Stalker portal', sub: 'Portal URL and MAC' },
++    };
++
++    iosLabel(method: PlaylistType, key: string): string {
++        return this.iosCopy[method]?.label ?? this.translateService.instant(key);
++    }
++
++    iosSub(method: PlaylistType, key: string): string {
++        return this.iosCopy[method]?.sub ?? this.translateService.instant(key);
++    }
++
++    iosPick(method: PlaylistType): void {
++        this.selectMethod(method);
++        this.iosStep.set('form');
++    }
++
++    iosBack(): void {
++        this.iosStep.set('choose');
++    }
+     readonly selectedMethod = computed(() =>
+         this.methodOptions.find((option) => option.value === this.method())!
+     );
+diff --git a/libs/portal/shared/ui/src/lib/components/unified-collection/unified-collection-page.component.html b/libs/portal/shared/ui/src/lib/components/unified-collection/unified-collection-page.component.html
+index 60c24a6..3eeaace 100644
+--- a/libs/portal/shared/ui/src/lib/components/unified-collection/unified-collection-page.component.html
++++ b/libs/portal/shared/ui/src/lib/components/unified-collection/unified-collection-page.component.html
+@@ -78,7 +78,7 @@
+     <div class="collection-header">
+         <span class="collection-title">{{ title() | translate }}</span>
+ 
+-        <div class="collection-header-actions">
++        <div class="collection-header-actions" [attr.data-mode]="mode()">
+             @if (showFavSortButton()) {
+                 <button
+                     type="button"
+@@ -135,6 +135,7 @@
+                 <button
+                     type="button"
+                     mat-icon-button
++                    class="collection-clear-button"
+                     (click)="clearAllCurrent()"
+                     [matTooltip]="
+                         clearButtonTooltipKey()
+diff --git a/libs/portal/shared/ui/src/lib/components/unified-collection/unified-grid-tab.component.html b/libs/portal/shared/ui/src/lib/components/unified-collection/unified-grid-tab.component.html
+index 4ac09a3..b679e7a 100644
+--- a/libs/portal/shared/ui/src/lib/components/unified-collection/unified-grid-tab.component.html
++++ b/libs/portal/shared/ui/src/lib/components/unified-collection/unified-grid-tab.component.html
+@@ -16,6 +16,46 @@
+             }
+         </p>
+     </div>
++} @else if (iosRows && mode() === 'recent') {
++    <div class="ios-recent">
++        @for (section of daySections(); track section.label) {
++            <div class="ios-recent__day">{{ section.label }}</div>
++            @for (item of section.items; track trackByUid($index, item)) {
++                <div
++                    class="ios-recent__row"
++                    role="button"
++                    tabindex="0"
++                    (click)="onCardClick(item)"
++                    (keydown.enter)="onCardClick(item)"
++                >
++                    <div
++                        class="ios-recent__thumb"
++                        [style.background-image]="
++                            item.posterUrl ? 'url(' + item.posterUrl + ')' : null
++                        "
++                    ></div>
++                    <div class="ios-recent__text">
++                        <div class="ios-recent__name">{{ item.name }}</div>
++                        <div class="ios-recent__sub">
++                            {{ rowSubtitle(item) }}
++                        </div>
++                    </div>
++                    <button
++                        type="button"
++                        class="ios-recent__more"
++                        [attr.aria-label]="'PORTALS.REMOVE_FROM_RECENT' | translate"
++                        (click)="$event.stopPropagation(); onRemove(item)"
++                    >
++                        <svg viewBox="0 0 24 24" aria-hidden="true">
++                            <circle cx="5" cy="12" r="1.4" />
++                            <circle cx="12" cy="12" r="1.4" />
++                            <circle cx="19" cy="12" r="1.4" />
++                        </svg>
++                    </button>
++                </div>
++            }
++        }
++    </div>
+ } @else {
+     <div class="grid-container">
+         @for (item of filteredItems(); track trackByUid($index, item)) {
+diff --git a/libs/portal/shared/ui/src/lib/components/unified-collection/unified-grid-tab.component.scss b/libs/portal/shared/ui/src/lib/components/unified-collection/unified-grid-tab.component.scss
+index f4c4579..ae372bc 100644
+--- a/libs/portal/shared/ui/src/lib/components/unified-collection/unified-grid-tab.component.scss
++++ b/libs/portal/shared/ui/src/lib/components/unified-collection/unified-grid-tab.component.scss
+@@ -70,3 +70,75 @@
+         margin: 0;
+     }
+ }
++
++// iPhone recently-viewed list (reference #12): 118×66 thumbnail rows under day headings.
++.ios-recent {
++    flex: 1;
++    min-height: 0;
++    overflow-y: auto;
++    padding-bottom: 24px;
++}
++
++.ios-recent__day {
++    padding: 12px 18px 6px;
++    font-size: 13px; font-weight: 700; line-height: 1.3;
++    color: rgba(255, 255, 255, 0.5);
++}
++
++.ios-recent__day:first-child {
++    padding-top: 4px;
++}
++
++.ios-recent__row {
++    display: flex;
++    align-items: center;
++    gap: 14px;
++    padding: 9px 18px;
++    cursor: pointer;
++}
++
++.ios-recent__thumb {
++    flex: none;
++    width: 118px;
++    height: 66px;
++    border-radius: 11px;
++    background: linear-gradient(150deg, #3d5a8a, #151a2e) center / cover no-repeat;
++}
++
++.ios-recent__text {
++    flex: 1;
++    min-width: 0;
++}
++
++.ios-recent__name {
++    font-size: 15.5px;
++    font-weight: 700;
++    overflow: hidden;
++    text-overflow: ellipsis;
++    white-space: nowrap;
++}
++
++.ios-recent__sub {
++    margin-top: 3px;
++    font-size: 12.5px;
++    font-weight: 500;
++    color: rgba(255, 255, 255, 0.55);
++}
++
++.ios-recent__more {
++    flex: none;
++    width: 44px;
++    height: 44px;
++    margin-right: -10px;
++    display: grid;
++    place-items: center;
++    border: 0;
++    background: transparent;
++    color: rgba(255, 255, 255, 0.55);
++
++    svg {
++        width: 24px;
++        height: 24px;
++        fill: currentColor;
++    }
++}
+diff --git a/libs/portal/shared/ui/src/lib/components/unified-collection/unified-grid-tab.component.ts b/libs/portal/shared/ui/src/lib/components/unified-collection/unified-grid-tab.component.ts
+index 38d18e4..f330f06 100644
+--- a/libs/portal/shared/ui/src/lib/components/unified-collection/unified-grid-tab.component.ts
++++ b/libs/portal/shared/ui/src/lib/components/unified-collection/unified-grid-tab.component.ts
+@@ -54,6 +54,41 @@ export class UnifiedGridTabComponent {
+ 
+     readonly isUnavailable = isCatalogUnavailable;
+ 
++    /** iPhone shell: recently viewed is a list with thumbnails grouped by day. */
++    readonly iosRows =
++        typeof document !== 'undefined' &&
++        document.documentElement.classList.contains('d7t-ios');
++
++    readonly daySections = computed(() => {
++        const startOfDay = (d: Date) =>
++            new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
++        const today = startOfDay(new Date());
++        const dayMs = 86_400_000;
++        const order = ['TODAY', 'YESTERDAY', 'THIS WEEK', 'EARLIER'];
++        const buckets = new Map<string, UnifiedCollectionItem[]>();
++        for (const item of this.filteredItems()) {
++            const t = item.viewedAt ? startOfDay(new Date(item.viewedAt)) : 0;
++            const age = Math.round((today - t) / dayMs);
++            const label =
++                age <= 0
++                    ? 'TODAY'
++                    : age === 1
++                      ? 'YESTERDAY'
++                      : age < 7
++                        ? 'THIS WEEK'
++                        : 'EARLIER';
++            buckets.set(label, [...(buckets.get(label) ?? []), item]);
++        }
++        return order
++            .filter((l) => buckets.has(l))
++            .map((label) => ({ label, items: buckets.get(label) ?? [] }));
++    });
++
++    rowSubtitle(item: UnifiedCollectionItem): string {
++        const kind = item.contentType === 'series' ? 'Series' : 'Movie';
++        return item.playlistName ? `${kind} · ${item.playlistName}` : kind;
++    }
++
+     onCardClick(item: UnifiedCollectionItem): void {
+         if (isCatalogUnavailable(item)) return;
+         this.itemSelected.emit(item);
 diff --git a/libs/portal/xtream/data-access/src/index.ts b/libs/portal/xtream/data-access/src/index.ts
 index 5449f5c..ac00d23 100644
 --- a/libs/portal/xtream/data-access/src/index.ts
@@ -10642,10 +12652,10 @@ index 0b3bb2a..897b3a3 100644
              this.playlists.getPlaylistById(id)
 diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.html b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.html
 new file mode 100644
-index 0000000..8bf824e
+index 0000000..d864ddf
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.html
-@@ -0,0 +1,148 @@
+@@ -0,0 +1,145 @@
 +<div class="ios-browse">
 +    <div class="ios-browse__top">
 +        <h1 class="ios-browse__title">{{ title }}</h1>
@@ -10668,24 +12678,24 @@ index 0000000..8bf824e
 +            <div class="ios-browse__skeleton" aria-hidden="true"></div>
 +        }
 +    } @else {
-+        @if (type === 'series' && featured(); as hero) {
++        @if (type === 'series' && featureCard(); as hero) {
 +            <button
 +                type="button"
 +                class="ios-browse__feature"
 +                data-test-id="ios-browse-featured"
-+                (click)="open(hero)"
++                (click)="openFeature(hero)"
 +            >
-+                @if (poster(hero); as src) {
-+                    <img class="ios-browse__feature-bg" [src]="src" alt="" />
++                @if (hero.image) {
++                    <img class="ios-browse__feature-bg" [src]="hero.image" alt="" />
 +                }
 +                <span class="ios-browse__feature-shade"></span>
 +                <span class="ios-browse__feature-text">
-+                    <span class="ios-browse__feature-kicker">{{ isNew(hero) ? 'New episode' : 'Featured series' }}</span>
-+                    <span class="ios-browse__feature-title">{{ label(hero) }}</span>
++                    <span class="ios-browse__feature-kicker">{{ hero.kicker }}</span>
++                    <span class="ios-browse__feature-title">{{ hero.title }}</span>
 +                    <span class="ios-browse__feature-actions">
 +                        <span class="ios-browse__feature-cta">
 +                            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 4.5v15l12-7.5z" fill="currentColor" /></svg>
-+                            Details
++                            {{ hero.cta }}
 +                        </span>
 +                    </span>
 +                </span>
@@ -10758,13 +12768,10 @@ index 0000000..8bf824e
 +            <section class="ios-browse__rail" data-test-id="ios-browse-genres">
 +                <header class="ios-browse__head">
 +                    <h2>Browse by Genre</h2>
-+                    <button type="button" class="ios-browse__link" (click)="openCategories()">All</button>
 +                </header>
 +                <div class="ios-browse__genres">
 +                    @for (genre of genres(); track genre.id) {
-+                        @if (link(type, genre.id); as to) {
-+                            <a class="ios-browse__genre" [routerLink]="to">{{ genre.name }}</a>
-+                        }
++                        <a class="ios-browse__genre" [routerLink]="genre.to.commands" [queryParams]="genre.to.queryParams">{{ genre.name }}</a>
 +                    }
 +                </div>
 +            </section>
@@ -10796,10 +12803,10 @@ index 0000000..8bf824e
 +</div>
 diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss
 new file mode 100644
-index 0000000..2a7ed33
+index 0000000..182762b
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.scss
-@@ -0,0 +1,527 @@
+@@ -0,0 +1,535 @@
 +:host {
 +    display: block;
 +    height: 100%;
@@ -10808,17 +12815,18 @@ index 0000000..2a7ed33
 +}
 +
 +.ios-browse {
-+    padding: 8px 0 120px;
++    padding: 0 0 120px;
 +    display: flex;
 +    flex-direction: column;
 +    gap: 22px;
-+    color: var(--app-on-surface, #fff);
++    color: #fff;
 +}
 +
 +.ios-browse__title {
-+    margin: 4px 20px 0;
++    margin: 0;
++    flex: 1;
 +    font-size: 34px;
-+    font-weight: 700;
++    font-weight: 800;
 +    letter-spacing: -0.02em;
 +    line-height: 1.1;
 +}
@@ -10828,14 +12836,14 @@ index 0000000..2a7ed33
 +    align-items: baseline;
 +    justify-content: space-between;
 +    gap: 12px;
-+    padding: 0 20px;
++    padding: 0 18px;
 +    margin-bottom: 10px;
 +
 +    h2 {
 +        margin: 0;
 +        font-size: 22px;
-+        font-weight: 700;
-+        letter-spacing: -0.015em;
++        font-weight: 800;
++        letter-spacing: -0.01em;
 +        color: #fff;
 +        min-width: 0;
 +        overflow: hidden;
@@ -10866,10 +12874,10 @@ index 0000000..2a7ed33
 +
 +.ios-browse__track {
 +    display: flex;
-+    gap: 10px;
-+    padding: 0 20px;
++    gap: 12px;
++    padding: 0 18px;
 +    // Without this the snap point pulls the first poster to the screen edge, past the page inset.
-+    scroll-padding-inline: 20px;
++    scroll-padding-inline: 18px;
 +    overflow-x: auto;
 +    scroll-snap-type: x proximity;
 +    scrollbar-width: none;
@@ -10885,8 +12893,8 @@ index 0000000..2a7ed33
 +    flex-direction: column;
 +    justify-content: flex-start;
 +    align-self: flex-start;
-+    flex: 0 0 118px;
-+    width: 118px;
++    flex: 0 0 122px;
++    width: 122px;
 +    padding: 0;
 +    border: 0;
 +    background: none;
@@ -10901,10 +12909,11 @@ index 0000000..2a7ed33
 +    display: block;
 +    width: 100%;
 +    position: relative;
-+    aspect-ratio: 2 / 3;
-+    border-radius: 12px;
++    aspect-ratio: 122 / 183;
++    border-radius: 14px;
 +    overflow: hidden;
 +    background: rgba(255, 255, 255, 0.08);
++    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.15);
 +
 +    // Bottom shade so the title sits on the artwork, as in the design.
 +    &::after {
@@ -10925,14 +12934,15 @@ index 0000000..2a7ed33
 +
 +.ios-browse__name {
 +    position: absolute;
-+    inset-inline: 8px;
-+    bottom: 8px;
++    inset-inline: 10px;
++    bottom: 10px;
 +    z-index: 1;
 +    display: -webkit-box;
-+    font-size: 13px;
-+    font-weight: 700;
++    font-size: 14px;
++    font-weight: 800;
 +    color: #fff;
-+    line-height: 1.2;
++    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
++    line-height: 1.05;
 +    -webkit-line-clamp: 2;
 +    -webkit-box-orient: vertical;
 +    overflow: hidden;
@@ -10950,7 +12960,8 @@ index 0000000..2a7ed33
 +    align-items: center;
 +    justify-content: space-between;
 +    gap: 12px;
-+    padding-right: 16px;
++    padding: 6px 18px 0;
++    margin-bottom: -7px;
 +
 +    .ios-browse__title {
 +        margin-top: 0;
@@ -11052,7 +13063,7 @@ index 0000000..2a7ed33
 +.ios-browse__genres {
 +    display: flex;
 +    gap: 8px;
-+    padding: 0 20px;
++    padding: 0 18px;
 +    overflow-x: auto;
 +    scrollbar-width: none;
 +
@@ -11063,12 +13074,12 @@ index 0000000..2a7ed33
 +
 +.ios-browse__genre {
 +    flex: none;
-+    padding: 8px 16px;
-+    border-radius: 999px;
-+    background: #1c1c1e;
++    padding: 9px 16px;
++    border-radius: 20px;
++    background: rgba(255, 255, 255, 0.1);
 +    color: #fff;
-+    font-size: 15px;
-+    font-weight: 600;
++    font-size: 14px;
++    font-weight: 700;
 +    text-decoration: none;
 +    white-space: nowrap;
 +    -webkit-tap-highlight-color: transparent;
@@ -11165,7 +13176,7 @@ index 0000000..2a7ed33
 +
 +// Numbered rail.
 +.ios-browse__track--ranked {
-+    gap: 14px;
++    gap: 8px;
 +}
 +
 +.ios-browse__ranked {
@@ -11183,8 +13194,14 @@ index 0000000..2a7ed33
 +    .ios-browse__poster {
 +        position: relative;
 +        z-index: 1;
-+        width: 108px;
++        width: 104px;
++        aspect-ratio: 104 / 156;
++        border-radius: 12px;
 +        flex: none;
++    }
++
++    .ios-browse__name {
++        font-size: 12px;
 +    }
 +}
 +
@@ -11192,12 +13209,10 @@ index 0000000..2a7ed33
 +    margin-inline-end: -10px;
 +    z-index: 0;
 +    font-size: 96px;
-+    font-weight: 800;
++    font-weight: 900;
 +    line-height: 0.8;
-+    letter-spacing: -0.06em;
-+    color: #0b0b0e;
-+    -webkit-text-stroke: 2px rgba(255, 255, 255, 0.85);
-+    paint-order: stroke fill;
++    color: transparent;
++    -webkit-text-stroke: 2px rgba(255, 255, 255, 0.55);
 +}
 +
 +.ios-browse__badge {
@@ -11207,11 +13222,10 @@ index 0000000..2a7ed33
 +    z-index: 1;
 +    padding: 3px 7px;
 +    border-radius: 6px;
-+    background: rgba(10, 20, 60, 0.85);
++    background: rgba(0, 0, 0, 0.55);
 +    color: #fff;
 +    font-size: 10px;
 +    font-weight: 800;
-+    letter-spacing: 0.04em;
 +}
 +
 +// "All sources" pill, top right.
@@ -11222,14 +13236,15 @@ index 0000000..2a7ed33
 +    max-width: 170px;
 +    display: inline-flex;
 +    align-items: center;
-+    gap: 14px;
-+    padding: 9px 14px;
-+    border-radius: 999px;
-+    background: #1c1c1e;
++    gap: 6px;
++    height: 38px;
++    padding: 0 14px;
++    border-radius: 19px;
++    background: rgba(255, 255, 255, 0.1);
 +    color: #fff;
 +    font: inherit;
 +    font-size: 14px;
-+    font-weight: 600;
++    font-weight: 700;
 +    cursor: pointer;
 +    -webkit-tap-highlight-color: transparent;
 +
@@ -11251,9 +13266,9 @@ index 0000000..2a7ed33
 +    display: block;
 +    appearance: none;
 +    border: 0;
-+    margin: 0 20px;
++    margin: 0 18px;
 +    padding: 0;
-+    height: 188px;
++    height: 200px;
 +    border-radius: 22px;
 +    overflow: hidden;
 +    color: #fff;
@@ -11283,11 +13298,11 @@ index 0000000..2a7ed33
 +.ios-browse__feature-text {
 +    position: absolute;
 +    inset: 0;
-+    padding: 18px 20px;
++    padding: 16px;
 +    display: flex;
 +    flex-direction: column;
 +    justify-content: flex-end;
-+    gap: 14px;
++    gap: 4px;
 +}
 +
 +.ios-browse__feature-kicker {
@@ -11299,9 +13314,9 @@ index 0000000..2a7ed33
 +}
 +
 +.ios-browse__feature-title {
-+    font-size: 28px;
++    font-size: 27px;
 +    font-weight: 800;
-+    line-height: 1.1;
++    line-height: 1.15;
 +    letter-spacing: -0.02em;
 +    display: -webkit-box;
 +    -webkit-line-clamp: 2;
@@ -11312,27 +13327,27 @@ index 0000000..2a7ed33
 +.ios-browse__feature-actions {
 +    display: flex;
 +    align-items: center;
-+    gap: 10px;
++    gap: 8px;
 +    margin-top: 6px;
 +}
 +
 +.ios-browse__feature-cta {
 +    display: inline-flex;
 +    align-items: center;
-+    gap: 7px;
-+    padding: 8px 18px;
-+    border-radius: 999px;
++    gap: 6px;
++    padding: 8px 16px;
++    border-radius: 18px;
 +    background: #fff;
-+    color: #000;
-+    font-size: 15px;
-+    font-weight: 700;
++    color: #111;
++    font-size: 14px;
++    font-weight: 800;
 +}
 diff --git a/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts
 new file mode 100644
-index 0000000..5440f71
+index 0000000..e222d1c
 --- /dev/null
 +++ b/libs/portal/xtream/feature/src/lib/ios-browse/ios-browse.component.ts
-@@ -0,0 +1,345 @@
+@@ -0,0 +1,449 @@
 +import {
 +    ChangeDetectionStrategy,
 +    Component,
@@ -11355,10 +13370,47 @@ index 0000000..5440f71
 +    plainDisplayText,
 +    toXtreamRecentlyAddedTimestamp,
 +} from '@iptvnator/shared/interfaces';
-+import { TmdbApiService, TmdbRuntimeService } from '@iptvnator/services';
++import {
++    TmdbApiService,
++    TmdbRuntimeService,
++    tmdbBackdropUrl,
++    tmdbPosterUrl,
++} from '@iptvnator/services';
++import { discoverLink } from '@iptvnator/portal/shared/util';
 +import { IosCategoryRow } from '../ios-live/ios-category-sheet.component';
 +import { IosCategorySheetService } from '../ios-live/ios-category-sheet.service';
 +import { IosHiddenCategoriesService } from '../ios-live/ios-hidden-categories.service';
++
++/** TMDB genre ids (ids are only valid inside their own movie / tv id space). */
++const MOVIE_GENRES = [
++    { id: 28, name: 'Action' },
++    { id: 35, name: 'Comedy' },
++    { id: 18, name: 'Drama' },
++    { id: 80, name: 'Crime' },
++    { id: 53, name: 'Thriller' },
++    { id: 27, name: 'Horror' },
++    { id: 878, name: 'Sci-Fi' },
++    { id: 10749, name: 'Romance' },
++    { id: 16, name: 'Animation' },
++    { id: 10751, name: 'Family' },
++    { id: 12, name: 'Adventure' },
++    { id: 14, name: 'Fantasy' },
++    { id: 9648, name: 'Mystery' },
++    { id: 99, name: 'Documentary' },
++];
++const TV_GENRES = [
++    { id: 10759, name: 'Action & Adventure' },
++    { id: 35, name: 'Comedy' },
++    { id: 18, name: 'Drama' },
++    { id: 80, name: 'Crime' },
++    { id: 9648, name: 'Mystery' },
++    { id: 10765, name: 'Sci-Fi & Fantasy' },
++    { id: 16, name: 'Animation' },
++    { id: 10751, name: 'Family' },
++    { id: 10762, name: 'Kids' },
++    { id: 99, name: 'Documentary' },
++    { id: 10764, name: 'Reality' },
++];
 +
 +interface BrowseItem {
 +    readonly added?: string;
@@ -11416,6 +13468,8 @@ index 0000000..5440f71
 +
 +    /** TMDB weekly trending for this kind of title, English (library titles are mostly English). */
 +    private readonly trending = signal<string[]>([]);
++    /** The week's number-one TMDB title, for the Series card (design: "trending series from TMDb"). */
++    private readonly trendingLead = signal<{ title: string; image: string | null } | null>(null);
 +
 +    readonly type: ContentType =
 +        this.route.parent?.snapshot.routeConfig?.path === 'series'
@@ -11516,12 +13570,67 @@ index 0000000..5440f71
 +            : this.recent().slice(0, 10)
 +    );
 +
-+    /** Category pills under the title; "Show All" for the rest stays in Categories. */
-+    readonly genres = computed(() =>
-+        this.categoryList()
-+            .filter((c) => c.id && !this.hiddenIds().has(c.id))
-+            .slice(0, 10)
-+    );
++    /**
++     * Series card: this week's trending series from TMDB (nothing to resume yet). If it is in the
++     * library the card opens it ("Details"); otherwise it goes to Search ("Find in library").
++     */
++    readonly featureCard = computed<{
++        title: string;
++        image: string | null;
++        kicker: string;
++        cta: string;
++        item: BrowseItem | null;
++    } | null>(() => {
++        const lead = this.trendingLead();
++        if (lead) {
++            const key = normalizeTitleKeys(lead.title).exact;
++            const hit = key
++                ? this.all().find(
++                      (i) =>
++                          normalizeTitleKeys(i.title || i.name || '').exact === key
++                  ) ?? null
++                : null;
++            return {
++                title: lead.title,
++                image: lead.image,
++                kicker: 'Trending · Series',
++                cta: hit ? 'Details' : 'Find in library',
++                item: hit,
++            };
++        }
++        const item = this.featured();
++        return item
++            ? {
++                  title: this.label(item),
++                  image: this.poster(item) ?? null,
++                  kicker: this.isNew(item) ? 'New episode' : 'Featured series',
++                  cta: 'Details',
++                  item,
++              }
++            : null;
++    });
++
++    openFeature(card: { item: BrowseItem | null }): void {
++        if (card.item) this.open(card.item);
++        else void this.router.navigate(['/workspace', 'search']);
++    }
++
++    /**
++     * Genre pills (design: Action, Comedy, Drama, Crime, ...). Each opens the portal's Discover page for
++     * that TMDB genre, which lists the popular titles of the genre and marks the ones in this library.
++     */
++    readonly genres = computed(() => {
++        const id = this.playlistId();
++        if (!id) return [];
++        const tv = this.type === 'series';
++        return (tv ? TV_GENRES : MOVIE_GENRES).map((genre) => ({
++            ...genre,
++            to: discoverLink('xtream', id, tv ? 'tv' : 'movie', {
++                kind: 'genre',
++                genre,
++            }),
++        }));
++    });
 +
 +    /** The subscription these titles come from. */
 +    readonly sourceName = computed(() => {
@@ -11612,6 +13721,16 @@ index 0000000..5440f71
 +                }
 +            }
 +            this.trending.set(titles);
++            const lead = results[0];
++            const leadTitle = lead?.title ?? lead?.name;
++            if (leadTitle) {
++                this.trendingLead.set({
++                    title: leadTitle,
++                    image:
++                        tmdbBackdropUrl(lead.backdrop_path) ??
++                        tmdbPosterUrl(lead.poster_path),
++                });
++            }
 +        } catch (error) {
 +            console.warn('TMDB trending (browse) failed:', error);
 +        }
@@ -13502,6 +15621,650 @@ index 7947435..e3f1f5a 100644
              !!this.selectedCategoryId() ||
              !!this.workspaceSearchTerm() ||
              !!this.activeStreamUrl()
+diff --git a/libs/portal/xtream/feature/src/lib/recently-added/recently-added.component.html b/libs/portal/xtream/feature/src/lib/recently-added/recently-added.component.html
+index b505a65..ffea41e 100644
+--- a/libs/portal/xtream/feature/src/lib/recently-added/recently-added.component.html
++++ b/libs/portal/xtream/feature/src/lib/recently-added/recently-added.component.html
+@@ -1,3 +1,34 @@
++@if (isIos) {
++    <div class="ios-added">
++        <div class="ios-added__bar">
++            <button type="button" class="ios-added__back" aria-label="Back" (click)="goBack()">
++                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
++            </button>
++            <div class="ios-added__title">Recently Added</div>
++            <span class="ios-added__spacer"></span>
++        </div>
++        <div class="ios-added__tabs" role="tablist">
++            <button type="button" role="tab" [class.on]="iosTab() === 'all'" (click)="iosTab.set('all')">All</button>
++            <button type="button" role="tab" [class.on]="iosTab() === 'vod'" (click)="iosTab.set('vod')">Movies</button>
++            <button type="button" role="tab" [class.on]="iosTab() === 'series'" (click)="iosTab.set('series')">Series</button>
++        </div>
++        <div class="ios-added__scroll">
++            @for (section of iosSections(); track section.label) {
++                <h3 class="ios-added__heading">{{ section.label }}</h3>
++                <div class="ios-added__grid">
++                    @for (row of section.rows; track row.item.xtream_id) {
++                        <button type="button" class="ios-added__card" (click)="openItem(row.item, row.type)">
++                            @if (row.poster) {
++                                <img [src]="row.poster" alt="" loading="lazy" />
++                            }
++                            <span class="ios-added__name">{{ row.item.title || row.item.name }}</span>
++                        </button>
++                    }
++                </div>
++            }
++        </div>
++    </div>
++} @else {
+ <div class="recently-added-page">
+     <h2 class="recently-added-page__title">
+         {{ 'PORTALS.SIDEBAR.RECENTLY_ADDED' | translate }}
+@@ -86,3 +117,4 @@
+         }
+     }
+ </div>
++}
+diff --git a/libs/portal/xtream/feature/src/lib/recently-added/recently-added.component.scss b/libs/portal/xtream/feature/src/lib/recently-added/recently-added.component.scss
+index 0fd0b35..e0bee22 100644
+--- a/libs/portal/xtream/feature/src/lib/recently-added/recently-added.component.scss
++++ b/libs/portal/xtream/feature/src/lib/recently-added/recently-added.component.scss
+@@ -104,3 +104,134 @@
+         width: min(var(--cover-rail-width, 160px), 136px);
+     }
+ }
++
++// iPhone layout (design #10)
++.ios-added {
++    display: flex;
++    flex-direction: column;
++    height: 100%;
++    min-height: 0;
++}
++
++.ios-added__bar {
++    display: flex;
++    align-items: center;
++    gap: 10px;
++    padding: 4px 14px 10px;
++}
++
++.ios-added__back {
++    flex: none;
++    width: 40px;
++    height: 40px;
++    display: grid;
++    place-items: center;
++    border: 0;
++    border-radius: 50%;
++    background: rgba(255, 255, 255, 0.1);
++    color: #fff;
++
++    svg {
++        width: 22px;
++        height: 22px;
++        fill: none;
++        stroke: currentColor;
++        stroke-width: 2.4;
++        stroke-linecap: round;
++        stroke-linejoin: round;
++    }
++}
++
++.ios-added__title {
++    flex: 1;
++    text-align: center;
++    font-size: 19px;
++    font-weight: 800;
++    letter-spacing: -0.01em;
++    color: #fff;
++}
++
++.ios-added__spacer {
++    flex: none;
++    width: 40px;
++}
++
++.ios-added__tabs {
++    display: flex;
++    margin: 0 18px 12px;
++    padding: 3px;
++    border-radius: 12px;
++    background: rgba(255, 255, 255, 0.08);
++
++    button {
++        flex: 1;
++        padding: 8px 0;
++        border: 0;
++        border-radius: 10px;
++        background: transparent;
++        color: rgba(255, 255, 255, 0.8);
++        font-size: 14px;
++        font-weight: 600;
++
++        &.on {
++            background: #fff;
++            color: #111;
++        }
++    }
++}
++
++.ios-added__scroll {
++    flex: 1;
++    min-height: 0;
++    overflow-y: auto;
++    padding-bottom: 24px;
++}
++
++.ios-added__heading {
++    margin: 0;
++    padding: 4px 18px 10px;
++    font-size: 20px;
++    font-weight: 800;
++    color: #fff;
++}
++
++.ios-added__grid {
++    display: grid;
++    grid-template-columns: repeat(3, 112px);
++    gap: 12px;
++    padding: 0 18px 14px;
++    justify-content: space-between;
++}
++
++.ios-added__card {
++    position: relative;
++    width: 112px;
++    height: 168px;
++    padding: 0;
++    overflow: hidden;
++    border: 0;
++    border-radius: 12px;
++    background: linear-gradient(160deg, #2f4f8f, #151a2e);
++    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.15);
++    color: #fff;
++    text-align: left;
++
++    img {
++        position: absolute;
++        inset: 0;
++        width: 100%;
++        height: 100%;
++        object-fit: cover;
++    }
++}
++
++.ios-added__name {
++    position: absolute;
++    left: 10px;
++    right: 10px;
++    bottom: 10px;
++    font-size: 13px;
++    font-weight: 800;
++    line-height: 1.05;
++    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
++}
+diff --git a/libs/portal/xtream/feature/src/lib/recently-added/recently-added.component.ts b/libs/portal/xtream/feature/src/lib/recently-added/recently-added.component.ts
+index 7897769..f74106d 100644
+--- a/libs/portal/xtream/feature/src/lib/recently-added/recently-added.component.ts
++++ b/libs/portal/xtream/feature/src/lib/recently-added/recently-added.component.ts
+@@ -3,7 +3,9 @@ import {
+     Component,
+     computed,
+     inject,
++    signal,
+ } from '@angular/core';
++import { Location } from '@angular/common';
+ import { ActivatedRoute, Router } from '@angular/router';
+ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+ import { injectTranslationTick } from '@iptvnator/services';
+@@ -71,6 +73,57 @@ export class RecentlyAddedComponent {
+ 
+     readonly skeletonSlots = SKELETON_CARDS_PER_RAIL;
+ 
++    /** iPhone shell: one poster grid under Today / This week headings (design #10). */
++    readonly isIos =
++        typeof document !== 'undefined' &&
++        document.documentElement.classList.contains('d7t-ios');
++    private readonly location = inject(Location);
++    readonly iosTab = signal<'all' | 'vod' | 'series'>('all');
++
++    readonly iosSections = computed(() => {
++        const tab = this.iosTab();
++        const rows = [
++            ...(tab === 'series'
++                ? []
++                : this.recentlyAddedVod().map((item) => ({
++                      item,
++                      type: 'vod' as ContentType,
++                      ts: this.getDate(item),
++                      poster: item.poster_url || item.stream_icon || '',
++                  }))),
++            ...(tab === 'vod'
++                ? []
++                : this.recentlyAddedSeries().map((item) => ({
++                      item,
++                      type: 'series' as ContentType,
++                      ts: this.getDate(item, true),
++                      poster: item.poster_url || item.cover || '',
++                  }))),
++        ].sort((a, b) => b.ts - a.ts);
++        const now = new Date();
++        const startOfToday = new Date(
++            now.getFullYear(),
++            now.getMonth(),
++            now.getDate()
++        ).getTime();
++        const buckets: { label: string; rows: typeof rows }[] = [
++            { label: 'Today', rows: [] },
++            { label: 'This week', rows: [] },
++            { label: 'Earlier', rows: [] },
++        ];
++        for (const row of rows) {
++            const age = (startOfToday - row.ts) / 86_400_000;
++            buckets[row.ts >= startOfToday ? 0 : age < 7 ? 1 : 2].rows.push(
++                row
++            );
++        }
++        return buckets.filter((b) => b.rows.length > 0);
++    });
++
++    goBack(): void {
++        this.location.back();
++    }
++
+     readonly totalItems = computed(
+         () =>
+             this.recentlyAddedVod().length +
+diff --git a/libs/portal/xtream/feature/src/lib/search-results/search-results.component.html b/libs/portal/xtream/feature/src/lib/search-results/search-results.component.html
+index a6e8885..77ec5ed 100644
+--- a/libs/portal/xtream/feature/src/lib/search-results/search-results.component.html
++++ b/libs/portal/xtream/feature/src/lib/search-results/search-results.component.html
+@@ -1,3 +1,88 @@
++@if (isIosApp && !isGlobalSearch) {
++    <div class="ios-search" data-test-id="ios-search">
++        <h1 class="ios-search__title">Search</h1>
++        <label class="ios-search__field">
++            <span class="ios-search__glass" aria-hidden="true"></span>
++            <input
++                type="search"
++                class="ios-search__input"
++                enterkeyhint="search"
++                autocapitalize="off"
++                autocorrect="off"
++                placeholder="Search"
++                [value]="iosQuery()"
++                (input)="onIosQuery($any($event.target).value)"
++            />
++            @if (iosQuery()) {
++                <button type="button" class="ios-search__clear" aria-label="Clear" (click)="clearIosQuery()"></button>
++            }
++        </label>
++        <div class="ios-search__scopes" role="tablist">
++            @for (scope of [['all', 'All'], ['live', 'Live'], ['movie', 'Movies'], ['series', 'Series']]; track scope[0]) {
++                <button
++                    type="button"
++                    role="tab"
++                    class="ios-search__scope"
++                    [class.is-on]="iosScope() === scope[0]"
++                    (click)="setIosScope($any(scope[0]))"
++                >{{ scope[1] }}</button>
++            }
++        </div>
++
++        @if (xtreamStore.isSearching()) {
++            <div class="ios-search__note">Searching…</div>
++        } @else if (searchTerm().length < minSearchLength) {
++            <div class="ios-search__note">Type at least {{ minSearchLength }} characters to search live TV, movies and series.</div>
++        } @else if (xtreamStore.searchResults().length === 0) {
++            <div class="ios-search__note">No results for “{{ searchTerm() }}”.</div>
++        } @else {
++            @if (iosLive().length) {
++                <h2 class="ios-search__section">Live TV</h2>
++                @for (item of iosLive().slice(0, iosScope() === 'live' ? 200 : 3); track item.id) {
++                    <button type="button" class="ios-search__row" (click)="selectItem(item)">
++                        <span class="ios-search__tile" [style.background]="tileColor(item.title)">
++                            @if (item.poster_url) {
++                                <img [src]="item.poster_url" alt="" loading="lazy" />
++                            } @else {
++                                {{ initials(item.title) }}
++                            }
++                        </span>
++                        <span class="ios-search__text">
++                            <span class="ios-search__name">{{ item.title }}</span>
++                            <span class="ios-search__sub">Live</span>
++                        </span>
++                    </button>
++                }
++            }
++            @if (iosMovies().length) {
++                <h2 class="ios-search__section">Movies</h2>
++                <div class="ios-search__rail">
++                    @for (item of iosMovies().slice(0, 40); track item.id) {
++                        <button type="button" class="ios-search__poster" (click)="selectItem(item)">
++                            @if (item.poster_url) {
++                                <img [src]="item.poster_url" alt="" loading="lazy" />
++                            }
++                            <span class="ios-search__poster-name">{{ item.title }}</span>
++                        </button>
++                    }
++                </div>
++            }
++            @if (iosSeries().length) {
++                <h2 class="ios-search__section">Series</h2>
++                <div class="ios-search__rail">
++                    @for (item of iosSeries().slice(0, 40); track item.id) {
++                        <button type="button" class="ios-search__poster" (click)="selectItem(item)">
++                            @if (item.poster_url) {
++                                <img [src]="item.poster_url" alt="" loading="lazy" />
++                            }
++                            <span class="ios-search__poster-name">{{ item.title }}</span>
++                        </button>
++                    }
++                </div>
++            }
++        }
++    </div>
++} @else {
+ <!-- Poster results: the next chunk is asked for two rows (~303 px each) ahead. -->
+ <app-search-layout
+     [nearEndThresholdPx]="640"
+@@ -186,3 +271,5 @@
+         }
+     </ng-container>
+ </app-search-layout>
++
++}
+diff --git a/libs/portal/xtream/feature/src/lib/search-results/search-results.component.scss b/libs/portal/xtream/feature/src/lib/search-results/search-results.component.scss
+index 9a017e6..b93962b 100644
+--- a/libs/portal/xtream/feature/src/lib/search-results/search-results.component.scss
++++ b/libs/portal/xtream/feature/src/lib/search-results/search-results.component.scss
+@@ -128,3 +128,216 @@
+     color: var(--mat-sys-on-surface-variant);
+     font-size: 0.85rem;
+ }
++
++// ── iPhone Search page (design #5) ──────────────────────────────────────────────────────────────
++.ios-search {
++    padding: 0 0 130px;
++    color: #fff;
++    height: 100%;
++    overflow-y: auto;
++}
++
++.ios-search__title {
++    margin: 0;
++    padding: 6px 18px 12px;
++    font-size: 34px;
++    font-weight: 800;
++    letter-spacing: -0.02em;
++    line-height: 1.2;
++}
++
++.ios-search__field {
++    display: flex;
++    align-items: center;
++    gap: 10px;
++    height: 46px;
++    margin: 0 18px 12px;
++    padding: 0 14px;
++    border-radius: 14px;
++    background: rgba(255, 255, 255, 0.1);
++}
++
++.ios-search__glass,
++.ios-search__clear {
++    flex: none;
++    width: 20px;
++    height: 20px;
++    background: rgba(255, 255, 255, 0.7);
++}
++
++.ios-search__glass {
++    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'><circle cx='11' cy='11' r='7'/><path d='M20 20l-4-4'/></svg>") center / contain no-repeat;
++    mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'><circle cx='11' cy='11' r='7'/><path d='M20 20l-4-4'/></svg>") center / contain no-repeat;
++}
++
++.ios-search__clear {
++    padding: 0;
++    border: 0;
++    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'><path d='M6 6l12 12M18 6L6 18'/></svg>") center / contain no-repeat;
++    mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'><path d='M6 6l12 12M18 6L6 18'/></svg>") center / contain no-repeat;
++}
++
++.ios-search__input {
++    flex: 1;
++    min-width: 0;
++    height: 100%;
++    border: 0;
++    outline: 0;
++    background: none;
++    color: #fff;
++    font: 500 17px Inter, sans-serif;
++    -webkit-appearance: none;
++    appearance: none;
++}
++
++.ios-search__input::placeholder {
++    color: rgba(255, 255, 255, 0.45);
++}
++
++.ios-search__scopes {
++    display: flex;
++    margin: 0 18px 14px;
++    padding: 3px;
++    border-radius: 12px;
++    background: rgba(255, 255, 255, 0.08);
++}
++
++.ios-search__scope {
++    flex: 1;
++    padding: 8px 0;
++    border: 0;
++    border-radius: 10px;
++    background: none;
++    color: rgba(255, 255, 255, 0.8);
++    font: 600 14px Inter, sans-serif;
++}
++
++.ios-search__scope.is-on {
++    background: #fff;
++    color: #111;
++}
++
++.ios-search__section {
++    margin: 0;
++    padding: 6px 18px 4px;
++    font-size: 20px;
++    font-weight: 800;
++}
++
++.ios-search__row {
++    display: flex;
++    align-items: center;
++    gap: 14px;
++    width: 100%;
++    padding: 9px 18px;
++    border: 0;
++    background: none;
++    color: inherit;
++    font: inherit;
++    text-align: start;
++}
++
++.ios-search__tile {
++    display: grid;
++    place-items: center;
++    flex: none;
++    width: 46px;
++    height: 46px;
++    border-radius: 11px;
++    overflow: hidden;
++    color: #fff;
++    font-size: 14px;
++    font-weight: 800;
++    letter-spacing: -0.02em;
++
++    img {
++        width: 100%;
++        height: 100%;
++        object-fit: contain;
++    }
++}
++
++.ios-search__text {
++    flex: 1;
++    min-width: 0;
++}
++
++.ios-search__name {
++    display: block;
++    font-size: 16px;
++    font-weight: 600;
++    overflow: hidden;
++    text-overflow: ellipsis;
++    white-space: nowrap;
++}
++
++.ios-search__sub {
++    display: block;
++    font-size: 12.5px;
++    font-weight: 500;
++    color: rgba(255, 255, 255, 0.55);
++}
++
++.ios-search__rail {
++    display: flex;
++    gap: 12px;
++    padding: 6px 18px 10px;
++    overflow-x: auto;
++    scrollbar-width: none;
++
++    &::-webkit-scrollbar {
++        display: none;
++    }
++}
++
++.ios-search__poster {
++    position: relative;
++    flex: none;
++    width: 100px;
++    height: 150px;
++    padding: 0;
++    border: 0;
++    border-radius: 12px;
++    overflow: hidden;
++    background: rgba(255, 255, 255, 0.08);
++    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.15);
++    color: #fff;
++
++    img {
++        position: absolute;
++        inset: 0;
++        width: 100%;
++        height: 100%;
++        object-fit: cover;
++    }
++
++    &::after {
++        content: '';
++        position: absolute;
++        inset: 45% 0 0;
++        background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.75));
++    }
++}
++
++.ios-search__poster-name {
++    position: absolute;
++    z-index: 1;
++    left: 10px;
++    right: 10px;
++    bottom: 10px;
++    font-size: 12px;
++    font-weight: 800;
++    line-height: 1.05;
++    text-align: start;
++    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
++    display: -webkit-box;
++    -webkit-line-clamp: 2;
++    -webkit-box-orient: vertical;
++    overflow: hidden;
++}
++
++.ios-search__note {
++    padding: 24px 18px;
++    color: rgba(255, 255, 255, 0.55);
++    font-size: 15px;
++}
+diff --git a/libs/portal/xtream/feature/src/lib/search-results/search-results.component.ts b/libs/portal/xtream/feature/src/lib/search-results/search-results.component.ts
+index b64c593..e43c9c5 100644
+--- a/libs/portal/xtream/feature/src/lib/search-results/search-results.component.ts
++++ b/libs/portal/xtream/feature/src/lib/search-results/search-results.component.ts
+@@ -302,6 +302,64 @@ export class SearchResultsComponent implements AfterViewInit {
+         });
+     }
+ 
++    /** iPhone app: the phone's own Search page (design #5), not the desktop layout. */
++    readonly isIosApp = !!(window as unknown as { d7tNative?: unknown }).d7tNative;
++    readonly iosScope = signal<'all' | 'live' | 'movie' | 'series'>('all');
++    readonly iosQuery = linkedSignal(() => this.routeSearchTerm());
++    private iosQueryTimer = 0;
++
++    readonly iosLive = computed(() =>
++        this.xtreamStore.searchResults().filter((i) => i.type === 'live')
++    );
++    readonly iosMovies = computed(() =>
++        this.xtreamStore.searchResults().filter((i) => i.type === 'movie')
++    );
++    readonly iosSeries = computed(() =>
++        this.xtreamStore.searchResults().filter((i) => i.type === 'series')
++    );
++
++    onIosQuery(value: string): void {
++        this.iosQuery.set(value);
++        window.clearTimeout(this.iosQueryTimer);
++        this.iosQueryTimer = window.setTimeout(() => {
++            void this.router.navigate([], {
++                relativeTo: this.activatedRoute,
++                queryParams: { q: value.trim() || null },
++                queryParamsHandling: 'merge',
++                replaceUrl: true,
++            });
++        }, 250);
++    }
++
++    clearIosQuery(): void {
++        this.onIosQuery('');
++    }
++
++    setIosScope(scope: 'all' | 'live' | 'movie' | 'series'): void {
++        this.iosScope.set(scope);
++        this.xtreamStore.setSearchFilters({
++            live: scope === 'all' || scope === 'live',
++            movie: scope === 'all' || scope === 'movie',
++            series: scope === 'all' || scope === 'series',
++        });
++        if (this.searchTerm().length >= this.minSearchLength) {
++            this.executeSearch();
++        }
++    }
++
++    /** Two letters on a colour tile, like the design's channel rows. */
++    initials(title: string): string {
++        const words = title.replace(/[^\p{L}\p{N} ]/gu, ' ').trim().split(/\s+/);
++        const letters = words.length > 1 ? words[0][0] + words[1][0] : (words[0] ?? '').slice(0, 2);
++        return letters.toUpperCase();
++    }
++
++    tileColor(title: string): string {
++        let h = 0;
++        for (const ch of title) h = (h * 31 + ch.charCodeAt(0)) % 360;
++        return `hsl(${h} 55% 45%)`;
++    }
++
+     ngAfterViewInit() {
+         this.xtreamStore.setSelectedContentType('vod');
+     }
 diff --git a/libs/portal/xtream/feature/src/lib/xtream-feature.routes.ts b/libs/portal/xtream/feature/src/lib/xtream-feature.routes.ts
 index ec3b761..710b691 100644
 --- a/libs/portal/xtream/feature/src/lib/xtream-feature.routes.ts
@@ -15142,73 +17905,32 @@ index 4171992..d654125 100644
      readonly remainingLabel?: DashboardRemainingLabel | null;
      readonly testId: string;
 diff --git a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html
-index 0d6bdad..af9c968 100644
+index 0d6bdad..70be9d4 100644
 --- a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html
 +++ b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html
-@@ -8,6 +8,11 @@
+@@ -8,6 +8,16 @@
      <h1 class="visually-hidden" data-test-id="dashboard-page-heading">
          {{ 'WORKSPACE.SHELL.RAIL_DASHBOARD' | translate }}
      </h1>
 +    <!-- iPhone app only (hidden elsewhere by CSS): brand row above the hero, like the design. -->
 +    <div class="ios-home-top" data-test-id="ios-home-top">
-+        <img class="ios-home-top__logo" src="assets/icons/d7t-logo.png" alt="" width="34" height="34" />
-+        <span class="ios-home-top__name">D7T</span>
++        <button type="button" class="ios-home-top__who" aria-label="More" data-test-id="ios-home-more" (click)="openMore()">
++            <img class="ios-home-top__logo" src="assets/icons/d7t-logo.png" alt="" width="38" height="38" />
++            <span class="ios-home-top__name">D7T</span>
++        </button>
++        <button type="button" class="ios-home-top__search" aria-label="Search" data-test-id="ios-home-search" (click)="openSearch()">
++            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M20 20l-4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
++        </button>
 +    </div>
      @if (data.playlistsLoaded() && !hasPlaylists()) {
          <app-empty-state
              [type]="'welcome-dashboard'"
-@@ -42,6 +47,7 @@
- 
-         <!-- Live favorites: no fallback. Recently watched live gets its own rail. -->
-         @if (
-+            !isIosApp &&
-             dashboardRails().liveFavorites &&
-             !showLiveFavoritesSkeleton() &&
-             liveFavoriteCardsEnriched().length > 0
-@@ -58,7 +64,7 @@
-                     liveEpg.setVisibleCards('favorites', $event)
-                 "
-             />
--        } @else if (railSkeletons.liveFavorites()) {
-+        } @else if (!isIosApp && railSkeletons.liveFavorites()) {
-             <lib-dashboard-rail-skeleton
-                 layout="channel"
-                 testId="dashboard-live-favorites-rail-skeleton"
-@@ -66,6 +72,7 @@
-         }
- 
-         @if (
-+            !isIosApp &&
-             dashboardRails().recentlyWatchedLive &&
-             recentLiveCardsEnriched().length > 0
-         ) {
-@@ -110,7 +117,11 @@
-         }
- 
-         <!-- Sources rail -->
--        @if (dashboardRails().recentSources && sourceCards().length > 0) {
-+        @if (
-+            !isIosApp &&
-+            dashboardRails().recentSources &&
-+            sourceCards().length > 0
-+        ) {
-             <lib-dashboard-rail
-                 [label]="'WORKSPACE.DASHBOARD.RECENT_SOURCES' | translate"
-                 [items]="sourceCards()"
-@@ -121,13 +132,37 @@
-                 [reserveMetaLine]="true"
-                 (actionSelected)="onSourceActionSelected($event)"
-             />
--        } @else if (railSkeletons.sources()) {
-+        } @else if (!isIosApp && railSkeletons.sources()) {
-             <lib-dashboard-rail-skeleton
-                 aspectRatio="16 / 9"
-                 testId="dashboard-recent-sources-rail-skeleton"
+@@ -40,8 +50,33 @@
              />
          }
  
-+        <!-- iPhone app: nothing to continue -> "Top 10 This Week" (TMDB), as in the design -->
-+        @if (isIosApp && continueWatchingCards().length === 0 && iosTop().length >= 5) {
++        <!-- iPhone app: "Top 10 This Week" (TMDB). Alone when there is nothing to continue; under Continue Watching otherwise. -->
++        @if (isIosApp && iosTop().length >= 5) {
 +            <section class="ios-top" data-test-id="ios-home-top-ten">
 +                <h2 class="ios-top__title">Top 10 This Week</h2>
 +                <div class="ios-top__track">
@@ -15231,14 +17953,56 @@ index 0d6bdad..af9c968 100644
 +            </section>
 +        }
 +
-         <!-- Xtream recently-added rail (only relevant if there are Xtream playlists) -->
+         <!-- Live favorites: no fallback. Recently watched live gets its own rail. -->
          @if (
-             dashboardRails().xtreamRecentlyAdded &&
++            !isIosApp &&
+             dashboardRails().liveFavorites &&
+             !showLiveFavoritesSkeleton() &&
+             liveFavoriteCardsEnriched().length > 0
+@@ -58,7 +93,7 @@
+                     liveEpg.setVisibleCards('favorites', $event)
+                 "
+             />
+-        } @else if (railSkeletons.liveFavorites()) {
++        } @else if (!isIosApp && railSkeletons.liveFavorites()) {
+             <lib-dashboard-rail-skeleton
+                 layout="channel"
+                 testId="dashboard-live-favorites-rail-skeleton"
+@@ -66,6 +101,7 @@
+         }
+ 
+         @if (
++            !isIosApp &&
+             dashboardRails().recentlyWatchedLive &&
+             recentLiveCardsEnriched().length > 0
+         ) {
+@@ -110,7 +146,11 @@
+         }
+ 
+         <!-- Sources rail -->
+-        @if (dashboardRails().recentSources && sourceCards().length > 0) {
++        @if (
++            !isIosApp &&
++            dashboardRails().recentSources &&
++            sourceCards().length > 0
++        ) {
+             <lib-dashboard-rail
+                 [label]="'WORKSPACE.DASHBOARD.RECENT_SOURCES' | translate"
+                 [items]="sourceCards()"
+@@ -121,7 +161,7 @@
+                 [reserveMetaLine]="true"
+                 (actionSelected)="onSourceActionSelected($event)"
+             />
+-        } @else if (railSkeletons.sources()) {
++        } @else if (!isIosApp && railSkeletons.sources()) {
+             <lib-dashboard-rail-skeleton
+                 aspectRatio="16 / 9"
+                 testId="dashboard-recent-sources-rail-skeleton"
 diff --git a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
-index df193cc..66f6da0 100644
+index df193cc..b7299aa 100644
 --- a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
 +++ b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
-@@ -57,3 +57,124 @@
+@@ -57,3 +57,155 @@
          gap: 24px;
      }
  }
@@ -15249,51 +18013,82 @@ index df193cc..66f6da0 100644
 +}
 +
 +:host-context(html.d7t-ios) .ios-home-top {
-+    // Top-leading corner, on the same row as the system "More" button: app logo + name.
++    // Design #1: profile top-left (38 pt circle + name), search button top-right (40 pt circle).
 +    display: flex;
 +    align-items: center;
 +    gap: 10px;
 +    position: fixed;
 +    z-index: 30;
-+    top: calc(env(safe-area-inset-top, 0px) + 8px);
-+    left: calc(16px + env(safe-area-inset-left, 0px));
-+    height: 44px;
++    top: calc(env(safe-area-inset-top, 0px) + 3px);
++    left: calc(18px + env(safe-area-inset-left, 0px));
++    right: calc(18px + env(safe-area-inset-right, 0px));
 +    pointer-events: none;
 +}
 +
++.ios-home-top__who {
++    display: flex;
++    align-items: center;
++    gap: 10px;
++    flex: 1 1 auto;
++    min-width: 0;
++    height: 44px;
++    padding: 0;
++    border: 0;
++    background: none;
++    color: #fff;
++    font: inherit;
++    text-align: start;
++    pointer-events: auto;
++    -webkit-tap-highlight-color: transparent;
++}
++
 +.ios-home-top__logo {
-+    width: 34px;
-+    height: 34px;
-+    border-radius: 8px;
-+    box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.18), 0 2px 8px rgba(0, 0, 0, 0.4);
++    width: 38px;
++    height: 38px;
++    border-radius: 19px;
++    object-fit: cover;
++    flex: none;
 +}
 +
 +.ios-home-top__name {
-+    font-size: 20px;
++    font-size: 17px;
 +    font-weight: 700;
-+    letter-spacing: -0.01em;
 +    color: #fff;
-+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
++}
++
++.ios-home-top__search {
++    display: grid;
++    place-items: center;
++    flex: none;
++    width: 40px;
++    height: 40px;
++    padding: 0;
++    border: 0;
++    border-radius: 20px;
++    background: rgba(255, 255, 255, 0.12);
++    color: #fff;
++    pointer-events: auto;
++    -webkit-tap-highlight-color: transparent;
 +}
 +
 +// iPhone Home: numbered "Top 10 This Week" rail (design #2, same look as the Movies tab).
 +.ios-top {
-+    margin: 4px 0 0;
++    margin: 0;
 +
 +    &__title {
-+        margin: 0 0 12px;
++        margin: 0 0 10px;
 +        font-size: 22px;
-+        font-weight: 700;
-+        letter-spacing: -0.015em;
++        font-weight: 800;
++        letter-spacing: -0.01em;
 +        color: #fff;
 +    }
 +
 +    &__track {
 +        display: flex;
-+        gap: 14px;
++        gap: 8px;
 +        overflow-x: auto;
 +        margin: 0 calc(-1 * var(--dashboard-gutter, 16px));
-+        padding: 0 var(--dashboard-gutter, 16px);
++        padding: 0 18px;
 +        scrollbar-width: none;
 +
 +        &::-webkit-scrollbar {
@@ -15316,22 +18111,21 @@ index df193cc..66f6da0 100644
 +    &__rank {
 +        margin-inline-end: -10px;
 +        font-size: 96px;
-+        font-weight: 800;
++        font-weight: 900;
 +        line-height: 0.8;
-+        letter-spacing: -0.06em;
-+        color: #0b0b0e;
-+        -webkit-text-stroke: 2px rgba(255, 255, 255, 0.85);
-+        paint-order: stroke fill;
++        color: transparent;
++        -webkit-text-stroke: 2px rgba(255, 255, 255, 0.55);
 +    }
 +
 +    &__poster {
 +        position: relative;
 +        z-index: 1;
-+        width: 108px;
-+        aspect-ratio: 2 / 3;
++        width: 104px;
++        aspect-ratio: 104 / 156;
 +        border-radius: 12px;
 +        overflow: hidden;
 +        background: rgba(255, 255, 255, 0.08);
++        box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.15);
 +
 +        img {
 +            width: 100%;
@@ -15350,13 +18144,14 @@ index df193cc..66f6da0 100644
 +
 +    &__name {
 +        position: absolute;
-+        inset-inline: 8px;
-+        bottom: 8px;
++        inset-inline: 10px;
++        bottom: 10px;
 +        z-index: 1;
 +        display: -webkit-box;
-+        font-size: 13px;
-+        font-weight: 700;
-+        line-height: 1.2;
++        font-size: 12px;
++        font-weight: 800;
++        text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
++        line-height: 1.05;
 +        color: #fff;
 +        -webkit-line-clamp: 2;
 +        -webkit-box-orient: vertical;
@@ -15364,7 +18159,7 @@ index df193cc..66f6da0 100644
 +    }
 +}
 diff --git a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts
-index 9eca42f..1a344ba 100644
+index 9eca42f..8a065d7 100644
 --- a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts
 +++ b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.ts
 @@ -4,6 +4,7 @@ import {
@@ -15385,7 +18180,24 @@ index 9eca42f..1a344ba 100644
  } from '@iptvnator/services';
  import {
      DashboardDataService,
-@@ -126,6 +129,24 @@ export class WorkspaceDashboardRailsComponent {
+@@ -111,6 +114,16 @@ import type {
+     ],
+ })
+ export class WorkspaceDashboardRailsComponent {
++    /** iPhone Home: the profile opens the More sheet (the shell's own button, hidden on the phone). */
++    openMore(): void {
++        document.querySelector<HTMLElement>('.app-rail button.rail-more')?.click();
++    }
++
++    /** iPhone Home: the search button goes to the Search tab. */
++    openSearch(): void {
++        document.querySelector<HTMLElement>('.app-rail a.nav-item[href$="/search"]')?.click();
++    }
++
+     readonly data = inject(DashboardDataService);
+     /** One facade for both live-EPG sources: uploaded XMLTV and the portal. */
+     readonly liveEpg = inject(DashboardLiveEpgPresenter);
+@@ -126,6 +139,24 @@ export class WorkspaceDashboardRailsComponent {
      private readonly translate = inject(TranslateService);
      private readonly languageTick = injectTranslationTick();
      private readonly shellActions = inject(WORKSPACE_SHELL_ACTIONS);
@@ -15410,7 +18222,7 @@ index 9eca42f..1a344ba 100644
      private readonly runtime = inject(RuntimeCapabilitiesService);
      private readonly settingsStore = inject(SettingsStore);
      private readonly sourceExpiry = inject(DashboardSourceExpiryService);
-@@ -327,6 +348,21 @@ export class WorkspaceDashboardRailsComponent {
+@@ -327,6 +358,21 @@ export class WorkspaceDashboardRailsComponent {
  
          this.liveEpg.connect(this.enabledLiveCards);
  
@@ -15432,7 +18244,7 @@ index 9eca42f..1a344ba 100644
          // Refresh when Xtream playlist count changes so a newly added provider
          // populates the rail without a manual dashboard reload. The Xtream
          // recently-added query can be the slowest dashboard worker request on
-@@ -712,4 +748,13 @@ export class WorkspaceDashboardRailsComponent {
+@@ -712,4 +758,13 @@ export class WorkspaceDashboardRailsComponent {
      private t(key: string): string {
          return this.translate.instant(key);
      }
@@ -15643,7 +18455,7 @@ index d2d082f..7db9df5 100644
 +/** Last URL segments of the pages the bottom bar opens directly. */
 +const TAB_ROOTS = new Set(['dashboard', 'vod', 'series', 'live', 'search']);
 diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html
-index 4e89c2e..eb8adcf 100644
+index 4e89c2e..b32c24b 100644
 --- a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html
 +++ b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.html
 @@ -1,6 +1,6 @@
@@ -15654,7 +18466,7 @@ index 4e89c2e..eb8adcf 100644
      <app-workspace-shell-rail-links [links]="workspaceLinks()" />
  
      @if (primaryContextLinks().length > 0) {
-@@ -22,6 +22,139 @@
+@@ -22,6 +22,204 @@
          </div>
      }
  
@@ -15669,7 +18481,72 @@ index 4e89c2e..eb8adcf 100644
 +        <mat-icon aria-hidden="true">more_horiz</mat-icon>
 +    </button>
 +
-+    @if (moreOpen()) {
++    @if (moreOpen() && isIosApp) {
++        <div class="d7m-scrim" [class.is-closing]="moreClosing()" (click)="closeMore()"></div>
++        <div class="d7m-sheet" [class.is-closing]="moreClosing()" role="dialog" aria-label="More" data-test-id="more-sheet">
++            <div class="d7m-grabber" aria-hidden="true"></div>
++            <div class="d7m-head">
++                <div class="d7m-title">More</div>
++                <button type="button" class="d7m-close" aria-label="Close" data-test-id="more-close" (click)="closeMore()"></button>
++            </div>
++            @if (!hasNoPlaylists() && playlists().length > 0) {
++                <div class="d7m-chips" data-test-id="more-group-source">
++                    @for (playlist of playlists(); track playlist._id) {
++                        <button
++                            type="button"
++                            class="d7m-chip"
++                            [class.is-on]="playlist._id === currentPlaylistId()"
++                            (click)="selectSource(playlist)"
++                        >{{ playlist.title }}</button>
++                    }
++                </div>
++            }
++            <div class="d7m-heading">LIBRARY</div>
++            <div class="d7m-group" data-test-id="more-group-library">
++                @for (link of libraryLinks(); track link.path.join('/')) {
++                    <a class="d7m-row" [routerLink]="link.path">
++                        <span class="d7m-tile" [attr.data-kind]="tileKind(link)"></span>
++                        <span class="d7m-label">{{ rowLabel(link) }}</span>
++                        <span class="d7m-chev"></span>
++                    </a>
++                }
++                @for (link of otherLinks(); track link.path.join('/')) {
++                    <a class="d7m-row" [routerLink]="link.path">
++                        <span class="d7m-tile" [attr.data-kind]="tileKind(link)"></span>
++                        <span class="d7m-label">{{ rowLabel(link) }}</span>
++                        @if (tileKind(link) === 'sources' && playlists().length) {
++                            <span class="d7m-value">{{ playlists().length }}</span>
++                        }
++                        <span class="d7m-chev"></span>
++                    </a>
++                }
++            </div>
++            <div class="d7m-heading">TOOLS</div>
++            <div class="d7m-group" data-test-id="more-group-tools">
++                <button type="button" class="d7m-row" data-test-id="more-add-playlist" (click)="closeMore(); addPlaylistRequested.emit()">
++                    <span class="d7m-tile" data-kind="add"></span>
++                    <span class="d7m-label">Add source</span>
++                    <span class="d7m-chev"></span>
++                </button>
++                <button type="button" class="d7m-row" data-test-id="more-parental-lock" (click)="onLockRow()">
++                    <span class="d7m-tile" data-kind="lock"></span>
++                    <span class="d7m-label">Parental lock</span>
++                    <span class="d7m-value">{{ lockValue() }}</span>
++                    <span class="d7m-chev"></span>
++                </button>
++            </div>
++            <div class="d7m-gap"></div>
++            <div class="d7m-group" data-test-id="more-group-app">
++                <a class="d7m-row" routerLink="/workspace/settings">
++                    <span class="d7m-tile" data-kind="settings"></span>
++                    <span class="d7m-label">Settings</span>
++                    <span class="d7m-chev"></span>
++                </a>
++            </div>
++        </div>
++    }
++
++    @if (moreOpen() && !isIosApp) {
 +        <div class="rail-more-scrim" [class.is-closing]="moreClosing()" (click)="closeMore()"></div>
 +        <div class="rail-more-sheet" [class.is-closing]="moreClosing()" role="menu" data-test-id="more-sheet">
 +            <div class="rail-more-grabber" aria-hidden="true"></div>
@@ -15811,7 +18688,7 @@ index 839d26b..76abf2f 100644
 +    display: none;
 +}
 diff --git a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts
-index 92fce1a..d31be6b 100644
+index 92fce1a..913271a 100644
 --- a/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts
 +++ b/libs/workspace/shell/feature/src/lib/workspace-shell/components/workspace-shell-rail/workspace-shell-rail.component.ts
 @@ -2,12 +2,20 @@ import {
@@ -15852,7 +18729,7 @@ index 92fce1a..d31be6b 100644
          RouterLink,
          TranslatePipe,
          WorkspaceShellRailLinksComponent,
-@@ -42,6 +52,229 @@ export class WorkspaceShellRailComponent {
+@@ -42,6 +52,173 @@ export class WorkspaceShellRailComponent {
      >(null);
      readonly railProviderClass = input('rail-context-region');
      readonly isSettingsRoute = input(false);
@@ -15889,7 +18766,7 @@ index 92fce1a..d31be6b 100644
 +    }
 +
 +    private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-+    private readonly isIosApp = !!(window as unknown as { d7tNative?: unknown })
++    protected readonly isIosApp = !!(window as unknown as { d7tNative?: unknown })
 +        .d7tNative;
 +    /** The first position is set without animating from the left edge. */
 +    readonly tabsReady = signal(false);
@@ -15902,108 +18779,8 @@ index 92fce1a..d31be6b 100644
 +    readonly nativeMoreOpen = signal(false);
 +
 +    toggleMore(): void {
-+        if (this.isIosApp) {
-+            void this.openNativeMore();
-+            return;
-+        }
 +        if (this.moreOpen() && !this.moreClosing()) this.closeMore();
 +        else if (!this.moreOpen()) this.moreOpen.set(true);
-+    }
-+
-+    /**
-+     * iPhone app: "More" is the system's own sheet (Liquid Glass on iOS 26), described here and
-+     * drawn by the phone. The page performs whatever row the user picks.
-+     */
-+    private async openNativeMore(): Promise<void> {
-+        const native = (
-+            window as unknown as {
-+                d7tNative?: {
-+                    call<T>(method: string, args?: unknown): Promise<T>;
-+                };
-+            }
-+        ).d7tNative;
-+        if (!native || this.nativeMoreOpen()) return;
-+
-+        const actions = new Map<string, () => void>();
-+        const linkRow = (link: PortalRailLink, icon: string) => {
-+            const id = `link:${link.path.join('/')}`;
-+            actions.set(id, () => void this.router.navigate(link.path));
-+            return { id, title: String(link.tooltip ?? ''), icon };
-+        };
-+        const symbolFor = (link: PortalRailLink): string => {
-+            const path = link.path.join('/');
-+            if (/favorites/.test(path)) return 'heart.fill';
-+            if (/recently-added/.test(path)) return 'sparkles';
-+            if (/recent/.test(path)) return 'clock.arrow.circlepath';
-+            if (/sources/.test(path)) return 'list.bullet.rectangle';
-+            return 'circle';
-+        };
-+
-+        const groups: unknown[] = [];
-+        const playlists = this.playlistContext.playlists();
-+        const current = this.playlistContext.resolvedPlaylistId();
-+        if (!this.hasNoPlaylists() && playlists.length) {
-+            groups.push({
-+                heading: 'Source',
-+                items: [
-+                    ...playlists.map((playlist) => {
-+                        const id = `playlist:${playlist._id}`;
-+                        actions.set(id, () =>
-+                            this.playlistContext.selectPlaylist(playlist)
-+                        );
-+                        return {
-+                            id,
-+                            title: playlist.title,
-+                            icon: 'play.rectangle.on.rectangle',
-+                            checked: playlist._id === current,
-+                        };
-+                    }),
-+                    ...this.otherLinks().map((link) =>
-+                        linkRow(link, symbolFor(link))
-+                    ),
-+                ],
-+            });
-+        }
-+        groups.push({
-+            heading: 'Library',
-+            items: this.libraryLinks().map((link) =>
-+                linkRow(link, symbolFor(link))
-+            ),
-+        });
-+        const tools: unknown[] = [];
-+        actions.set('add', () => this.addPlaylistRequested.emit());
-+        tools.push({ id: 'add', title: 'Add playlist', icon: 'plus' });
-+        actions.set('palette', () => this.commandPaletteRequested.emit());
-+        tools.push({ id: 'palette', title: 'Open command palette', icon: 'bolt.fill' });
-+        if (this.parentalLockState() !== 'off') {
-+            actions.set('lock', () => this.parentalLockToggleRequested.emit());
-+            tools.push({
-+                id: 'lock',
-+                title:
-+                    this.parentalLockState() === 'locked'
-+                        ? 'Unlock parental lock'
-+                        : 'Lock with parental lock',
-+                icon: this.parentalLockState() === 'locked' ? 'lock.fill' : 'lock.open.fill',
-+            });
-+        }
-+        groups.push({ heading: 'Tools', items: tools });
-+        actions.set('settings', () => void this.router.navigate(['/workspace/settings']));
-+        groups.push({
-+            items: [{ id: 'settings', title: 'Settings', icon: 'gearshape.fill' }],
-+        });
-+
-+        this.nativeMoreOpen.set(true);
-+        try {
-+            const picked = await native.call<string | null>('ui.sheet', {
-+                title: 'More',
-+                groups,
-+            });
-+            if (picked) actions.get(picked)?.();
-+        } catch {
-+            // The sheet could not be shown; nothing to do.
-+        } finally {
-+            this.nativeMoreOpen.set(false);
-+        }
 +    }
 +
 +    /** The sheet slides down and the scrim fades before it leaves the DOM. */
@@ -16056,6 +18833,50 @@ index 92fce1a..d31be6b 100644
 +     * keeps five places and everything else opens from "More".
 +     */
 +    readonly moreOpen = signal(false);
++
++    /** iPhone sheet (design #14): the sources as chips, the current one filled. */
++    readonly playlists = this.playlistContext.playlists;
++    readonly currentPlaylistId = this.playlistContext.resolvedPlaylistId;
++    selectSource(playlist: PlaylistMeta): void {
++        this.playlistContext.selectPlaylist(playlist);
++    }
++
++    /** The coloured tile behind a row's glyph (the glyph itself is drawn in CSS). */
++    tileKind(link: PortalRailLink): string {
++        const path = link.path.join('/');
++        if (/favorites/.test(path)) return 'favorites';
++        if (/recently-added/.test(path)) return 'new';
++        if (/recent/.test(path)) return 'recent';
++        if (/downloads/.test(path)) return 'downloads';
++        if (/sources/.test(path)) return 'sources';
++        return 'other';
++    }
++
++    /** Row names as the design writes them. */
++    rowLabel(link: PortalRailLink): string {
++        const names: Record<string, string> = {
++            favorites: 'Favorites',
++            recent: 'Recently Viewed',
++            new: 'Recently Added',
++            downloads: 'Downloads',
++            sources: 'Sources',
++        };
++        return names[this.tileKind(link)] ?? String(link.tooltip ?? '');
++    }
++
++    /** Parental lock row: its state as the design shows it (Off / Locked / Unlocked). */
++    readonly lockValue = computed(() => {
++        const state = this.parentalLockState();
++        return state === 'locked' ? 'On' : 'Off';
++    });
++    onLockRow(): void {
++        this.closeMore();
++        if (this.parentalLockState() === 'off') {
++            void this.router.navigate(['/workspace/settings']);
++        } else {
++            this.parentalLockToggleRequested.emit();
++        }
++    }
 +    /** Favorites, recently watched and recently added belong together. */
 +    private static readonly LIBRARY_PATH = /(favorites|recent|recently-added)/;
 +    readonly libraryLinks = computed(() =>
@@ -16126,3 +18947,45 @@ index c0e6839..70c0380 100644
      readonly keyboardShortcuts = inject(WorkspaceKeyboardShortcutsService);
      readonly contextDrawer = inject(WorkspaceShellContextDrawerService);
      private readonly mpvOverlayVisibility = inject(
+diff --git a/libs/workspace/shell/feature/src/lib/workspace-sources/workspace-sources.component.html b/libs/workspace/shell/feature/src/lib/workspace-sources/workspace-sources.component.html
+index 27a9a21..b14d711 100644
+--- a/libs/workspace/shell/feature/src/lib/workspace-sources/workspace-sources.component.html
++++ b/libs/workspace/shell/feature/src/lib/workspace-sources/workspace-sources.component.html
+@@ -8,6 +8,16 @@
+                 }}</span>
+             </div>
+             <div class="sources-header__actions">
++                <button
++                    type="button"
++                    class="sources-add-ios"
++                    aria-label="Add source"
++                    (click)="onAddPlaylist()"
++                >
++                    <svg viewBox="0 0 24 24" aria-hidden="true">
++                        <path d="M12 5v14M5 12h14" />
++                    </svg>
++                </button>
+                 @if (canCleanSources()) {
+                     <button
+                         mat-flat-button
+diff --git a/libs/workspace/shell/feature/src/lib/workspace-sources/workspace-sources.component.ts b/libs/workspace/shell/feature/src/lib/workspace-sources/workspace-sources.component.ts
+index 3a7ac7c..b975387 100644
+--- a/libs/workspace/shell/feature/src/lib/workspace-sources/workspace-sources.component.ts
++++ b/libs/workspace/shell/feature/src/lib/workspace-sources/workspace-sources.component.ts
+@@ -145,10 +145,15 @@ export class WorkspaceSourcesComponent {
+     readonly title = computed(() => {
+         this.languageTick();
+         const filter = this.viewState.filter();
++        const phone =
++            typeof document !== 'undefined' &&
++            document.documentElement.classList.contains('d7t-ios');
+         const key =
+             this.showFailingFirst && filter.status === 'bad'
+                 ? 'WORKSPACE.SOURCES.STATUS_BAD'
+-                : TYPE_TITLE_KEYS[filter.type];
++                : phone && filter.type === 'all'
++                  ? 'WORKSPACE.SOURCES.TITLE'
++                  : TYPE_TITLE_KEYS[filter.type];
+         return this.translate.instant(key);
+     });
+ 
