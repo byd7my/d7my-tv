@@ -1264,10 +1264,10 @@ index 0000000..9d562c2
 +}
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..dc51626
+index 0000000..0aea08b
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,1917 @@
+@@ -0,0 +1,2851 @@
 +@mixin phone-controls {
 +            grid-template-columns: auto minmax(0, 1fr) !important;
 +            grid-template-areas:
@@ -3185,6 +3185,940 @@ index 0000000..dc51626
 +        order: 3;
 +    }
 +}
++
++// ── Home: the hero runs up behind the status bar; brand row top-leading; hero follows the finger ──
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-more-btn.d7t-home:not(.d7t-has-fullscreen) body {
++        padding-top: 0;
++    }
++
++    html.d7t-ios.d7t-home lib-workspace-dashboard-rails,
++    html.d7t-ios.d7t-home app-workspace-dashboard-rails {
++        padding-top: 0 !important;
++    }
++
++    // Soft top scrim so the status bar, logo and the system More button stay readable on any artwork.
++    html.d7t-ios.d7t-home:not(.d7t-has-fullscreen) body::before {
++        content: '';
++        position: fixed;
++        inset: 0 0 auto 0;
++        height: calc(env(safe-area-inset-top, 0px) + 72px);
++        background: linear-gradient(180deg, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0) 100%);
++        pointer-events: none;
++        z-index: 20;
++    }
++
++    html.d7t-ios .hero[data-test-id='dashboard-hero'] {
++        touch-action: pan-y;
++        -webkit-user-select: none;
++        user-select: none;
++    }
++
++    // The artwork and text trail the finger (half speed) and settle back (or switch) on release.
++    html.d7t-ios .hero--dragging .hero__content,
++    html.d7t-ios .hero--dragging .hero__stage,
++    html.d7t-ios .hero--settling .hero__content,
++    html.d7t-ios .hero--settling .hero__stage {
++        transform: translateX(calc(var(--hero-drag, 0px) * 0.5));
++    }
++
++    html.d7t-ios .hero--settling .hero__content,
++    html.d7t-ios .hero--settling .hero__stage {
++        transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
++    }
++
++    // A slide that just arrived slides in a little from the side it came from.
++    html.d7t-ios .hero__content:not([inert]) {
++        animation: d7t-hero-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
++    }
++}
++
++@keyframes d7t-hero-in {
++    from {
++        opacity: 0;
++        transform: translateX(14px);
++    }
++    to {
++        opacity: 1;
++        transform: none;
++    }
++}
++
++// ── "Audio from another channel" + the clock picker: iOS sheets (grouped lists, segmented control,
++// prominent blue button, system switch) over the app's own audio-sync logic ────────────────────────────
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++  html.d7t-ios.d7t-ios body {
++    --d7t-blue: #0a84ff;
++    --d7t-fill: rgba(120, 120, 128, 0.24);
++    --d7t-fill-soft: rgba(120, 120, 128, 0.16);
++    --d7t-sep: rgba(84, 84, 88, 0.65);
++    --d7t-label2: rgba(235, 235, 245, 0.6);
++
++    // Sheets stay fully opaque even while the player's own controls fade out.
++    .player-controls__split-audio-panel,
++    app-audio-sync-window {
++        opacity: 1 !important;
++        visibility: visible !important;
++    }
++
++    .player-controls__split-audio-panel .split-audio,
++    app-audio-sync-window > .sync {
++        background: #1c1c1e !important;
++        border-radius: 28px !important;
++        box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.12), 0 24px 60px rgba(0, 0, 0, 0.6) !important;
++        backdrop-filter: none !important;
++        -webkit-backdrop-filter: none !important;
++        color: #fff;
++        gap: 0 !important;
++        padding: 0 0 14px !important;
++        overflow-y: auto !important;
++        overscroll-behavior: contain;
++        -webkit-overflow-scrolling: touch;
++    }
++
++    .player-controls__split-audio-panel .split-audio {
++        max-height: 74vh !important;
++    }
++
++    // Grabber (portrait sheet only; landscape is the two-column layout)
++    .player-controls__split-audio-panel .split-audio::before,
++    app-audio-sync-window > .sync::before {
++        content: '';
++        display: block;
++        flex: 0 0 auto;
++        width: 36px;
++        height: 5px;
++        margin: 8px auto 2px;
++        border-radius: 3px;
++        background: rgba(235, 235, 245, 0.3);
++    }
++
++    // ── headers: big title, round glass buttons
++    .split-audio__header,
++    .sync__header {
++        padding: 6px 16px 10px !important;
++        gap: 10px !important;
++        background: transparent !important;
++        border: 0 !important;
++        box-shadow: none !important;
++        min-height: 48px;
++    }
++
++    .split-audio__header-icon,
++    .sync__header-icon {
++        display: none !important;
++    }
++
++    .split-audio__title,
++    .sync__title {
++        flex: 1;
++        margin: 0 !important;
++        font-size: 22px !important;
++        font-weight: 700 !important;
++        letter-spacing: -0.02em;
++        text-align: start;
++    }
++
++    .split-audio__icon-button,
++    .sync__icon-button {
++        display: grid !important;
++        place-items: center;
++        flex: 0 0 auto;
++        width: 34px !important;
++        height: 34px !important;
++        min-width: 0 !important;
++        padding: 0 !important;
++        border: 0 !important;
++        border-radius: 50% !important;
++        background: var(--d7t-fill) !important;
++        color: rgba(235, 235, 245, 0.85) !important;
++        box-shadow: none !important;
++
++        mat-icon {
++            width: 18px;
++            height: 18px;
++            font-size: 18px;
++            line-height: 18px;
++        }
++    }
++
++    .split-audio__icon-button--on {
++        background: #fff !important;
++        color: #000 !important;
++    }
++
++    // ── picture ↔ audio: one grouped card
++    .split-audio__link {
++        display: flex !important;
++        align-items: stretch;
++        gap: 0 !important;
++        margin: 2px 16px 12px !important;
++        padding: 0 !important;
++        background: var(--d7t-fill-soft);
++        border-radius: 14px;
++        overflow: hidden;
++    }
++
++    .split-audio__link-icon {
++        display: none !important;
++    }
++
++    .split-audio__side {
++        flex: 1 1 0;
++        min-width: 0;
++        padding: 10px 14px !important;
++        background: transparent !important;
++        border: 0 !important;
++        border-radius: 0 !important;
++        box-shadow: none !important;
++    }
++
++    .split-audio__side + .split-audio__link-icon + .split-audio__side {
++        box-shadow: inset 0.5px 0 0 var(--d7t-sep) !important;
++    }
++
++    .split-audio__side-label {
++        text-transform: none !important;
++        letter-spacing: 0 !important;
++        font-size: 12px !important;
++        font-weight: 500 !important;
++        color: var(--d7t-label2) !important;
++    }
++
++    .split-audio__side-name {
++        font-size: 15px !important;
++        font-weight: 600 !important;
++    }
++
++    .split-audio__side-src {
++        font-size: 12px !important;
++        color: var(--d7t-blue) !important;
++    }
++
++    .split-audio__side--empty .split-audio__side-name {
++        color: var(--d7t-label2);
++        font-weight: 500 !important;
++    }
++
++    // ── source chips: a scrolling row that is never clipped
++    .split-audio__browse {
++        flex: 0 0 auto !important;
++        min-height: 0;
++    }
++
++    .split-audio__scopes {
++        display: flex !important;
++        flex: 0 0 auto !important;
++        gap: 8px !important;
++        height: auto !important;
++        padding: 0 16px 12px !important;
++        overflow-x: auto !important;
++        overflow-y: hidden !important;
++        scrollbar-width: none;
++
++        &::-webkit-scrollbar {
++            display: none;
++        }
++    }
++
++    .split-audio__scope {
++        flex: 0 0 auto !important;
++        height: 34px !important;
++        padding: 0 16px !important;
++        border: 0 !important;
++        border-radius: 17px !important;
++        background: var(--d7t-fill) !important;
++        box-shadow: none !important;
++        color: #fff !important;
++        font-size: 14px !important;
++        font-weight: 600 !important;
++        white-space: nowrap;
++    }
++
++    .split-audio__scope--on {
++        background: #fff !important;
++        color: #000 !important;
++    }
++
++    .split-audio__search {
++        margin: 0 16px 12px !important;
++        height: 36px;
++        padding: 0 12px 0 14px !important;
++        border: 0 !important;
++        border-radius: 10px !important;
++        background: var(--d7t-fill) !important;
++        color: #fff;
++        font-size: 16px !important;
++    }
++
++    // ── channel list: inset grouped rows, blue check on the chosen one
++    .split-audio__list {
++        margin: 0 16px 12px !important;
++        padding: 0 !important;
++        max-height: 34vh;
++        overflow-y: auto !important;
++        background: var(--d7t-fill-soft);
++        border-radius: 14px;
++        list-style: none;
++    }
++
++    .split-audio__row {
++        display: flex;
++        align-items: center;
++        min-height: 50px;
++        padding: 0 6px 0 0 !important;
++        background: transparent !important;
++        border-radius: 0 !important;
++
++        &:not(:last-child) {
++            box-shadow: inset 0 -0.5px 0 var(--d7t-sep);
++            margin-inline-start: 0;
++        }
++    }
++
++    .split-audio__pick {
++        min-height: 50px !important;
++        padding: 0 8px 0 16px !important;
++        font-size: 16px !important;
++        border-radius: 0 !important;
++        background: transparent !important;
++    }
++
++    .split-audio__pick::before {
++        display: none !important;
++    }
++
++    .split-audio__row--active .split-audio__pick {
++        color: var(--d7t-blue);
++        font-weight: 600;
++    }
++
++    .split-audio__wave {
++        background: transparent !important;
++        color: var(--d7t-blue) !important;
++        width: 22px !important;
++        height: 22px !important;
++        order: 2;
++        margin-inline-start: auto;
++    }
++
++    .split-audio__row--active .split-audio__name {
++        order: 1;
++    }
++
++    .split-audio__source-tag {
++        order: 3;
++        font-size: 13px !important;
++        color: var(--d7t-label2) !important;
++    }
++
++    .split-audio__star {
++        width: 40px !important;
++        height: 40px !important;
++        color: rgba(235, 235, 245, 0.45);
++    }
++
++    .split-audio__star--on {
++        color: #ffd60a !important;
++    }
++
++    .split-audio__divider {
++        display: none !important;
++    }
++
++    .split-audio__after {
++        padding: 0 16px;
++    }
++
++    // ── sync section: segmented control, prominent button, grouped tools, system switch
++    .sync-section {
++        gap: 12px !important;
++    }
++
++    .sync-section__modes,
++    .sync-section__lead {
++        padding: 2px !important;
++        border-radius: 9px !important;
++        background: var(--d7t-fill) !important;
++        box-shadow: none !important;
++    }
++
++    .sync-section__mode {
++        height: 32px;
++        border: 0 !important;
++        border-radius: 7px !important;
++        background: transparent !important;
++        color: #fff !important;
++        font-size: 14px !important;
++        font-weight: 500 !important;
++        box-shadow: none !important;
++    }
++
++    .sync-section__mode--on {
++        background: #fff !important;
++        color: #000 !important;
++        font-weight: 600 !important;
++        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35) !important;
++    }
++
++    .sync-section__hint {
++        margin: 0 !important;
++        font-size: 13px !important;
++        line-height: 1.35;
++        color: var(--d7t-label2) !important;
++    }
++
++    .sync-section__start {
++        height: 50px !important;
++        border: 0 !important;
++        border-radius: 999px !important;
++        background: #fff !important;
++        color: #000 !important;
++        font-size: 17px !important;
++        font-weight: 600 !important;
++        box-shadow: none !important;
++    }
++
++    .sync-section__start--on {
++        background: rgba(255, 69, 58, 0.2) !important;
++        color: #ff453a !important;
++    }
++
++    .sync-section__tools,
++    .sync-section__tools--pair {
++        display: flex !important;
++        flex-direction: column;
++        gap: 0 !important;
++        padding: 0 !important;
++        background: var(--d7t-fill-soft);
++        border-radius: 12px;
++        overflow: hidden;
++    }
++
++    .sync-section__tool {
++        display: flex !important;
++        align-items: center;
++        gap: 12px;
++        justify-content: flex-start !important;
++        height: 48px;
++        padding: 0 14px !important;
++        border: 0 !important;
++        border-radius: 0 !important;
++        background: transparent !important;
++        box-shadow: none !important;
++        color: #fff !important;
++        font-size: 16px !important;
++        font-weight: 400 !important;
++
++        mat-icon {
++            color: var(--d7t-blue) !important;
++        }
++
++        & + .sync-section__tool {
++            box-shadow: inset 0 0.5px 0 var(--d7t-sep) !important;
++        }
++
++        &:disabled {
++            opacity: 0.4;
++        }
++    }
++
++    .sync-section__check {
++        padding: 10px 0 !important;
++        border-top: 0 !important;
++        font-size: 16px !important;
++    }
++
++    .sync-section__check input {
++        width: 51px !important;
++        height: 31px !important;
++        border-radius: 16px !important;
++        background: rgba(120, 120, 128, 0.32) !important;
++    }
++
++    .sync-section__check input::after {
++        top: 2px !important;
++        width: 27px !important;
++        height: 27px !important;
++    }
++
++    .sync-section__check input:checked {
++        background: #34c759 !important;
++    }
++
++    .sync-section__check input:checked::after {
++        transform: translateX(20px) !important;
++    }
++
++    .sync-section__target {
++        padding: 6px 0 0 !important;
++        border-top: 0 !important;
++    }
++
++    .sync-section__label {
++        font-size: 13px !important;
++        font-weight: 500 !important;
++        text-transform: none !important;
++        letter-spacing: 0 !important;
++        color: var(--d7t-label2) !important;
++    }
++
++    .sync-section__target-row {
++        display: flex !important;
++        align-items: center;
++        gap: 0 !important;
++        padding: 0 !important;
++        background: var(--d7t-fill-soft);
++        border-radius: 12px;
++        overflow: hidden;
++    }
++
++    .sync-section__target-row .sync-section__nudge {
++        flex: 1;
++        height: 46px;
++        border: 0 !important;
++        border-radius: 0 !important;
++        background: transparent !important;
++        color: var(--d7t-blue) !important;
++        font-size: 17px !important;
++        font-weight: 600 !important;
++        box-shadow: none !important;
++    }
++
++    .sync-section__target-value {
++        flex: 0 0 auto;
++        min-width: 64px;
++        text-align: center;
++        font-size: 17px !important;
++        font-weight: 600 !important;
++        box-shadow: inset 0.5px 0 0 var(--d7t-sep), inset -0.5px 0 0 var(--d7t-sep);
++        line-height: 46px;
++    }
++
++    .sync-section__nudge {
++        border: 0 !important;
++        border-radius: 10px !important;
++        background: var(--d7t-fill) !important;
++        color: #fff !important;
++        font-weight: 600 !important;
++        box-shadow: none !important;
++    }
++
++    .sync-section__field input {
++        border: 0 !important;
++        border-radius: 10px !important;
++        background: var(--d7t-fill) !important;
++        font-size: 17px !important;
++        color: #fff;
++    }
++
++    .split-audio__save,
++    .sync__save {
++        height: 44px;
++        border: 0 !important;
++        border-radius: 12px !important;
++        background: var(--d7t-fill) !important;
++        color: var(--d7t-blue) !important;
++        font-size: 16px !important;
++        font-weight: 600 !important;
++        box-shadow: none !important;
++
++        &:disabled {
++            color: var(--d7t-label2) !important;
++        }
++    }
++
++    .split-audio__original {
++        height: 44px;
++        border: 0 !important;
++        background: transparent !important;
++        color: #ff453a !important;
++        font-size: 16px !important;
++        box-shadow: none !important;
++    }
++
++    .split-audio__error {
++        margin: 0 16px 12px !important;
++        padding: 10px 14px !important;
++        border-radius: 12px !important;
++        background: rgba(255, 69, 58, 0.16) !important;
++        color: #ff6961 !important;
++        font-size: 14px !important;
++    }
++
++    // ── clock picker window
++    app-audio-sync-window > .sync {
++        display: flex;
++        flex-direction: column;
++        padding-bottom: 16px !important;
++    }
++
++    .sync__tabs {
++        display: flex !important;
++        margin: 0 16px 8px !important;
++        padding: 2px !important;
++        border-radius: 9px !important;
++        background: var(--d7t-fill) !important;
++        box-shadow: none !important;
++    }
++
++    .sync__tab {
++        flex: 1;
++        height: 32px;
++        border: 0 !important;
++        border-radius: 7px !important;
++        background: transparent !important;
++        color: #fff !important;
++        font-size: 14px !important;
++        font-weight: 500 !important;
++        box-shadow: none !important;
++    }
++
++    .sync__tab--on {
++        background: #fff !important;
++        color: #000 !important;
++        font-weight: 600 !important;
++    }
++
++    .sync__hint {
++        margin: 0 16px 10px !important;
++        font-size: 13px !important;
++        line-height: 1.35;
++        color: var(--d7t-label2) !important;
++    }
++
++    // Both pictures stay in view; the one being picked has the blue ring.
++    .sync__source {
++        margin: 0 16px 10px !important;
++        padding: 0 !important;
++        background: transparent !important;
++        border: 0 !important;
++    }
++
++    .sync__source[hidden] {
++        display: none;
++    }
++
++    .sync__label {
++        margin: 0 4px 6px !important;
++        font-size: 13px !important;
++        font-weight: 500 !important;
++        text-transform: none !important;
++        letter-spacing: 0 !important;
++        color: var(--d7t-label2) !important;
++    }
++
++    .sync__shot {
++        position: relative;
++        border-radius: 12px !important;
++        background: #000 !important;
++        overflow: hidden;
++        box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.14) !important;
++        max-height: 19dvh !important;
++        touch-action: none;
++    }
++
++    .sync__shot--picking {
++        cursor: crosshair;
++        box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.14) !important;
++    }
++
++    .sync__shot--current {
++        box-shadow: 0 0 0 2.5px var(--d7t-blue) !important;
++    }
++
++    .sync__canvas {
++        display: block;
++        width: 100%;
++        height: 100%;
++        max-height: 19dvh;
++        object-fit: contain;
++        background: #000;
++    }
++
++    // No picture yet (or why not): never a blank black box.
++    .sync__shot:has(.sync__canvas:not([data-painted]))::after {
++        content: 'Waiting for the picture…';
++        position: absolute;
++        inset: 0;
++        display: grid;
++        place-items: center;
++        padding: 0 16px;
++        text-align: center;
++        color: var(--d7t-label2);
++        font-size: 14px;
++        pointer-events: none;
++    }
++
++    .sync__shot[data-error]:has(.sync__canvas:not([data-painted]))::after {
++        content: 'Waiting for the picture…\A' attr(data-error);
++        white-space: pre-wrap;
++        font-size: 12px;
++    }
++
++    .sync__selection {
++        border: 2px solid #ffd60a !important;
++        border-radius: 4px;
++        background: rgba(255, 214, 10, 0.16) !important;
++        box-shadow: none !important;
++    }
++
++    .sync__actions {
++        display: flex;
++        flex-direction: column;
++        gap: 4px;
++        padding: 4px 16px 0;
++    }
++
++    .sync__primary {
++        height: 50px;
++        border: 0 !important;
++        border-radius: 999px !important;
++        background: #fff !important;
++        color: #000 !important;
++        font-size: 17px !important;
++        font-weight: 600 !important;
++        box-shadow: none !important;
++
++        &:disabled {
++            background: var(--d7t-fill) !important;
++            color: var(--d7t-label2) !important;
++        }
++    }
++
++    .sync__link {
++        height: 44px;
++        border: 0 !important;
++        background: transparent !important;
++        color: var(--d7t-blue) !important;
++        font-size: 16px !important;
++        box-shadow: none !important;
++    }
++
++    .sync__readout {
++        margin: 6px 4px 0 !important;
++    }
++
++    .sync__result,
++    .sync__stepper,
++    .sync__chips {
++        margin-left: 16px !important;
++        margin-right: 16px !important;
++    }
++
++    .sync__step-button,
++    .sync__chip {
++        border: 0 !important;
++        background: var(--d7t-fill) !important;
++        color: #fff !important;
++        box-shadow: none !important;
++    }
++
++    .sync__chip--on {
++        background: #fff !important;
++        color: #000 !important;
++    }
++  }
++
++  // Landscape: no grabber (the sheet is a side column there)
++  @media (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios body .player-controls__split-audio-panel .split-audio::before,
++    html.d7t-ios.d7t-ios body app-audio-sync-window > .sync::before {
++        display: none;
++    }
++
++    html.d7t-ios.d7t-ios body .split-audio__list {
++        max-height: none;
++    }
++
++    // The left column has to hold the sync controls too: the picture/audio card shrinks to two lines.
++    html.d7t-ios.d7t-ios body .split-audio__side-label,
++    html.d7t-ios.d7t-ios body .split-audio__side-src {
++        display: none !important;
++    }
++
++    html.d7t-ios.d7t-ios body .split-audio__side {
++        padding: 7px 12px !important;
++    }
++
++    html.d7t-ios.d7t-ios body .split-audio__link {
++        flex-direction: column !important;
++        margin: 4px 12px 8px !important;
++    }
++
++    html.d7t-ios.d7t-ios body .split-audio__side + .split-audio__link-icon + .split-audio__side {
++        box-shadow: inset 0 0.5px 0 var(--d7t-sep) !important;
++    }
++
++    html.d7t-ios.d7t-ios body .sync-section {
++        gap: 8px !important;
++    }
++
++    html.d7t-ios.d7t-ios body .sync-section__start {
++        height: 44px !important;
++    }
++
++    html.d7t-ios.d7t-ios body .sync-section__tool {
++        height: 42px;
++    }
++
++    html.d7t-ios.d7t-ios body .sync__shot,
++    html.d7t-ios.d7t-ios body .sync__canvas {
++        max-height: 30dvh !important;
++    }
++  }
++}
++
++
++// ── Settings rows with a description: title and value on one line, the description full width under them ──
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios .setting-item:not(.setting-item--full-control) {
++        align-items: center;
++        row-gap: 2px !important;
++    }
++
++    html.d7t-ios .setting-item:not(.setting-item--full-control) > .setting-item__meta {
++        display: contents;
++    }
++
++    html.d7t-ios .setting-item:not(.setting-item--full-control) .setting-item__meta h4 {
++        grid-column: 1;
++        grid-row: 1;
++        margin: 0;
++    }
++
++    html.d7t-ios .setting-item:not(.setting-item--full-control) .setting-item__meta p {
++        grid-column: 1 / -1;
++        grid-row: 2;
++        margin: 0 !important;
++    }
++
++    html.d7t-ios .setting-item:not(.setting-item--full-control) > .setting-item__control {
++        grid-column: 2;
++        grid-row: 1;
++        justify-self: end;
++    }
++}
++
++// ── Empty / no-data states (Favorites, Recently viewed, No results): icon tile, white title, white capsule ──
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios app-empty-state .empty-state {
++        gap: 0;
++
++        .empty-icon-container {
++            display: grid;
++            place-items: center;
++            width: 84px;
++            height: 84px;
++            margin: 0 auto 18px;
++            border-radius: 24px;
++            background: rgba(10, 132, 255, 0.16);
++            box-shadow: none;
++
++            .empty-icon,
++            mat-icon {
++                width: 40px;
++                height: 40px;
++                font-size: 40px;
++                color: #0a84ff;
++            }
++        }
++
++        .content {
++            display: flex;
++            flex-direction: column;
++            align-items: center;
++            gap: 6px;
++            text-align: center;
++        }
++
++        .title {
++            margin: 0;
++            background: none !important;
++            -webkit-text-fill-color: #fff !important;
++            color: #fff !important;
++            font-size: 22px !important;
++            font-weight: 700 !important;
++            letter-spacing: -0.015em;
++        }
++
++        .description {
++            max-width: 300px;
++            margin: 0;
++            color: rgba(235, 235, 245, 0.6) !important;
++            font-size: 15px;
++            line-height: 1.4;
++        }
++
++        .actions {
++            margin-top: 18px;
++        }
++
++        .actions button,
++        .actions .secondary-button {
++            min-height: 48px;
++            padding: 0 28px;
++            border: 0;
++            border-radius: 999px;
++            background: #fff !important;
++            color: #000 !important;
++            font-size: 16px;
++            font-weight: 600;
++        }
++    }
++
++    // Sources: the sort control is one round glass button, not a wide white pill.
++    html.d7t-ios.d7t-ios .sources-page {
++        .sources-header {
++            display: flex !important;
++            flex-direction: row !important;
++            flex-wrap: nowrap !important;
++            align-items: center !important;
++            justify-content: space-between !important;
++        }
++
++        .sources-header__title {
++            flex: 1 1 auto;
++            min-width: 0;
++        }
++
++        .sources-header__actions {
++            flex: 0 0 auto;
++        }
++
++        .sort-trigger.sort-trigger.sort-trigger,
++        .sources-action.sort-trigger.sort-trigger {
++            --mdc-filled-button-container-color: rgba(120, 120, 128, 0.32);
++            --mat-button-filled-container-color: rgba(120, 120, 128, 0.32);
++            --mdc-filled-button-label-text-color: #fff;
++            --mat-button-filled-label-text-color: #fff;
++            min-width: 0 !important;
++            width: 38px;
++            height: 38px;
++            min-height: 38px !important;
++            padding: 0 !important;
++            border-radius: 50% !important;
++            background: rgba(120, 120, 128, 0.32) !important;
++            color: #fff !important;
++            box-shadow: none !important;
++
++            .sort-trigger__label,
++            .sort-trigger__chevron {
++                display: none !important;
++            }
++
++            mat-icon {
++                margin: 0 !important;
++            }
++        }
++
++        .sources-title {
++            font-size: 34px !important;
++            font-weight: 700 !important;
++            letter-spacing: -0.02em;
++        }
++    }
++}
 diff --git a/apps/web/src/app/app.component.ts b/apps/web/src/app/app.component.ts
 index 3f52add..2b611e6 100644
 --- a/apps/web/src/app/app.component.ts
@@ -3907,10 +4841,10 @@ index 0000000..2dd8486
 +}
 diff --git a/apps/web/src/app/ios/ios-mpv-host.ts b/apps/web/src/app/ios/ios-mpv-host.ts
 new file mode 100644
-index 0000000..21a2f56
+index 0000000..7925bc0
 --- /dev/null
 +++ b/apps/web/src/app/ios/ios-mpv-host.ts
-@@ -0,0 +1,746 @@
+@@ -0,0 +1,754 @@
 +import type {
 +    ElectronBridgeApi,
 +    EmbeddedMpvBounds,
@@ -4616,8 +5550,14 @@ index 0000000..21a2f56
 +                region,
 +            };
 +            if (role === 'preview') paintPreview(slot.last);
-+        } catch {
-+            /* the player has no picture yet */
++        } catch (error) {
++            // No picture yet: the clock window says so (and why, in short) instead of staying blank.
++            const why = String((error as { message?: string })?.message ?? error).slice(0, 80);
++            document
++                .querySelectorAll<HTMLCanvasElement>(role === 'main' ? 'canvas[data-test-id="audio-sync-main-shot"]' : 'canvas[data-embedded-mpv-preview]')
++                .forEach((canvas) => {
++                    if (canvas.parentElement && !canvas.dataset['painted']) canvas.parentElement.dataset['error'] = why;
++                });
 +        } finally {
 +            slot.busy = false;
 +        }
@@ -4637,6 +5577,8 @@ index 0000000..21a2f56
 +            canvas.width = frame.width;
 +            canvas.height = frame.height;
 +        }
++        canvas.dataset['painted'] = '1';
++        if (canvas.parentElement) delete canvas.parentElement.dataset['error'];
 +        context.putImageData(new ImageData(frame.data as Uint8ClampedArray<ArrayBuffer>, frame.width, frame.height), 0, 0);
 +    });
 +}
@@ -4659,10 +5601,10 @@ index 0000000..21a2f56
 +}
 diff --git a/apps/web/src/app/ios/ios-native-tabs.ts b/apps/web/src/app/ios/ios-native-tabs.ts
 new file mode 100644
-index 0000000..765b294
+index 0000000..1910a67
 --- /dev/null
 +++ b/apps/web/src/app/ios/ios-native-tabs.ts
-@@ -0,0 +1,128 @@
+@@ -0,0 +1,133 @@
 +import { getD7tNative } from './ios-bridge';
 +
 +/**
@@ -4740,6 +5682,11 @@ index 0000000..765b294
 +        html.classList.toggle(
 +            'd7t-more-btn',
 +            !hasPlayer && !searchHeader && !hidden
++        );
++        // Home: the hero runs up behind the status bar (Apple TV style).
++        html.classList.toggle(
++            'd7t-home',
++            /\/dashboard\/?$/.test(path) && !hasPlayer && !hidden
 +        );
 +        send({
 +            active,
@@ -8738,6 +9685,114 @@ index afb68a7..9eace24 100644
              "HERO_RECENTLY_ADDED": "Recently added",
              "HERO_CONTINUE": "Continue",
              "HERO_WATCH_LIVE": "Watch live",
+diff --git a/apps/web/src/assets/icons/d7t-logo.png b/apps/web/src/assets/icons/d7t-logo.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..6db2d5c97b5bfa3f2b0938f4c55c9e85a1a968f6
+GIT binary patch
+literal 5136
+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
+
+literal 0
+HcmV?d00001
+
 diff --git a/apps/web/src/index.html b/apps/web/src/index.html
 index 4314d5c..06063d8 100644
 --- a/apps/web/src/index.html
@@ -12634,6 +13689,143 @@ index d832ac7..71f89b1 100644
      readonly programs = input<EpgProgram[]>([]);
      readonly channelName = input('');
      readonly channelLogo = input('');
+diff --git a/libs/ui/playback/src/lib/audio-sync/audio-sync-ticker.ts b/libs/ui/playback/src/lib/audio-sync/audio-sync-ticker.ts
+index 9f393c8..ec374e7 100644
+--- a/libs/ui/playback/src/lib/audio-sync/audio-sync-ticker.ts
++++ b/libs/ui/playback/src/lib/audio-sync/audio-sync-ticker.ts
+@@ -72,7 +72,11 @@ export class AudioSyncTicker {
+             // attached here too, and there is no preview session whose
+             // "playing" update would end the "opening" state.
+             ctx.split.sync();
+-            if (ctx.pickSource() === 'main') {
++            // The phone keeps both pictures in view while picking: the main one is read throughout.
++            const phone =
++                typeof document !== 'undefined' &&
++                document.documentElement.classList.contains('d7t-ios');
++            if (ctx.pickSource() === 'main' || phone) {
+                 ctx.pickFrame(
+                     api.captureEmbeddedMpvFrame(
+                         'main',
+@@ -80,7 +84,12 @@ export class AudioSyncTicker {
+                         PICK_CAPTURE_WIDTH
+                     )
+                 );
+-            } else if (ctx.split.active && ctx.previewStatus() === 'starting') {
++            }
++            if (
++                ctx.pickSource() !== 'main' &&
++                ctx.split.active &&
++                ctx.previewStatus() === 'starting'
++            ) {
+                 this.checkFirstFrame(api.captureEmbeddedMpvFrame('preview'));
+             }
+             return;
+diff --git a/libs/ui/playback/src/lib/audio-sync/audio-sync-window.component.html b/libs/ui/playback/src/lib/audio-sync/audio-sync-window.component.html
+index fefba13..0489b61 100644
+--- a/libs/ui/playback/src/lib/audio-sync/audio-sync-window.component.html
++++ b/libs/ui/playback/src/lib/audio-sync/audio-sync-window.component.html
+@@ -93,7 +93,7 @@
+ 
+     <!-- Main video: the cropped clock (live) or the whole frame (picker). -->
+     <section class="sync__source" [hidden]="!showMain() || isCompare()">
+-        @if (!isPicking()) {
++        @if (!isPicking() || both) {
+             <div class="sync__label">
+                 {{ 'CHANNELS.SPLIT_AUDIO.SYNC.MAIN_VIDEO' | translate }}
+             </div>
+@@ -101,7 +101,8 @@
+         <div
+             class="sync__shot"
+             [class.sync__shot--picking]="isPicking()"
+-            (pointerdown)="onStagePointerDown($event)"
++            [class.sync__shot--current]="isPicking() && pickSource() === 'main'"
++            (pointerdown)="onStagePointerDown($event, 'main')"
+             (pointermove)="onStagePointerMove($event)"
+             (pointerup)="onStagePointerUp($event)"
+             (pointercancel)="onStagePointerUp($event)"
+@@ -125,7 +126,7 @@
+ 
+     <!-- Audio channel: its own silent session, painted onto this canvas. -->
+     <section class="sync__source" [hidden]="!showAudio()">
+-        @if (!isPicking()) {
++        @if (!isPicking() || both) {
+             <div class="sync__label">
+                 {{ 'CHANNELS.SPLIT_AUDIO.SYNC.AUDIO_CHANNEL' | translate }}
+                 @if (audioName()) {
+@@ -136,7 +137,8 @@
+         <div
+             class="sync__shot"
+             [class.sync__shot--picking]="isPicking()"
+-            (pointerdown)="onStagePointerDown($event)"
++            [class.sync__shot--current]="isPicking() && pickSource() === 'audio'"
++            (pointerdown)="onStagePointerDown($event, 'audio')"
+             (pointermove)="onStagePointerMove($event)"
+             (pointerup)="onStagePointerUp($event)"
+             (pointercancel)="onStagePointerUp($event)"
+diff --git a/libs/ui/playback/src/lib/audio-sync/audio-sync-window.component.ts b/libs/ui/playback/src/lib/audio-sync/audio-sync-window.component.ts
+index 4072194..fccc576 100644
+--- a/libs/ui/playback/src/lib/audio-sync/audio-sync-window.component.ts
++++ b/libs/ui/playback/src/lib/audio-sync/audio-sync-window.component.ts
+@@ -102,11 +102,15 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
+     protected readonly sync = computed(() => this.controls().sync);
+     protected readonly isPicking = computed(() => this.sync().mode() === 'pick');
+     protected readonly pickSource = computed(() => this.sync().pickSource());
++    /** On the phone both pictures stay in view while the clock is picked (tap one, drag a box on it). */
++    protected readonly both =
++        typeof document !== 'undefined' &&
++        document.documentElement.classList.contains('d7t-ios');
+     protected readonly showMain = computed(
+-        () => !this.isPicking() || this.pickSource() === 'main'
++        () => !this.isPicking() || this.both || this.pickSource() === 'main'
+     );
+     protected readonly showAudio = computed(
+-        () => !this.isPicking() || this.pickSource() === 'audio'
++        () => !this.isPicking() || this.both || this.pickSource() === 'audio'
+     );
+     protected readonly audioName = computed(
+         () => this.controls().activeAudio()?.title ?? ''
+@@ -287,9 +291,12 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
+     // --------------------------------------------------------------- drawing
+ 
+     private drawMain(frame: EmbeddedMpvFrameCapture | null): void {
+-        this.finder.see(frame);
+-        if (this.isPicking() && !this.selection()) {
+-            this.finder.auto((region) => this.selection.set(region));
++        // The clock finder only looks at the picture being picked (the phone keeps both on screen).
++        if (!this.isPicking() || this.pickSource() === 'main') {
++            this.finder.see(frame);
++            if (this.isPicking() && !this.selection()) {
++                this.finder.auto((region) => this.selection.set(region));
++            }
+         }
+         const canvas = this.mainCanvas()?.nativeElement;
+         if (!canvas) return;
+@@ -299,12 +306,14 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
+             // No fresh picture: clear it rather than leave an old one that
+             // would pass for live.
+             context.clearRect(0, 0, canvas.width, canvas.height);
++            delete canvas.dataset['painted'];
+             return;
+         }
+         if (canvas.width !== frame.width || canvas.height !== frame.height) {
+             canvas.width = frame.width;
+             canvas.height = frame.height;
+         }
++        canvas.dataset['painted'] = '1';
+         context.putImageData(
+             new ImageData(
+                 frame.data as Uint8ClampedArray<ArrayBuffer>,
+@@ -318,8 +327,9 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
+ 
+     // ---------------------------------------------------------- region picker
+ 
+-    protected onStagePointerDown(event: PointerEvent): void {
++    protected onStagePointerDown(event: PointerEvent, source?: SyncSourceKey): void {
+         if (!this.isPicking() || event.button !== 0) return;
++        if (source && source !== this.pickSource()) this.selectPickSource(source);
+         const point = this.pointIn(event);
+         if (!point) return;
+         (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
 diff --git a/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-command-runner.ts b/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-command-runner.ts
 index 926d545..7fbc74c 100644
 --- a/libs/ui/playback/src/lib/embedded-mpv-player/embedded-mpv-command-runner.ts
@@ -13479,10 +14671,24 @@ index 44d146f..c703a3b 100644
      isEnabled(): boolean {
          return this.enrichment.isEnabled();
 diff --git a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.component.html b/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.component.html
-index 221c433..12eb9f5 100644
+index 221c433..4c1e3d6 100644
 --- a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.component.html
 +++ b/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.component.html
-@@ -107,11 +107,6 @@
+@@ -9,6 +9,13 @@
+         [attr.aria-label]="'WORKSPACE.DASHBOARD.HERO_LABEL' | translate"
+         [class.hero--paused]="paused()"
+         [class.hero--rotating]="canRotate()"
++        [class.hero--dragging]="drag() !== 0"
++        [class.hero--settling]="dragSettling()"
++        [style.--hero-drag.px]="drag()"
++        (touchstart)="onTouchStart($event)"
++        (touchmove)="onTouchMove($event)"
++        (touchend)="onTouchEnd()"
++        (touchcancel)="onTouchEnd()"
+         (mouseenter)="setHovered(true)"
+         (mouseleave)="setHovered(false)"
+         (focusin)="onFocusIn()"
+@@ -107,11 +114,6 @@
                              slide.episodeBadge
                          }}</app-meta-chip>
                      }
@@ -13494,7 +14700,7 @@ index 221c433..12eb9f5 100644
                      @for (genre of slide.genres; track genre) {
                          <app-meta-chip class="hero__pill">{{
                              genre
-@@ -132,6 +127,11 @@
+@@ -132,6 +134,11 @@
                              slide.year
                          }}</app-meta-chip>
                      }
@@ -13506,7 +14712,7 @@ index 221c433..12eb9f5 100644
                      @if (slide.source) {
                          <app-meta-chip class="hero__pill hero__pill--source">{{
                              slide.source
-@@ -181,6 +181,7 @@
+@@ -181,6 +188,7 @@
                          class="hero__button hero__button--primary"
                          [attr.data-test-id]="current ? primary.testId : null"
                          [routerLink]="primary.link"
@@ -13514,7 +14720,7 @@ index 221c433..12eb9f5 100644
                          [state]="primary.state ?? {}"
                      >
                          <mat-icon aria-hidden="true">{{
-@@ -203,6 +204,7 @@
+@@ -203,6 +211,7 @@
                                  current ? secondary.testId : null
                              "
                              [routerLink]="secondary.link"
@@ -13522,6 +14728,73 @@ index 221c433..12eb9f5 100644
                              [state]="secondary.state ?? {}"
                          >
                              <mat-icon aria-hidden="true">{{
+diff --git a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.component.ts b/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.component.ts
+index 96fd765..5a07cd7 100644
+--- a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.component.ts
++++ b/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.component.ts
+@@ -164,6 +164,62 @@ export class DashboardHeroComponent {
+         this.hovered.set(hovered);
+     }
+ 
++    // ── Touch: drag the hero sideways like the Apple TV app ───────────────
++    private touchX = 0;
++    private touchY = 0;
++    private dragging = false;
++    private axisLocked: 'x' | 'y' | null = null;
++    /** Live drag distance (px), read by the stylesheet to move the artwork and text. */
++    readonly drag = signal(0);
++    readonly dragSettling = signal(false);
++
++    onTouchStart(event: TouchEvent): void {
++        if (this.slides().length < 2 || event.touches.length !== 1) {
++            return;
++        }
++        const touch = event.touches[0];
++        this.touchX = touch.clientX;
++        this.touchY = touch.clientY;
++        this.dragging = true;
++        this.axisLocked = null;
++        this.dragSettling.set(false);
++        this.hovered.set(true);
++    }
++
++    onTouchMove(event: TouchEvent): void {
++        if (!this.dragging) {
++            return;
++        }
++        const touch = event.touches[0];
++        const dx = touch.clientX - this.touchX;
++        const dy = touch.clientY - this.touchY;
++        if (this.axisLocked === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
++            this.axisLocked = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'x' : 'y';
++        }
++        if (this.axisLocked === 'x') {
++            this.drag.set(dx);
++        }
++    }
++
++    onTouchEnd(): void {
++        if (!this.dragging) {
++            return;
++        }
++        this.dragging = false;
++        const dx = this.drag();
++        const count = this.slides().length;
++        const width =
++            typeof window !== 'undefined' ? window.innerWidth || 390 : 390;
++        if (this.axisLocked === 'x' && Math.abs(dx) > Math.min(70, width * 0.18)) {
++            const step = dx < 0 ? 1 : -1;
++            this.show((this.activeIndex() + step + count) % count);
++        }
++        this.axisLocked = null;
++        this.dragSettling.set(true);
++        this.drag.set(0);
++        this.hovered.set(false);
++    }
++
+     onFocusIn(): void {
+         this.focusWithin.set(true);
+     }
 diff --git a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.utils.ts b/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.utils.ts
 index 4171992..d654125 100644
 --- a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero.utils.ts
@@ -13535,34 +14808,22 @@ index 4171992..d654125 100644
      readonly remainingLabel?: DashboardRemainingLabel | null;
      readonly testId: string;
 diff --git a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html
-index 0d6bdad..638e703 100644
+index 0d6bdad..af9c968 100644
 --- a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html
 +++ b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.html
-@@ -8,6 +8,23 @@
+@@ -8,6 +8,11 @@
      <h1 class="visually-hidden" data-test-id="dashboard-page-heading">
          {{ 'WORKSPACE.SHELL.RAIL_DASHBOARD' | translate }}
      </h1>
 +    <!-- iPhone app only (hidden elsewhere by CSS): brand row above the hero, like the design. -->
 +    <div class="ios-home-top" data-test-id="ios-home-top">
-+        <span class="ios-home-top__avatar" aria-hidden="true">D</span>
++        <img class="ios-home-top__logo" src="assets/icons/d7t-logo.png" alt="" width="34" height="34" />
 +        <span class="ios-home-top__name">D7T</span>
-+        <button
-+            type="button"
-+            class="ios-home-top__search"
-+            aria-label="Search"
-+            data-test-id="ios-home-search"
-+            (click)="openIosSearch()"
-+        >
-+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-+                <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2" />
-+                <path d="M16 16l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
-+            </svg>
-+        </button>
 +    </div>
      @if (data.playlistsLoaded() && !hasPlaylists()) {
          <app-empty-state
              [type]="'welcome-dashboard'"
-@@ -42,6 +59,7 @@
+@@ -42,6 +47,7 @@
  
          <!-- Live favorites: no fallback. Recently watched live gets its own rail. -->
          @if (
@@ -13570,7 +14831,7 @@ index 0d6bdad..638e703 100644
              dashboardRails().liveFavorites &&
              !showLiveFavoritesSkeleton() &&
              liveFavoriteCardsEnriched().length > 0
-@@ -58,7 +76,7 @@
+@@ -58,7 +64,7 @@
                      liveEpg.setVisibleCards('favorites', $event)
                  "
              />
@@ -13579,7 +14840,7 @@ index 0d6bdad..638e703 100644
              <lib-dashboard-rail-skeleton
                  layout="channel"
                  testId="dashboard-live-favorites-rail-skeleton"
-@@ -66,6 +84,7 @@
+@@ -66,6 +72,7 @@
          }
  
          @if (
@@ -13587,7 +14848,7 @@ index 0d6bdad..638e703 100644
              dashboardRails().recentlyWatchedLive &&
              recentLiveCardsEnriched().length > 0
          ) {
-@@ -110,7 +129,11 @@
+@@ -110,7 +117,11 @@
          }
  
          <!-- Sources rail -->
@@ -13600,7 +14861,7 @@ index 0d6bdad..638e703 100644
              <lib-dashboard-rail
                  [label]="'WORKSPACE.DASHBOARD.RECENT_SOURCES' | translate"
                  [items]="sourceCards()"
-@@ -121,13 +144,37 @@
+@@ -121,13 +132,37 @@
                  [reserveMetaLine]="true"
                  (actionSelected)="onSourceActionSelected($event)"
              />
@@ -13640,10 +14901,10 @@ index 0d6bdad..638e703 100644
          @if (
              dashboardRails().xtreamRecentlyAdded &&
 diff --git a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
-index df193cc..23e1bd2 100644
+index df193cc..66f6da0 100644
 --- a/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
 +++ b/libs/workspace/dashboard/feature/src/lib/rails/workspace-dashboard-rails.component.scss
-@@ -57,3 +57,149 @@
+@@ -57,3 +57,124 @@
          gap: 24px;
      }
  }
@@ -13654,56 +14915,31 @@ index df193cc..23e1bd2 100644
 +}
 +
 +:host-context(html.d7t-ios) .ios-home-top {
++    // Top-leading corner, on the same row as the system "More" button: app logo + name.
 +    display: flex;
 +    align-items: center;
 +    gap: 10px;
-+    padding: 4px 0 12px;
-+    // Sits on top of the full-bleed hero (design #1); the hero's top gradient keeps it readable.
-+    position: relative;
-+    z-index: 3;
-+    margin-bottom: -56px;
++    position: fixed;
++    z-index: 30;
++    top: calc(env(safe-area-inset-top, 0px) + 8px);
++    left: calc(16px + env(safe-area-inset-left, 0px));
++    height: 44px;
++    pointer-events: none;
 +}
 +
-+.ios-home-top__avatar {
-+    display: grid;
-+    place-items: center;
++.ios-home-top__logo {
 +    width: 34px;
 +    height: 34px;
-+    border-radius: 50%;
-+    background: linear-gradient(135deg, #0a84ff, #5e5ce6);
-+    color: #fff;
-+    font-size: 16px;
-+    font-weight: 700;
++    border-radius: 8px;
++    box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.18), 0 2px 8px rgba(0, 0, 0, 0.4);
 +}
 +
 +.ios-home-top__name {
-+    flex: 1;
 +    font-size: 20px;
 +    font-weight: 700;
 +    letter-spacing: -0.01em;
-+}
-+
-+.ios-home-top__search {
-+    display: grid;
-+    place-items: center;
-+    width: 40px;
-+    height: 40px;
-+    padding: 0;
-+    border: 0;
-+    border-radius: 50%;
 +    color: #fff;
-+    background: rgba(118, 118, 128, 0.3);
-+    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
-+    -webkit-tap-highlight-color: transparent;
-+}
-+
-+.ios-home-top__name::after {
-+    content: var(--d7t-build, '');
-+    margin-inline-start: 8px;
-+    font-size: 11px;
-+    font-weight: 500;
-+    letter-spacing: 0;
-+    color: rgba(235, 235, 245, 0.4);
++    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
 +}
 +
 +// iPhone Home: numbered "Top 10 This Week" rail (design #2, same look as the Movies tab).
