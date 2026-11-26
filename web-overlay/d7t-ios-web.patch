@@ -1264,10 +1264,10 @@ index 0000000..9d562c2
 +}
 diff --git a/apps/web/src/_ios-mock.scss b/apps/web/src/_ios-mock.scss
 new file mode 100644
-index 0000000..28fdb1c
+index 0000000..468572b
 --- /dev/null
 +++ b/apps/web/src/_ios-mock.scss
-@@ -0,0 +1,1295 @@
+@@ -0,0 +1,1606 @@
 +// The phone app, exactly as the design (D7T mock, 393 pt wide): every value below is read from the
 +// mock's own markup. Loaded last, so it wins over the earlier shell/Lume rules.
 +@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
@@ -2461,106 +2461,417 @@ index 0000000..28fdb1c
 +    }
 +}
 +
-+// ── Audio from another channel (#39): one calm sync card, offset first, one blue button ──────────
++// ── Audio from another channel (#39) + Pick the match clock (#40) ───────────────────────────────
++// Approved mock: a bottom sheet; Picture/Audio tiles; once a channel is picked the list steps aside and
++// one calm card holds Auto/Manual, the offset, one blue button and two quiet text actions.
 +@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
-+    html.d7t-ios.d7t-ios .split-audio__after {
-+        margin: 6px 14px 14px;
-+        padding: 14px 16px 10px !important;
-+        border-radius: 22px;
-+        background: rgba(255, 255, 255, 0.06);
++    html.d7t-ios.d7t-ios body .player-controls__split-audio-panel {
++        inset: auto 0 0 0 !important;
++        justify-content: stretch;
++
++        .split-audio {
++            width: 100% !important;
++            max-width: none !important;
++            max-height: 82vh !important;
++            box-sizing: border-box;
++            padding: 0 16px calc(18px + env(safe-area-inset-bottom)) !important;
++            border-radius: 38px 38px 0 0 !important;
++            border: 1px solid #2c2c31 !important;
++            border-bottom: 0 !important;
++            background: #1b1b1f !important;
++            overflow-x: hidden !important;
++        }
++    }
++
++    html.d7t-ios.d7t-ios body .split-audio * {
++        min-width: 0;
 +        box-sizing: border-box;
++    }
++
++    html.d7t-ios.d7t-ios body .split-audio__header {
++        padding: 0 !important;
++        margin: 22px 2px 0 !important;
++        gap: 8px;
++        flex-wrap: nowrap !important;
++    }
++
++    html.d7t-ios.d7t-ios body .split-audio__title {
++        flex: 1 1 auto;
++        white-space: nowrap !important;
++        overflow: hidden;
++        text-overflow: ellipsis;
++    }
++
++    html.d7t-ios.d7t-ios body .split-audio__header-icon {
++        display: none !important;
++    }
++
++    html.d7t-ios.d7t-ios body .split-audio__icon-button {
++        flex: none;
++        width: 34px !important;
++        height: 34px !important;
++        border-radius: 50% !important;
++        background: #3a3a3f !important;
++        color: #e5e5ea !important;
++        padding: 0 !important;
++    }
++
++    html.d7t-ios.d7t-ios body .split-audio__icon-button--on {
++        background: #fff !important;
++        color: #000 !important;
++    }
++
++    // Picture / Audio tiles
++    html.d7t-ios.d7t-ios body .split-audio__link {
++        display: flex !important;
++        flex-direction: row !important;
++        align-items: center;
++        gap: 8px !important;
++        margin: 18px 0 0 !important;
++        padding: 0 !important;
++        background: transparent !important;
++    }
++
++    html.d7t-ios.d7t-ios body .split-audio__side {
++        flex: 1 1 0;
++        height: 92px;
++        display: block !important;
++        padding: 12px 12px 0 !important;
++        border-radius: 18px !important;
++        background: #26262b !important;
++        border: 1px solid #333339 !important;
 +        overflow: hidden;
 +    }
 +
-+    html.d7t-ios.d7t-ios .split-audio__divider {
-+        display: none !important;
-+    }
-+
-+    html.d7t-ios.d7t-ios .split-audio__after app-split-sync-section {
++    html.d7t-ios.d7t-ios body .split-audio__side-label {
 +        display: block;
-+        min-width: 0;
++        font-size: 11px !important;
++        font-weight: 600 !important;
++        letter-spacing: 0.8px;
++        text-transform: uppercase;
++        color: #9a9aa1 !important;
 +    }
 +
-+    html.d7t-ios.d7t-ios .sync-section {
++    html.d7t-ios.d7t-ios body .split-audio__side-main {
 +        display: flex !important;
-+        flex-direction: column;
-+        gap: 12px !important;
-+        min-width: 0;
-+        width: 100%;
-+        box-sizing: border-box;
++        align-items: center;
++        gap: 8px;
++        margin-top: 8px;
 +    }
 +
-+    html.d7t-ios.d7t-ios .sync-section > * {
++    html.d7t-ios.d7t-ios body .split-audio__side-text {
++        display: block !important;
 +        min-width: 0;
-+        max-width: 100%;
-+        box-sizing: border-box;
++        flex: 1 1 auto;
 +    }
 +
-+    html.d7t-ios.d7t-ios .sync-section__modes { order: 1; }
-+    html.d7t-ios.d7t-ios .sync-section__target { order: 2; }
-+    html.d7t-ios.d7t-ios .sync-section__manual { order: 3; }
-+    html.d7t-ios.d7t-ios .sync-section__start { order: 4; }
-+    html.d7t-ios.d7t-ios .sync-section__tools { order: 5; }
++    html.d7t-ios.d7t-ios body .split-audio__avatar {
++        flex: none;
++        width: 32px;
++        height: 32px;
++        border-radius: 10px;
++        display: grid !important;
++        place-items: center;
++        color: #fff;
++        font-size: 12px;
++        font-weight: 800;
++    }
 +
-+    // Explanations and the "freeze" switch live in Settings; the card keeps only what the mock shows.
-+    html.d7t-ios.d7t-ios .sync-section__hint,
-+    html.d7t-ios.d7t-ios .sync-section__check,
-+    html.d7t-ios.d7t-ios .sync-section__label,
-+    html.d7t-ios.d7t-ios .sync-section__tool[data-test-id='split-sync-quick'],
-+    html.d7t-ios.d7t-ios .split-audio__hints {
++    html.d7t-ios.d7t-ios body .split-audio__side-name {
++        display: block !important;
++        font-size: 14.5px !important;
++        font-weight: 700 !important;
++        line-height: 1.2 !important;
++        color: #fff !important;
++        white-space: nowrap;
++        overflow: hidden;
++        text-overflow: ellipsis;
++    }
++
++    html.d7t-ios.d7t-ios body .split-audio__side-src {
++        display: block !important;
++        min-height: 0 !important;
++        font-size: 12.5px !important;
++        line-height: 1.3 !important;
++        color: #0a84ff !important;
++        white-space: nowrap;
++        overflow: hidden;
++        text-overflow: ellipsis;
++    }
++
++    html.d7t-ios.d7t-ios body .split-audio__link-icon {
++        flex: none;
++        font-size: 18px !important;
++        width: 18px !important;
++        height: 18px !important;
++        color: #0a84ff !important;
++    }
++
++    // A channel is picked: the list steps aside (tap the Audio tile to change it).
++    html.d7t-ios.d7t-ios body .split-audio--changing .split-audio__after {
 +        display: none !important;
 +    }
 +
-+    html.d7t-ios.d7t-ios .sync-section__start {
-+        width: 100% !important;
-+        height: 50px !important;
-+        margin: 0 !important;
++    html.d7t-ios.d7t-ios body .split-audio__browse,
++    html.d7t-ios.d7t-ios body .split-audio__search,
++    html.d7t-ios.d7t-ios body .split-audio__scopes {
++        max-width: 100% !important;
++        box-sizing: border-box;
 +    }
 +
-+    html.d7t-ios.d7t-ios .sync-section__tools,
-+    html.d7t-ios.d7t-ios .sync-section__tools--pair {
-+        display: flex !important;
-+        justify-content: center;
-+        gap: 0 !important;
-+        padding: 0 !important;
-+        background: transparent !important;
++    html.d7t-ios.d7t-ios body .split-audio--compact .split-audio__browse,
++    html.d7t-ios.d7t-ios body .split-audio--compact .split-audio__list,
++    html.d7t-ios.d7t-ios body .split-audio--compact .split-audio__source {
++        display: none !important;
 +    }
 +
-+    html.d7t-ios.d7t-ios .sync-section__tool {
-+        height: 36px !important;
-+        padding: 0 !important;
++    // The sync card
++    html.d7t-ios.d7t-ios body .split-audio__after {
++        display: grid !important;
++        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
++        column-gap: 8px;
++        row-gap: 0;
++        margin: 14px 0 0 !important;
++        padding: 14px 14px 10px !important;
++        border-radius: 22px !important;
++        background: #26262b !important;
 +        border: 0 !important;
++        overflow: hidden;
++    }
++
++    html.d7t-ios.d7t-ios body .split-audio__after > *,
++    html.d7t-ios.d7t-ios body .sync-section > * {
++        grid-column: 1 / -1;
++    }
++
++    html.d7t-ios.d7t-ios body .split-audio__divider {
++        display: none !important;
++    }
++
++    html.d7t-ios.d7t-ios body .split-audio__after app-split-sync-section,
++    html.d7t-ios.d7t-ios body .sync-section,
++    html.d7t-ios.d7t-ios body .split-audio__footer {
++        display: contents !important;
++    }
++
++    html.d7t-ios.d7t-ios body .sync-section__modes { order: 1; }
++    html.d7t-ios.d7t-ios body .sync-section__target { order: 2; }
++    html.d7t-ios.d7t-ios body .sync-section__manual { order: 3; }
++    html.d7t-ios.d7t-ios body .sync-section__start { order: 4; }
++    html.d7t-ios.d7t-ios body .sync-section__tools { order: 5; grid-column: 1 !important; }
++    html.d7t-ios.d7t-ios body .split-audio__save { order: 6; grid-column: 1 / -1 !important; }
++    html.d7t-ios.d7t-ios body .split-audio__original { order: 7; grid-column: 2 !important; }
++
++    html.d7t-ios.d7t-ios body .sync-section__hint,
++    html.d7t-ios.d7t-ios body .sync-section__check,
++    html.d7t-ios.d7t-ios body .sync-section__label,
++    html.d7t-ios.d7t-ios body .sync-section__tool[data-test-id='split-sync-quick'],
++    html.d7t-ios.d7t-ios body .split-audio__hints,
++    html.d7t-ios.d7t-ios body .split-audio__save:disabled {
++        display: none !important;
++    }
++
++    // Auto | Manual
++    html.d7t-ios.d7t-ios body .sync-section__modes {
++        display: flex !important;
++        height: 38px;
++        width: 100% !important;
++        margin: 0 !important;
++        padding: 3px !important;
++        gap: 0 !important;
++        border-radius: 12px !important;
++        background: #3a3a3f !important;
++        border: 0 !important;
++    }
++
++    html.d7t-ios.d7t-ios body .sync-section__modes .sync-section__mode {
++        flex: 1 1 0;
++        height: 100% !important;
++        border: 0 !important;
++        border-radius: 10px !important;
 +        background: transparent !important;
-+        color: rgba(255, 255, 255, 0.78) !important;
-+        font-size: 14px !important;
++        color: #b9b9c0 !important;
++        font-size: 15px !important;
 +        font-weight: 600 !important;
++        box-shadow: none !important;
++    }
++
++    html.d7t-ios.d7t-ios body .sync-section__modes .sync-section__mode--on {
++        background: #0a84ff !important;
++        color: #fff !important;
++    }
++
++    // The offset: big number on the left, round minus / plus on the right
++    html.d7t-ios.d7t-ios body .sync-section__target {
++        display: block !important;
++        margin: 16px 0 0 !important;
++        padding: 0 !important;
++        background: transparent !important;
++        border: 0 !important;
++    }
++
++    html.d7t-ios.d7t-ios body .sync-section__target-row {
++        display: grid !important;
++        grid-template-columns: minmax(0, 1fr) 46px 46px;
++        align-items: center;
++        gap: 10px;
++        padding: 0 !important;
++        background: transparent !important;
++        border: 0 !important;
++    }
++
++    html.d7t-ios.d7t-ios body .sync-section__target-value {
++        order: -1;
++        background: transparent !important;
++        border: 0 !important;
++        box-shadow: none !important;
++        padding: 0 !important;
++        margin: 0 !important;
++        font-size: 44px !important;
++        font-weight: 700 !important;
++        letter-spacing: -1px;
++        line-height: 1 !important;
++        color: #fff !important;
++        white-space: nowrap;
++        text-align: left !important;
++
++        small {
++            margin-left: 2px;
++            font-size: 18px;
++            font-weight: 600;
++            letter-spacing: 0;
++            color: #8e8e93;
++        }
++    }
++
++    html.d7t-ios.d7t-ios body .sync-section__target .sync-section__nudge {
++        width: 46px !important;
++        height: 46px !important;
++        min-width: 46px !important;
++        max-width: 46px !important;
++        padding: 0 !important;
++        border-radius: 50% !important;
++        border: 0 !important;
++        background: #3a3a3f !important;
++        color: #fff !important;
++        font-size: 0 !important;
++        display: grid !important;
++        place-items: center;
++
++        &::before {
++            font-size: 26px;
++            font-weight: 600;
++            line-height: 1;
++        }
++    }
++
++    html.d7t-ios.d7t-ios body .sync-section__nudge[data-test-id='split-sync-target-minus']::before { content: '\2212'; }
++    html.d7t-ios.d7t-ios body .sync-section__nudge[data-test-id='split-sync-target-plus']::before { content: '+'; }
++
++    // One blue button; while measuring it is a calm grey Stop, never red.
++    html.d7t-ios.d7t-ios body .sync-section__start {
++        width: 100% !important;
++        height: 54px !important;
++        margin: 16px 0 0 !important;
++        padding: 0 16px !important;
++        border: 0 !important;
++        border-radius: 27px !important;
++        background: #0a84ff !important;
++        color: #fff !important;
++        font-size: 18px !important;
++        font-weight: 700 !important;
++        display: flex !important;
++        align-items: center;
++        justify-content: center;
++        gap: 10px;
++        box-shadow: none !important;
++
++        mat-icon {
++            font-size: 22px;
++            width: 22px;
++            height: 22px;
++        }
++    }
++
++    html.d7t-ios.d7t-ios body .sync-section__start.sync-section__start--on {
++        background: rgba(255, 255, 255, 0.12) !important;
++        color: #fff !important;
++    }
++
++    // Manual: keep its fields tidy inside the card
++    html.d7t-ios.d7t-ios body .sync-section__manual {
++        margin: 14px 0 0 !important;
++        padding: 0 !important;
++        background: transparent !important;
++        border: 0 !important;
++    }
++
++    // Two quiet text actions under the button
++    html.d7t-ios.d7t-ios body .sync-section__tools,
++    html.d7t-ios.d7t-ios body .sync-section__tools--pair {
++        display: flex !important;
++        margin: 8px 0 0 !important;
++        padding: 0 !important;
++        background: transparent !important;
++        border: 0 !important;
++        justify-content: flex-start;
++    }
++
++    html.d7t-ios.d7t-ios body .sync-section__tool,
++    html.d7t-ios.d7t-ios body .split-audio__save,
++    html.d7t-ios.d7t-ios body .split-audio__original {
++        height: 38px !important;
++        padding: 0 6px !important;
++        margin: 0 !important;
++        border: 0 !important;
++        border-radius: 0 !important;
++        background: transparent !important;
++        color: #a0a0a7 !important;
++        font-size: 14.5px !important;
++        font-weight: 600 !important;
++        white-space: nowrap;
++        overflow: hidden;
++        text-overflow: ellipsis;
++        box-shadow: none !important;
 +
 +        mat-icon {
 +            display: none !important;
 +        }
 +    }
 +
-+    // Footer: two quiet text actions side by side.
-+    html.d7t-ios.d7t-ios .split-audio__footer {
-+        display: flex !important;
-+        justify-content: space-between;
-+        align-items: center;
-+        gap: 12px;
-+        padding: 0 !important;
-+        margin-top: 2px;
++    html.d7t-ios.d7t-ios body .split-audio__original {
++        margin-top: 8px !important;
++        text-align: right;
++        justify-self: end;
++        color: #a0a0a7 !important;
 +    }
 +
-+    html.d7t-ios.d7t-ios .split-audio__save,
-+    html.d7t-ios.d7t-ios .split-audio__original {
-+        flex: 1 1 0;
-+        min-width: 0;
-+        height: 36px !important;
-+        padding: 0 !important;
-+        background: transparent !important;
-+        color: rgba(255, 255, 255, 0.78) !important;
-+        font-size: 14px !important;
-+        font-weight: 600 !important;
-+        white-space: normal;
++    // Pick the match clock: one picture at a time, blue box like the mock
++    html.d7t-ios.d7t-ios body .sync__selection {
++        border: 2px solid #0a84ff !important;
++        border-radius: 10px;
++        background: rgba(10, 132, 255, 0.14) !important;
++        box-shadow: none !important;
++    }
++}
++
++// While the audio sheet or the clock picker is open they own the bottom of the screen: the floating tab
++// bar steps away so it can never sit over (or take the taps of) the sheet's buttons.
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios:has(.player-controls__split-audio-panel .split-audio) app-workspace-shell-rail,
++    html.d7t-ios.d7t-ios:has(app-audio-sync-window) app-workspace-shell-rail {
++        display: none !important;
++    }
++}
++
++// Clock picker: keep the buttons reachable on short screens (the card scrolls instead of clipping).
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios body app-audio-sync-window > * {
++        overflow-y: auto !important;
++    }
++
++    html.d7t-ios.d7t-ios body app-audio-sync-window .sync__canvas {
++        max-height: 200px !important;
 +    }
 +}
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
@@ -16963,17 +17274,15 @@ index fefba13..0489b61 100644
              (pointerup)="onStagePointerUp($event)"
              (pointercancel)="onStagePointerUp($event)"
 diff --git a/libs/ui/playback/src/lib/audio-sync/audio-sync-window.component.ts b/libs/ui/playback/src/lib/audio-sync/audio-sync-window.component.ts
-index 4072194..fccc576 100644
+index 4072194..8e52c3e 100644
 --- a/libs/ui/playback/src/lib/audio-sync/audio-sync-window.component.ts
 +++ b/libs/ui/playback/src/lib/audio-sync/audio-sync-window.component.ts
-@@ -102,11 +102,15 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
+@@ -102,11 +102,13 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
      protected readonly sync = computed(() => this.controls().sync);
      protected readonly isPicking = computed(() => this.sync().mode() === 'pick');
      protected readonly pickSource = computed(() => this.sync().pickSource());
-+    /** On the phone both pictures stay in view while the clock is picked (tap one, drag a box on it). */
-+    protected readonly both =
-+        typeof document !== 'undefined' &&
-+        document.documentElement.classList.contains('d7t-ios');
++    /** One picture at a time on every screen: the tabs switch between the audio channel and the main video. */
++    protected readonly both = false;
      protected readonly showMain = computed(
 -        () => !this.isPicking() || this.pickSource() === 'main'
 +        () => !this.isPicking() || this.both || this.pickSource() === 'main'
@@ -16984,7 +17293,7 @@ index 4072194..fccc576 100644
      );
      protected readonly audioName = computed(
          () => this.controls().activeAudio()?.title ?? ''
-@@ -287,9 +291,12 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
+@@ -287,9 +289,12 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
      // --------------------------------------------------------------- drawing
  
      private drawMain(frame: EmbeddedMpvFrameCapture | null): void {
@@ -17000,7 +17309,7 @@ index 4072194..fccc576 100644
          }
          const canvas = this.mainCanvas()?.nativeElement;
          if (!canvas) return;
-@@ -299,12 +306,14 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
+@@ -299,12 +304,14 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
              // No fresh picture: clear it rather than leave an old one that
              // would pass for live.
              context.clearRect(0, 0, canvas.width, canvas.height);
@@ -17015,7 +17324,7 @@ index 4072194..fccc576 100644
          context.putImageData(
              new ImageData(
                  frame.data as Uint8ClampedArray<ArrayBuffer>,
-@@ -318,8 +327,9 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
+@@ -318,8 +325,9 @@ export class AudioSyncWindowComponent implements OnInit, OnDestroy {
  
      // ---------------------------------------------------------- region picker
  
@@ -17305,10 +17614,18 @@ index 4ee3dc1..bf79bf2 100644
      private readonly translate = inject(TranslateService);
      readonly controller = input.required<PlayerController>();
 diff --git a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html
-index 688a3ed..1fa79e3 100644
+index 688a3ed..37667ac 100644
 --- a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html
 +++ b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.html
-@@ -31,7 +31,23 @@
+@@ -1,5 +1,7 @@
+ <div
+     class="split-audio"
++    [class.split-audio--compact]="compact()"
++    [class.split-audio--changing]="onPhone && changing()"
+     role="dialog"
+     [attr.aria-label]="'CHANNELS.SPLIT_AUDIO.PANEL_TITLE' | translate"
+ >
+@@ -31,7 +33,43 @@
          </button>
      </header>
  
@@ -17317,14 +17634,34 @@ index 688a3ed..1fa79e3 100644
 +        <div class="split-audio__link" data-test-id="split-audio-link">
 +            <div class="split-audio__side">
 +                <span class="split-audio__side-label">Picture</span>
-+                <span class="split-audio__side-name">{{ pictureName() }}</span>
-+                <span class="split-audio__side-src">{{ pictureSource() }}</span>
++                <span class="split-audio__side-main">
++                    <span class="split-audio__avatar" aria-hidden="true" [style.background]="tint(pictureName())">{{ initials(pictureName()) }}</span>
++                    <span class="split-audio__side-text">
++                        <span class="split-audio__side-name">{{ pictureName() }}</span>
++                        <span class="split-audio__side-src">{{ pictureSource() }}</span>
++                    </span>
++                </span>
 +            </div>
 +            <mat-icon class="split-audio__link-icon" aria-hidden="true">link</mat-icon>
-+            <div class="split-audio__side" [class.split-audio__side--empty]="!active()">
++            <div
++                class="split-audio__side"
++                [class.split-audio__side--empty]="!active()"
++                [attr.role]="active() ? 'button' : null"
++                [attr.tabindex]="active() ? 0 : null"
++                data-test-id="split-audio-change"
++                (click)="active() && changing.set(!changing())"
++                (keydown.enter)="active() && changing.set(!changing())"
++            >
 +                <span class="split-audio__side-label">Audio</span>
-+                <span class="split-audio__side-name">{{ active() ? audioName() : 'Choose a channel' }}</span>
-+                <span class="split-audio__side-src">{{ audioSource() }}</span>
++                <span class="split-audio__side-main">
++                    @if (active()) {
++                        <span class="split-audio__avatar" aria-hidden="true" [style.background]="tint(audioName())">{{ initials(audioName()) }}</span>
++                    }
++                    <span class="split-audio__side-text">
++                        <span class="split-audio__side-name">{{ active() ? audioName() : 'Choose a channel' }}</span>
++                        <span class="split-audio__side-src">{{ active() ? audioSource() : 'tap a channel' }}</span>
++                    </span>
++                </span>
 +            </div>
 +        </div>
 +    }
@@ -17333,7 +17670,7 @@ index 688a3ed..1fa79e3 100644
          <label class="split-audio__source">
              <span>{{ 'CHANNELS.SPLIT_AUDIO.SOURCE_LABEL' | translate }}</span>
              <select
-@@ -93,6 +109,41 @@
+@@ -93,6 +131,41 @@
          </p>
      }
  
@@ -17375,7 +17712,7 @@ index 688a3ed..1fa79e3 100644
      @if (searching()) {
          <input
              #searchInput
-@@ -108,6 +159,19 @@
+@@ -108,6 +181,19 @@
          />
      }
  
@@ -17395,7 +17732,7 @@ index 688a3ed..1fa79e3 100644
      @if (!controls().hasChannelList()) {
          <p
              class="split-audio__error"
-@@ -142,6 +206,9 @@
+@@ -142,6 +228,9 @@
                          >
                      }
                      <span class="split-audio__name">{{ channel.name }}</span>
@@ -17405,7 +17742,7 @@ index 688a3ed..1fa79e3 100644
                  </button>
                  @if (controls().canCheck()) {
                      @if (checkOf(channel); as check) {
-@@ -221,8 +288,10 @@
+@@ -221,8 +310,10 @@
              </li>
          }
      </ul>
@@ -17416,7 +17753,7 @@ index 688a3ed..1fa79e3 100644
          <div class="split-audio__divider"></div>
  
          @if (controls().splitActive()) {
-@@ -322,5 +391,6 @@
+@@ -322,5 +413,6 @@
                  {{ 'CHANNELS.SPLIT_AUDIO.BACK_TO_ORIGINAL' | translate }}
              </button>
          </div>
@@ -17424,10 +17761,10 @@ index 688a3ed..1fa79e3 100644
      }
  </div>
 diff --git a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.scss b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.scss
-index a1ac048..b870f4b 100644
+index a1ac048..54c501a 100644
 --- a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.scss
 +++ b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.scss
-@@ -483,3 +483,129 @@
+@@ -483,3 +483,139 @@
  .split-audio__check-result--bad {
      color: #ffd0cc;
  }
@@ -17557,11 +17894,34 @@ index a1ac048..b870f4b 100644
 +    background: rgba(255, 255, 255, 0.16);
 +    font-weight: 600;
 +}
++
++/* Wrappers and tile that only the phone layout uses: invisible on desktop. */
++.split-audio__side-main,
++.split-audio__side-text {
++    display: contents;
++}
++
++.split-audio__avatar {
++    display: none;
++}
 diff --git a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.ts b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.ts
-index 1ab7542..6932214 100644
+index 1ab7542..1ad5d12 100644
 --- a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.ts
 +++ b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-audio-panel.component.ts
-@@ -16,6 +16,8 @@ import { SplitSyncSectionComponent } from './split-sync-section.component';
+@@ -2,10 +2,12 @@ import {
+     ChangeDetectionStrategy,
+     Component,
+     computed,
++    effect,
+     ElementRef,
+     input,
+     output,
+     signal,
++    untracked,
+     viewChild,
+ } from '@angular/core';
+ import { MatIconModule } from '@angular/material/icon';
+@@ -16,6 +18,8 @@ import { SplitSyncSectionComponent } from './split-sync-section.component';
  
  /** Search results beyond this are cut: refine the search instead of scrolling. */
  const MAX_SEARCH_RESULTS = 40;
@@ -17570,11 +17930,41 @@ index 1ab7542..6932214 100644
  const DELAY_STEPS = [0.5, 1, 5, 10] as const;
  
  /**
-@@ -49,13 +51,82 @@ export class SplitAudioPanelComponent {
+@@ -49,13 +53,112 @@ export class SplitAudioPanelComponent {
  
      protected readonly active = computed(() => this.controls().activeAudio());
  
 -    /** Rows shown: search matches while typing, else the favorites. */
++    /** Phone only: once a channel is picked the list gets out of the way, the sync card is the sheet. */
++    protected readonly onPhone =
++        typeof document !== 'undefined' &&
++        document.documentElement.classList.contains('d7t-ios');
++    protected readonly changing = signal(false);
++    protected readonly compact = computed(
++        () => this.onPhone && !!this.active() && !this.changing()
++    );
++
++    private readonly closeListOnPick = effect(() => {
++        this.active();
++        untracked(() => this.changing.set(false));
++    });
++
++    /** Two letters for a channel tile: "NM: beIN SPORTS 3 hevc" gives "BS". */
++    protected initials(name: string): string {
++        const words = name
++            .replace(/^[^:|]{1,6}[:|]\s*/, '')
++            .split(/\s+/)
++            .filter((word) => /[\p{L}\p{N}]/u.test(word));
++        const letters = words.slice(0, 2).map((word) => Array.from(word)[0]);
++        return (letters.join('') || '?').toUpperCase();
++    }
++
++    protected tint(name: string): string {
++        let hue = 0;
++        for (const ch of name) hue = (hue * 31 + ch.charCodeAt(0)) % 360;
++        return `hsl(${hue} 55% 42%)`;
++    }
++
 +    /** Subscriptions whose channels the app has loaded (iPhone app: every saved subscription). */
 +    protected readonly scopes = computed(() => {
 +        const seen = new Map<string, { id: string; title: string; count: number }>();
@@ -17657,7 +18047,7 @@ index 1ab7542..6932214 100644
          const needle = foldSearchText(this.query().trim());
          let rows: Channel[];
          if (needle) {
-@@ -68,6 +139,7 @@ export class SplitAudioPanelComponent {
+@@ -68,6 +171,7 @@ export class SplitAudioPanelComponent {
              }
              return rows;
          }
@@ -17665,7 +18055,7 @@ index 1ab7542..6932214 100644
          rows = channels.filter((channel) => controls.isFavorite(channel));
          // The channel in use stays on top even when it is not a favorite.
          const activeUrl = this.active()?.streamUrl;
-@@ -78,6 +150,14 @@ export class SplitAudioPanelComponent {
+@@ -78,6 +182,14 @@ export class SplitAudioPanelComponent {
          return rows;
      });
  
@@ -17680,7 +18070,7 @@ index 1ab7542..6932214 100644
      protected readonly isSearchMode = computed(
          () => this.query().trim().length > 0
      );
-@@ -87,6 +167,22 @@ export class SplitAudioPanelComponent {
+@@ -87,6 +199,22 @@ export class SplitAudioPanelComponent {
          return `${delay > 0 ? '+' : ''}${delay}`;
      });
  
@@ -17703,6 +18093,50 @@ index 1ab7542..6932214 100644
      protected toggleSearch(): void {
          const next = !this.searching();
          this.searching.set(next);
+diff --git a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-sync-section.component.html b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-sync-section.component.html
+index 234eaf1..27a9ac4 100644
+--- a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-sync-section.component.html
++++ b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-sync-section.component.html
+@@ -46,7 +46,7 @@
+         (click)="sync.press()"
+     >
+         <mat-icon aria-hidden="true">{{
+-            sync.stopShown() ? 'stop' : 'play_arrow'
++            sync.stopShown() ? 'stop' : sync.mode() === 'auto' ? 'schedule' : 'play_arrow'
+         }}</mat-icon>
+         <span>{{
+             (sync.stopShown()
+@@ -223,8 +223,10 @@
+                 class="sync-section__target-value"
+                 data-test-id="split-sync-target"
+             >
+-                {{ controls().activeAudio()?.delaySeconds ?? 0
+-                }}{{ 'CHANNELS.SPLIT_AUDIO.SECONDS_SHORT' | translate }}
++                {{ targetLabel()
++                }}<small>{{
++                    'CHANNELS.SPLIT_AUDIO.SECONDS_SHORT' | translate
++                }}</small>
+             </span>
+             <button
+                 type="button"
+diff --git a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-sync-section.component.ts b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-sync-section.component.ts
+index 6162828..6606a7a 100644
+--- a/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-sync-section.component.ts
++++ b/libs/ui/playback/src/lib/player-controls/split-audio-panel/split-sync-section.component.ts
+@@ -20,6 +20,13 @@ export class SplitSyncSectionComponent {
+     readonly controls = input.required<ControlsSplitAudio>();
+     protected readonly steps = MANUAL_STEPS;
+ 
++    /** The delay on show, signed and to one decimal: "+0.4", "-1.2", "0". */
++    protected targetLabel(): string {
++        const delay = this.controls().activeAudio()?.delaySeconds ?? 0;
++        const rounded = Math.round(delay * 10) / 10;
++        return `${rounded > 0 ? '+' : ''}${rounded}`;
++    }
++
+     protected onOriginalAudio(event: Event): void {
+         this.controls().syncCtl.setOriginalAudio(
+             (event.target as HTMLInputElement).checked
 diff --git a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero-slides.presenter.ts b/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero-slides.presenter.ts
 index 24943c3..ec9fe3a 100644
 --- a/libs/workspace/dashboard/feature/src/lib/rails/dashboard-hero-slides.presenter.ts
