@@ -1264,10 +1264,10 @@ index 0000000..9d562c2
 +}
 diff --git a/apps/web/src/_ios-shell.scss b/apps/web/src/_ios-shell.scss
 new file mode 100644
-index 0000000..0aea08b
+index 0000000..742342b
 --- /dev/null
 +++ b/apps/web/src/_ios-shell.scss
-@@ -0,0 +1,2851 @@
+@@ -0,0 +1,3185 @@
 +@mixin phone-controls {
 +            grid-template-columns: auto minmax(0, 1fr) !important;
 +            grid-template-areas:
@@ -3304,12 +3304,31 @@ index 0000000..0aea08b
 +        min-height: 48px;
 +    }
 +
-+    .split-audio__header-icon,
-+    .sync__header-icon {
++    .split-audio__header-icon {
 +        display: none !important;
 +    }
 +
-+    .split-audio__title,
++    .sync__header-icon {
++        display: block !important;
++        color: var(--d7t-blue) !important;
++        font-size: 24px !important;
++        width: 24px !important;
++        height: 24px !important;
++    }
++
++    .split-audio__title {
++        flex: 1;
++        margin: 0 !important;
++        font-size: 0 !important;
++
++        &::after {
++            content: 'Audio from another channel';
++            font-size: 20px;
++            font-weight: 700;
++            letter-spacing: -0.02em;
++        }
++    }
++
 +    .sync__title {
 +        flex: 1;
 +        margin: 0 !important;
@@ -3347,41 +3366,40 @@ index 0000000..0aea08b
 +        color: #000 !important;
 +    }
 +
-+    // ── picture ↔ audio: one grouped card
++    // ── picture ↔ audio: two linked cards (like the design)
 +    .split-audio__link {
 +        display: flex !important;
-+        align-items: stretch;
-+        gap: 0 !important;
++        align-items: center;
++        gap: 8px !important;
 +        margin: 2px 16px 12px !important;
 +        padding: 0 !important;
-+        background: var(--d7t-fill-soft);
-+        border-radius: 14px;
-+        overflow: hidden;
++        background: transparent !important;
 +    }
 +
 +    .split-audio__link-icon {
-+        display: none !important;
++        display: block !important;
++        flex: 0 0 auto;
++        width: 20px !important;
++        height: 20px !important;
++        font-size: 20px !important;
++        color: var(--d7t-blue) !important;
 +    }
 +
 +    .split-audio__side {
 +        flex: 1 1 0;
 +        min-width: 0;
-+        padding: 10px 14px !important;
-+        background: transparent !important;
++        padding: 10px 12px !important;
++        background: var(--d7t-fill-soft) !important;
 +        border: 0 !important;
-+        border-radius: 0 !important;
++        border-radius: 14px !important;
 +        box-shadow: none !important;
 +    }
 +
-+    .split-audio__side + .split-audio__link-icon + .split-audio__side {
-+        box-shadow: inset 0.5px 0 0 var(--d7t-sep) !important;
-+    }
-+
 +    .split-audio__side-label {
-+        text-transform: none !important;
-+        letter-spacing: 0 !important;
-+        font-size: 12px !important;
-+        font-weight: 500 !important;
++        text-transform: uppercase !important;
++        letter-spacing: 0.06em !important;
++        font-size: 11px !important;
++        font-weight: 600 !important;
 +        color: var(--d7t-label2) !important;
 +    }
 +
@@ -3409,11 +3427,14 @@ index 0000000..0aea08b
 +    .split-audio__scopes {
 +        display: flex !important;
 +        flex: 0 0 auto !important;
-+        gap: 8px !important;
++        gap: 2px !important;
 +        height: auto !important;
-+        padding: 0 16px 12px !important;
++        margin: 0 16px 12px !important;
++        padding: 2px !important;
 +        overflow-x: auto !important;
 +        overflow-y: hidden !important;
++        border-radius: 10px;
++        background: var(--d7t-fill);
 +        scrollbar-width: none;
 +
 +        &::-webkit-scrollbar {
@@ -3422,22 +3443,23 @@ index 0000000..0aea08b
 +    }
 +
 +    .split-audio__scope {
-+        flex: 0 0 auto !important;
-+        height: 34px !important;
-+        padding: 0 16px !important;
++        flex: 1 0 auto !important;
++        height: 32px !important;
++        padding: 0 14px !important;
 +        border: 0 !important;
-+        border-radius: 17px !important;
-+        background: var(--d7t-fill) !important;
++        border-radius: 8px !important;
++        background: transparent !important;
 +        box-shadow: none !important;
 +        color: #fff !important;
 +        font-size: 14px !important;
-+        font-weight: 600 !important;
++        font-weight: 500 !important;
 +        white-space: nowrap;
 +    }
 +
 +    .split-audio__scope--on {
 +        background: #fff !important;
 +        color: #000 !important;
++        font-weight: 600 !important;
 +    }
 +
 +    .split-audio__search {
@@ -3485,7 +3507,9 @@ index 0000000..0aea08b
 +    }
 +
 +    .split-audio__pick::before {
-+        display: none !important;
++        width: 26px !important;
++        height: 26px !important;
++        box-shadow: inset 0 0 0 2px rgba(235, 235, 245, 0.3) !important;
 +    }
 +
 +    .split-audio__row--active .split-audio__pick {
@@ -3555,10 +3579,10 @@ index 0000000..0aea08b
 +    }
 +
 +    .sync-section__mode--on {
-+        background: #fff !important;
-+        color: #000 !important;
++        background: var(--d7t-blue) !important;
++        color: #fff !important;
 +        font-weight: 600 !important;
-+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35) !important;
++        box-shadow: none !important;
 +    }
 +
 +    .sync-section__hint {
@@ -3572,8 +3596,8 @@ index 0000000..0aea08b
 +        height: 50px !important;
 +        border: 0 !important;
 +        border-radius: 999px !important;
-+        background: #fff !important;
-+        color: #000 !important;
++        background: var(--d7t-blue) !important;
++        color: #fff !important;
 +        font-size: 17px !important;
 +        font-weight: 600 !important;
 +        box-shadow: none !important;
@@ -3665,6 +3689,7 @@ index 0000000..0aea08b
 +
 +    .sync-section__target-row {
 +        display: flex !important;
++        flex-wrap: nowrap;
 +        align-items: center;
 +        gap: 0 !important;
 +        padding: 0 !important;
@@ -3673,26 +3698,48 @@ index 0000000..0aea08b
 +        overflow: hidden;
 +    }
 +
-+    .sync-section__target-row .sync-section__nudge {
-+        flex: 1;
-+        height: 46px;
-+        border: 0 !important;
-+        border-radius: 0 !important;
++    .sync-section__target-row {
 +        background: transparent !important;
-+        color: var(--d7t-blue) !important;
-+        font-size: 17px !important;
-+        font-weight: 600 !important;
-+        box-shadow: none !important;
++        overflow: visible !important;
++        gap: 10px !important;
 +    }
 +
 +    .sync-section__target-value {
++        order: 0;
++        flex: 1 1 auto;
++        text-align: start;
++        font-size: 34px !important;
++        font-weight: 700 !important;
++        letter-spacing: -0.02em;
++        line-height: 1.1;
++    }
++
++    .sync-section__target-row .sync-section__nudge {
++        order: 1;
 +        flex: 0 0 auto;
-+        min-width: 64px;
-+        text-align: center;
-+        font-size: 17px !important;
-+        font-weight: 600 !important;
-+        box-shadow: inset 0.5px 0 0 var(--d7t-sep), inset -0.5px 0 0 var(--d7t-sep);
-+        line-height: 46px;
++        width: 44px;
++        height: 44px;
++        padding: 0 !important;
++        border: 0 !important;
++        border-radius: 50% !important;
++        background: var(--d7t-fill) !important;
++        color: #fff !important;
++        font-size: 0 !important;
++        box-shadow: none !important;
++
++        &::before {
++            font-size: 26px;
++            font-weight: 400;
++            line-height: 44px;
++        }
++    }
++
++    .sync-section__target-row [data-test-id='split-sync-target-minus']::before {
++        content: '\2212';
++    }
++
++    .sync-section__target-row [data-test-id='split-sync-target-plus']::before {
++        content: '+';
 +    }
 +
 +    .sync-section__nudge {
@@ -3857,9 +3904,9 @@ index 0000000..0aea08b
 +    }
 +
 +    .sync__selection {
-+        border: 2px solid #ffd60a !important;
++        border: 2px solid var(--d7t-blue) !important;
 +        border-radius: 4px;
-+        background: rgba(255, 214, 10, 0.16) !important;
++        background: rgba(10, 132, 255, 0.18) !important;
 +        box-shadow: none !important;
 +    }
 +
@@ -3874,8 +3921,8 @@ index 0000000..0aea08b
 +        height: 50px;
 +        border: 0 !important;
 +        border-radius: 999px !important;
-+        background: #fff !important;
-+        color: #000 !important;
++        background: var(--d7t-blue) !important;
++        color: #fff !important;
 +        font-size: 17px !important;
 +        font-weight: 600 !important;
 +        box-shadow: none !important;
@@ -4116,6 +4163,293 @@ index 0000000..0aea08b
 +            font-size: 34px !important;
 +            font-weight: 700 !important;
 +            letter-spacing: -0.02em;
++        }
++    }
++}
++
++// ── Search (design #5): large title, one segmented scope control, quiet option chip ──
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios app-search-layout {
++        .header-top {
++            flex-direction: column !important;
++            align-items: stretch !important;
++            gap: 10px !important;
++        }
++
++        .header-left {
++            flex-direction: column !important;
++            align-items: stretch !important;
++            gap: 12px !important;
++            width: 100%;
++        }
++
++        .header-left h2 {
++            margin: 0 !important;
++            font-size: 34px !important;
++            font-weight: 700 !important;
++            letter-spacing: -0.02em;
++        }
++
++        .type-filters {
++            display: flex !important;
++            flex-wrap: wrap;
++            gap: 8px;
++        }
++
++        .type-filters .mat-mdc-checkbox {
++            flex: 0 0 auto;
++        }
++
++        .type-filters .mat-mdc-checkbox .mdc-form-field {
++            display: flex;
++            align-items: center;
++            justify-content: center;
++            min-height: 34px !important;
++            padding: 0 16px !important;
++            border-radius: 999px !important;
++            background: rgba(120, 120, 128, 0.24) !important;
++            color: rgba(235, 235, 245, 0.6) !important;
++            font-size: 15px !important;
++            font-weight: 500 !important;
++        }
++
++        .type-filters .mat-mdc-checkbox.mat-mdc-checkbox-checked .mdc-form-field {
++            background: #0a84ff !important;
++            color: #fff !important;
++            font-weight: 600 !important;
++        }
++
++        .header-right {
++            justify-content: flex-start !important;
++        }
++
++        .header-right .mat-mdc-checkbox .mdc-form-field {
++            min-height: 30px !important;
++            padding: 0 12px !important;
++            font-size: 13px !important;
++            font-weight: 500 !important;
++        }
++    }
++}
++
++// ── Favorites (design #11): same rows as Live TV, blue heart, no drag handle ──
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios app-global-favorites-list {
++        $heart-on: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 20.5s-8-4.9-8-11A4.6 4.6 0 0 1 12 6.8 4.6 4.6 0 0 1 20 9.5c0 6.1-8 11-8 11Z' fill='black'/%3E%3C/svg%3E");
++
++        .drag-icon {
++            display: none !important;
++        }
++
++        app-channel-list-item .channel-list-item,
++        app-channel-list-item .channel-list-item:not(.compact) {
++            height: 68px;
++            min-height: 68px;
++            padding: 0 8px 0 16px;
++            border-radius: 0;
++            background: transparent !important;
++            gap: 12px;
++        }
++
++        .channel-logo-shell {
++            width: 52px;
++            height: 52px;
++            border-radius: 12px;
++            overflow: hidden;
++        }
++
++        .channel-name {
++            font-size: 17px;
++            font-weight: 600;
++        }
++
++        .epg-placeholder {
++            font-size: 13px;
++            color: rgba(235, 235, 245, 0.6);
++        }
++
++        .favorite-button {
++            width: 36px;
++            height: 36px;
++            padding: 0;
++            color: #0a84ff;
++
++            mat-icon {
++                font-size: 0 !important;
++                width: 22px;
++                height: 22px;
++                background: currentColor;
++                -webkit-mask: $heart-on center / contain no-repeat;
++                mask: $heart-on center / contain no-repeat;
++            }
++        }
++    }
++
++    // The two scope switches become one quiet pill row.
++    html.d7t-ios.d7t-ios .collection-header-toggles {
++        display: flex;
++        flex-direction: column;
++        align-items: stretch;
++        gap: 8px;
++        width: 100%;
++
++        .mat-button-toggle-group {
++            width: 100%;
++        }
++
++        .mat-button-toggle {
++            flex: 1 1 0;
++        }
++    }
++}
++
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios app-global-favorites-list .action-buttons {
++        align-self: center;
++        display: flex;
++        align-items: center;
++        height: 100%;
++    }
++}
++
++// ── Categories sheet (design #41): Done is plain blue text ──
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios [data-test-id='ios-cat-done'] {
++        background: transparent !important;
++        box-shadow: none !important;
++        color: #0a84ff !important;
++        font-weight: 600 !important;
++    }
++}
++
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios app-global-favorites-list .action-buttons .favorite-button {
++        display: inline-flex !important;
++        align-items: center;
++        justify-content: center;
++        align-self: center;
++        width: 44px !important;
++        height: 44px !important;
++        margin: 0 !important;
++        padding: 0 !important;
++        transform: none !important;
++    }
++}
++
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios app-global-favorites-list .program-info-button {
++        display: none !important;
++    }
++}
++
++// ── Recently viewed (design #12): a list of wide thumbnails, "…" at the end ──
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios app-unified-grid-tab .grid-container:has(.date-info) {
++        display: flex !important;
++        flex-direction: column;
++        gap: 14px !important;
++        padding: 4px 16px 24px !important;
++        grid-template-columns: none !important;
++
++        app-content-card {
++            width: 100% !important;
++        }
++
++        .content-card {
++            position: relative;
++            display: block;
++            width: 100% !important;
++            max-width: none !important;
++        }
++
++        .content-card__activation {
++            display: flex !important;
++            flex-direction: row !important;
++            align-items: center;
++            gap: 14px;
++            padding-inline-end: 44px;
++        }
++
++        .thumbnail-wrapper {
++            flex: 0 0 auto;
++            width: 128px !important;
++            height: 72px !important;
++            min-height: 0 !important;
++            aspect-ratio: 16 / 9 !important;
++            border-radius: 10px !important;
++            overflow: hidden;
++        }
++
++        .thumbnail-wrapper .poster {
++            width: 100% !important;
++            height: 100% !important;
++            object-fit: cover;
++        }
++
++        .card-info {
++            position: static !important;
++            flex: 1 1 auto;
++            min-width: 0;
++            padding: 0 !important;
++            background: transparent !important;
++        }
++
++        .card-info h3 {
++            margin: 0 0 3px !important;
++            font-size: 16px !important;
++            font-weight: 600 !important;
++            white-space: nowrap;
++            overflow: hidden;
++            text-overflow: ellipsis;
++        }
++
++        .date-info {
++            margin: 0 !important;
++            font-size: 13px !important;
++            color: rgba(235, 235, 245, 0.6) !important;
++        }
++
++        .remove-button {
++            position: absolute !important;
++            inset-block-start: 50% !important;
++            inset-inline-end: 0 !important;
++            transform: translateY(-50%) !important;
++            width: 36px !important;
++            height: 36px !important;
++            border-radius: 50% !important;
++            background: transparent !important;
++            color: rgba(235, 235, 245, 0.6) !important;
++        }
++
++        .remove-button mat-icon {
++            font-size: 0 !important;
++        }
++
++        .remove-button mat-icon::before {
++            content: 'more_horiz';
++            font-family: 'Material Icons';
++            font-size: 24px;
++            line-height: 24px;
++            font-feature-settings: 'liga';
++        }
++    }
++}
++
++@media (max-width: 640px), (max-height: 480px) and (orientation: landscape) {
++    html.d7t-ios.d7t-ios app-unified-grid-tab .grid-container:has(.date-info) .remove-button {
++        display: flex !important;
++        align-items: center;
++        justify-content: center;
++        overflow: visible !important;
++        padding: 0 !important;
++
++        mat-icon {
++            display: flex !important;
++            align-items: center;
++            justify-content: center;
++            width: 28px !important;
++            height: 28px !important;
++            overflow: visible !important;
 +        }
 +    }
 +}
