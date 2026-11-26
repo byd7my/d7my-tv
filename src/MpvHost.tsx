@@ -181,14 +181,25 @@ export const MpvHost = forwardRef<MpvHostHandle, Props>(function MpvHost({ emit 
                 new Promise<T>((_, reject) => setTimeout(() => reject(new Error('no answer from the player')), ms)),
               ]);
             let why = '';
-            for (const flag of ['video', 'window', 'subtitles']) {
+            // The raw route (mpv hands over the pixels itself) comes first: the encoded route
+            // (screenshot-to-file) fails on this build, most likely for want of an image encoder.
+            const routes: Array<[string, string]> = [
+              ['d7t-raw-shot', 'video'],
+              ['d7t-raw-shot', 'window'],
+              ['screenshot-to-file', 'video'],
+              ['screenshot-to-file', 'window'],
+            ];
+            for (const [route, flag] of routes) {
               try {
-                await within(view.setPropertyString('d7t-command', ['screenshot-to-file', file, flag].join('\u0001')), 4000);
+                await within(view.setPropertyString('d7t-command', [route, file, flag].join('\u0001')), 4000);
+                // The player says whether it really wrote a picture; never read an older file instead.
+                const reported = (await within(view.getMediaInfo(), 2000).catch(() => ({}))) as Record<string, unknown>;
+                if (reported.d7tLastError) throw new Error(String(reported.d7tLastError));
                 return a.region
                   ? await D7TNative.frameCrop(file, a.region.x, a.region.y, a.region.width, a.region.height, width)
                   : await D7TNative.frameRGBA(file, width);
               } catch (error) {
-                why = `${flag}: ${String((error as { message?: string })?.message ?? error)}`;
+                why = why || `${route} ${flag}: ${String((error as { message?: string })?.message ?? error)}`;
               }
             }
             // Say what the player reported, so a failure explains itself instead of staying blank.

@@ -238,7 +238,26 @@ enum D7THttp {
 }
 
 enum D7TVision {
+  /// D7TRAW1 pictures come from mpv's screenshot-raw (see scripts/patch-expo-mpv.js):
+  /// 8-byte magic, UInt32 width, UInt32 height (little endian), then BGRA rows.
+  static func loadRaw(_ path: String) -> CGImage? {
+    guard let data = try? Data(contentsOf: URL(fileURLWithPath: path), options: .mappedIfSafe),
+          data.count > 16, data.prefix(8) == Data("D7TRAW1\0".utf8) else { return nil }
+    let w = Int(data.subdata(in: 8..<12).withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) }.littleEndian)
+    let h = Int(data.subdata(in: 12..<16).withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) }.littleEndian)
+    guard w > 0, h > 0, data.count >= 16 + w * h * 4 else { return nil }
+    let pixels = data.subdata(in: 16..<(16 + w * h * 4))
+    guard let provider = CGDataProvider(data: pixels as CFData) else { return nil }
+    return CGImage(
+      width: w, height: h, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: w * 4,
+      space: CGColorSpaceCreateDeviceRGB(),
+      bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue),
+      provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent
+    )
+  }
+
   static func loadImage(_ path: String) throws -> CGImage {
+    if let raw = loadRaw(path) { return raw }
     guard let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil),
           let img = CGImageSourceCreateImageAtIndex(src, 0, nil) else {
       throw D7TError("تعذر قراءة اللقطة")
