@@ -1,0 +1,1 @@
+import{M as Jc,w as Gy}from"./chunk-B_R8RfLq.js";import{g as oe}from"./chunk-BGzwaJVk.js";var n=(()=>{class e{static ɵfac=function(i){return new(i||e)};static ɵmod=Gy({type:e});static ɵinj=Jc({imports:[oe]})}return e})();export{n as t};

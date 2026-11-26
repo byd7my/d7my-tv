@@ -1,0 +1,1 @@
+import"./chunk-BynQ4ihV.js";import"./chunk-CoR6Tyun.js";import"./chunk-CoL_e1sQ.js";import{t as B}from"./chunk-CicVbb4h.js";function i(r,t,a){return new B(r).restore(t,a)}export{i as restorePwaXtreamUserData};
