@@ -1,0 +1,1 @@
+import"./chunk-BynQ4ihV.js";import"./chunk-DSGdOKrv.js";import{yn as ie}from"./chunk-B_R8RfLq.js";function u(e,o,t=0){return new Promise(c=>{let r=()=>{ie(()=>e.isBusy(o,t))||(s(),c())},s=e.onRelease(r);r()})}export{u as waitForSourceIdle};

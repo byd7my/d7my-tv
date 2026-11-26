@@ -1,0 +1,1 @@
+import{f as y}from"./chunk-DlCZLZKv.js";function i(r){let o=y();return o===`iptvnator`?r:`${o}:${r}`}export{i as t};
